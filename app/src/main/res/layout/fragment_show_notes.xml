@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top"
+    android:padding="0dp">
+
+    <!-- Action Bar / Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="90sp"
+        android:background="@color/nav"
+        android:elevation="4dp"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="Notes App"
+
+        >
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            >
+
+            <LinearLayout
+                android:id="@+id/linearLayout3"
+                android:layout_width="0dp"
+                android:layout_margin="10sp"
+                android:layout_height="match_parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="30sp"
+                    android:text="VIP Research Group"
+                    android:textStyle="normal"
+                    android:textColor="@color/secondary"
+                    android:textSize="20sp"
+                    ></TextView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="30sp"
+                    android:text="Note Takers"
+                    android:textStyle="bold"
+                    android:textColor="@color/third"
+                    android:textSize="25sp"
+                    ></TextView>
+
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/add_event"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginRight="10sp"
+                android:layout_alignParentBottom="true"
+                android:src="@mipmap/addbutton"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/add_api"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginRight="10sp"
+                android:src="@mipmap/settings"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/linearLayout3"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.appcompat.widget.Toolbar>
+
+    <!-- Floating Action Button -->
+
+
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recordingRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/toolbar"
+        android:padding="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+    <androidx.cardview.widget.CardView
+        android:id="@+id/recording_small_card"
+        android:layout_width="wrap_content"
+        android:layout_height="50sp"
+        app:cardCornerRadius="30sp"
+        android:layout_gravity="end"
+
+        android:backgroundTint="@color/nav"
+        android:layout_marginRight="5sp"
+        app:layout_constraintVertical_bias="0.89"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:layout_marginLeft="10sp"
+                android:id="@+id/textView_small_Timer"
+                android:layout_width="wrap_content"
+
+                android:layout_height="40sp"
+                android:textSize="15sp"
+                android:textColor="@color/fourth"
+
+                android:gravity="center"
+                android:textStyle="bold"
+                android:layout_centerHorizontal="true"
+                android:text="00:00" />
+            <ImageView
+                android:id="@+id/play_pause_recording_small_animation"
+                android:layout_width="match_parent"
+                android:layout_height="50sp"
+                android:src="@mipmap/pause"
+                android:backgroundTint="@color/secondary"
+                android:padding="5sp"
+                android:layout_marginLeft="10sp"
+
+
+                >
+
+            </ImageView>
+            <ImageView
+                android:id="@+id/stop_recording_small_animation"
+                android:layout_width="50sp"
+                android:layout_height="50sp"
+                android:padding="5sp"
+                android:src="@mipmap/stop"
+                android:backgroundTint="@color/secondary"
+
+
+                >
+
+            </ImageView>
+
+        </LinearLayout>
+
+
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

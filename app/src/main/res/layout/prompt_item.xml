@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10sp"
+        android:backgroundTint="@color/third"
+        app:cardCornerRadius="10sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/title_prompt"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10sp"
+                        android:text="Title"
+                        android:textColor="@color/button"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/edit_p"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                       >
+
+                    </TextView>
+
+
+                    <ImageView
+                        android:id="@+id/edit_p"
+                        android:layout_width="40sp"
+                        android:layout_height="0sp"
+                        android:layout_margin="5sp"
+                        android:padding="10sp"
+                        android:src="@mipmap/edit"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/delete_p"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintWidth_percent="0.05">
+
+                    </ImageView>
+
+                    <ImageView
+                        android:id="@+id/delete_p"
+                        android:layout_width="40sp"
+                        android:layout_height="40sp"
+                        android:layout_margin="5sp"
+                        android:padding="10sp"
+                        android:src="@mipmap/delete"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                    </ImageView>
+
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:backgroundTint="@color/black"
+                android:background="@color/black"
+
+                android:layout_height="1sp">
+
+            </com.google.android.material.divider.MaterialDivider>
+
+            <TextView
+                android:id="@+id/prompt_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10sp"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:visibility="visible">
+
+            </TextView>
+
+            <LinearLayout
+                android:id="@+id/linearLayout5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/secondary"
+                android:backgroundTint="@color/third"
+                android:gravity="start"
+
+                android:orientation="horizontal"
+                android:padding="0sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/appBar">
+
+                <ImageView
+                    android:visibility="gone"
+                    android:id="@+id/save_p"
+                    android:layout_width="40sp"
+                    android:layout_height="40sp"
+                    android:layout_margin="0sp"
+                    android:padding="10sp"
+                    android:src="@mipmap/save">
+
+                </ImageView>
+
+                <ImageView
+                    android:id="@+id/share_p"
+                    android:layout_width="40sp"
+                    android:layout_height="40sp"
+                    android:layout_margin="0sp"
+                    android:padding="10sp"
+                    android:src="@mipmap/share"
+
+
+                    >
+
+                </ImageView>
+
+                <ImageView
+                    android:id="@+id/copy_p"
+                    android:layout_width="40sp"
+                    android:layout_height="40sp"
+                    android:layout_margin="0sp"
+                    android:padding="10sp"
+                    android:src="@mipmap/copy">
+
+                </ImageView>
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/selectedcard"
+                    android:layout_width="wrap_content"
+                    app:cardCornerRadius="20sp"
+                    android:layout_gravity="center_vertical"
+                    android:backgroundTint="@color/secondary"
+                    android:layout_height="wrap_content"
+                    >
+                    <TextView
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Selected"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:padding="4sp"
+                        android:textSize="14sp"
+                        >
+
+                    </TextView>
+                </androidx.cardview.widget.CardView>
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

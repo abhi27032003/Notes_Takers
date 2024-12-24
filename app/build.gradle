@@ -1,0 +1,87 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.recorderchunks'
+    compileSdk 34
+    packagingOptions {
+        jniLibs {
+            pickFirsts += ['lib/x86/libc++_shared.so', 'lib/x86_64/libc++_shared.so', 'lib/armeabi-v7a/libc++_shared.so', 'lib/arm64-v8a/libc++_shared.so']
+        }
+    }
+    defaultConfig {
+        applicationId "com.example.recorderchunks"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        packagingOptions {
+            exclude 'lib/arm64-v8a/libc++_shared.so' // Exclude the conflicting libc++_shared.so file
+        }
+        ndk {
+
+        }
+
+
+    }
+
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    ndkVersion '28.0.12433566 rc1'
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+    implementation 'androidx.activity:activity:1.8.0'
+
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    implementation 'com.google.code.gson:gson:2.8.9'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    implementation 'com.alphacephei:vosk-android:0.3.37@aar'
+    implementation 'net.java.dev.jna:jna:5.8.0@aar'
+
+   // implementation 'org.pytorch:pytorch_android_torchvision:1.10.0'
+    //////////////////////////////
+    implementation 'com.arthenica:mobile-ffmpeg-full:4.4'
+
+    ////
+    implementation 'nl.bryanderidder:themed-toggle-button-group:1.4.1'
+    implementation 'com.android.volley:volley:1.2.1'
+
+    ////gemini
+    implementation 'com.google.ai.client.generativeai:generativeai:0.7.0'
+
+    implementation 'com.google.guava:guava:31.0.1-android'
+    implementation 'org.reactivestreams:reactive-streams:1.0.4'
+
+    //neon button
+
+    implementation 'com.github.SMehranB:GlowNeonButton:2.0.1'
+    //lottie
+
+    implementation 'com.airbnb.android:lottie:6.0.0'
+    // audio file picker
+    implementation 'com.github.MajidArabi:AndroidFilePicker:0.2.2'
+
+    implementation 'com.github.jeancsanchez:JcPlayer:2.7.2'
+    implementation 'com.github.happysingh23828:HappyTimer:1.0.1'
+
+
+
+}

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/recordingCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        
+        android:layout_marginLeft="5sp"
+        android:layout_marginRight="5sp"
+        android:layout_marginTop="8sp"
+        android:layout_marginBottom="5sp"
+        android:visibility="visible"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+
+            android:padding="8dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="40sp">
+
+                <TextView
+
+                    android:id="@+id/recordingLabel"
+                    android:layout_width="0dp"
+
+                    android:layout_height="40sp"
+                    android:textAlignment="textStart"
+                    android:ellipsize="middle"
+                    app:layout_constraintWidth_percent="0.4"
+
+                    android:gravity="center|start"
+                    android:text="Recorded Audio"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <Button
+                    android:id="@+id/Start_Transcription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="5sp"
+                    android:backgroundTint="@color/nav"
+                    android:text="Transcribe File Now"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/add_to_list"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/add_to_list"
+                    android:layout_width="35dp"
+                    android:layout_height="35sp"
+                    android:padding="0sp"
+                    android:src="@drawable/baseline_add_24"
+                    android:layout_marginRight="5sp"
+
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/deleteButton"
+                    app:layout_constraintTop_toTopOf="parent" />
+                <ImageView
+                    android:id="@+id/deleteButton"
+                    android:layout_width="35dp"
+                    android:layout_height="35sp"
+                    android:padding="0sp"
+                    android:src="@mipmap/delete"
+
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+            <TextView
+                android:id="@+id/ceation_d_and_t"
+                android:textColor="@color/button"
+                android:layout_width="match_parent"
+                android:layout_gravity="center"
+                android:gravity="center_vertical"
+                android:layout_height="wrap_content"
+                android:text="Created on 221"
+                >
+
+            </TextView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="1sp"
+                android:backgroundTint="@color/black"></androidx.cardview.widget.CardView>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                >
+
+                <ProgressBar
+                    android:id="@+id/transcription_progress"
+                    android:layout_width="30sp"
+                    android:layout_height="30sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/Description"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                </ProgressBar>
+
+                <TextView
+                    android:id="@+id/Description"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:ellipsize="end"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+
+                    android:paddingBottom="8sp"
+                    android:paddingEnd="8sp"
+                    android:paddingTop="8sp"
+                    android:text="Created on 221. This is an example of a very long description that will be expanded when the button is clicked."
+                    android:textColor="@color/nav"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/expand_btn"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/expand_btn"
+                    android:layout_width="30sp"
+                    android:layout_height="30sp"
+                    android:layout_gravity="center"
+                    android:text="Expand"
+                    android:src="@mipmap/expand"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="1sp"
+                android:backgroundTint="@color/black"></androidx.cardview.widget.CardView>
+            <!-- Audio Playback Controls -->
+            <LinearLayout
+                android:visibility="visible"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <!-- Play/Pause Button -->
+                <ImageView
+                    android:id="@+id/playPauseButton"
+                    android:layout_width="50dp"
+                    android:layout_height="40sp"
+                    android:layout_gravity="center"
+
+                    android:layout_margin="0sp"
+                    android:backgroundTint="@color/third"
+                    android:padding="0sp"
+                    android:src="@drawable/baseline_play_circle_24"
+
+
+                    />
+
+                <!-- Progress Bar for Audio Playback -->
+                <SeekBar
+                    android:id="@+id/playbackProgressBar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:progressTint="@color/black"
+                    android:thumbTintMode="src_atop"
+                    android:thumbTint="@color/button"
+                    android:layout_weight="1"
+                    android:max="100"
+                    android:progress="0"
+                    app:layout_constraintWidth_percent="0.75" />
+
+                <!-- Timer for Playback Progress -->
+                <TextView
+
+                    android:id="@+id/playbackTimer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingRight="5sp"
+                    android:text="00:00"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+                <TextView
+                    android:id="@+id/total_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingRight="5sp"
+                    android:textStyle="bold"
+                    android:text="00:00"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+
+
+            <com.example.jean.jcplayer.view.JcPlayerView
+                android:visibility="gone"
+
+                android:id="@+id/jcplayer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>
