@@ -299,8 +299,15 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             } catch (Exception e) {
                 // Handle errors
                 new Handler(Looper.getMainLooper()).post(() ->
+
                         Log.d("hellorecorder", "Error during speech recognition: " + e.getMessage())
                 );
+                audioItem.setDescription("Error during speech recognition: " + e.getMessage());
+                audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
+                recordingList.set(position, audioItem);
+
+                // Notify adapter about the item change
+                notifyItemChanged(position);
             }
         });
 
