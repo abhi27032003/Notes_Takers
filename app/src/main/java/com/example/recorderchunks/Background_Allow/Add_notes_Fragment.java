@@ -19,6 +19,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -26,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -51,6 +54,7 @@ import com.example.recorderchunks.Manage_Prompt;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.Model_Class.RecordingViewModel;
+import com.example.recorderchunks.Model_Class.SharedViewModel;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.Model_Class.is_recording;
 import com.example.recorderchunks.Model_Class.recording_event_no;
@@ -114,7 +118,20 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     String prompt_message = "";
     public static int event_id;
     is_recording is_recording;
+    //prompt
 
+    String[] languages;
+    ArrayAdapter<String> adapter;
+
+    //draging icons
+    private static final String PREFS_NAME = "CardViewPosition";
+    private static final String PREF_START_MARGIN = "StartMargin";
+    private static final String PREF_TOP_MARGIN = "TopMargin";
+
+    private float dX, dY;
+    private int lastAction;
+    private SharedPreferences sharedPreferences2;
+    private ConstraintLayout constraintLayout;
 
 
     @Override
@@ -138,6 +155,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
         );
         recordingList = new ArrayList<>();
+        sharedPreferences2 = getActivity().getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+//        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
 
 
@@ -165,6 +184,46 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         textView_small_Timer=view.findViewById(R.id.textView_small_Timer);
         stop_recording_small_animation=view.findViewById(R.id.stop_recording_small_animation);
         play_pause_recording_small_animation=view.findViewById(R.id.play_pause_recording_small_animation);
+        constraintLayout = view.findViewById(R.id.constraint);
+
+
+
+        // Set OnTouchListener for the CardView
+        reloadPosition(recording_small_card);
+        recording_small_card.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        dX = v.getX() - event.getRawX();
+                        dY = v.getY() - event.getRawY();
+                        lastAction = MotionEvent.ACTION_DOWN;
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float newX = event.getRawX() + dX;
+                        float newY = event.getRawY() + dY;
+
+                        // Prevent the view from going off-screen
+                        newX = Math.max(0, Math.min(newX, constraintLayout.getWidth() - v.getWidth()));
+                        newY = Math.max(0, Math.min(newY, constraintLayout.getHeight() - v.getHeight()));
+
+                        v.setX(newX);
+                        v.setY(newY);
+                        lastAction = MotionEvent.ACTION_MOVE;
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        if (lastAction == MotionEvent.ACTION_MOVE) {
+                            savePosition(recording_small_card); // Save the position when drag ends
+                        }
+                        return true;
+
+                    default:
+                        return false;
+                }
+            }
+        });
 
 
         //delete all recordings if already exists
@@ -190,14 +249,13 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         }
 
         //Setup all Prompts Spinner
-        String[] languages = promptDatabaseHelper.getAllPromptTexts();
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        languages = promptDatabaseHelper.getAllPromptTexts();
+        adapter = new ArrayAdapter<>(
                 getActivity(),
                 android.R.layout.simple_spinner_item,
                 languages
         );
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        prompt_spinner.setPrompt("asdfghj");
         prompt_spinner.setAdapter(adapter);
         if (languages == null || languages.length == 0) {
             no_item_text.setVisibility(View.VISIBLE);
@@ -396,6 +454,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
                 recording_event_no.setRecording_event_no(event_id);
                 recording_small_card.setVisibility(View.VISIBLE);
+                reloadPosition(recording_small_card);
             } else {
                 // Stop recording
                 recordButton.setText("Start Recording");
@@ -428,6 +487,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     recordingViewModel.setRecording(true);
                     recordingViewModel.startTimer();
                     recording_small_card.setVisibility(View.VISIBLE);
+                    reloadPosition(recording_small_card);
 
                 } else {
                     recordButton.setText("Start Recording");
@@ -543,6 +603,45 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             recyclerView.setAdapter(recordingAdapter);
         } else {
             recordingAdapter.notifyDataSetChanged();
+        }
+        languages = promptDatabaseHelper.getAllPromptTexts();
+        adapter = new ArrayAdapter<>(
+                getActivity(),
+                android.R.layout.simple_spinner_item,
+                languages
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        prompt_spinner.setAdapter(adapter);
+        if (languages == null || languages.length == 0) {
+            no_item_text.setVisibility(View.VISIBLE);
+        }
+        else {
+            no_item_text.setVisibility(View.GONE);
+        }
+    }
+    private void savePosition(CardView cardView) {
+        ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) cardView.getLayoutParams();
+        int startMargin = layoutParams.leftMargin;
+        int topMargin = layoutParams.topMargin;
+
+        SharedPreferences.Editor editor = sharedPreferences2.edit();
+        editor.putInt(PREF_START_MARGIN, startMargin);
+        editor.putInt(PREF_TOP_MARGIN, topMargin);
+        editor.apply();
+    }
+    private void reloadPosition(CardView cardView) {
+        int startMargin = sharedPreferences2.getInt(PREF_START_MARGIN, -1);
+        int topMargin = sharedPreferences2.getInt(PREF_TOP_MARGIN, -1);
+
+        // If a position was saved, apply it
+        if (startMargin != -1 && topMargin != -1) {
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(constraintLayout);
+
+            constraintSet.connect(cardView.getId(), ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, startMargin);
+            constraintSet.connect(cardView.getId(), ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, topMargin);
+
+            constraintSet.applyTo(constraintLayout);
         }
     }
     @Override
@@ -844,6 +943,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         updateSelectedItemsDisplay(updatedSelection);
 
     }
+
+
 
 }
 

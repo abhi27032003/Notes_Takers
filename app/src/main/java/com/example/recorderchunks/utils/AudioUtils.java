@@ -152,7 +152,7 @@ public class AudioUtils {
         String[] supportedFormats = {"wav", "3gp"};
         if (!Arrays.asList(supportedFormats).contains(fileExtension)) {
 
-            return null;
+            return "wrong format";
         }
 
         // Check if input WAV file needs conversion

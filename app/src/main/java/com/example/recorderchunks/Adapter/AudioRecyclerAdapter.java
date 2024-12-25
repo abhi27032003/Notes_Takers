@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -45,6 +46,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -250,10 +252,31 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
     private void handleTranscription(Recording audioItem, int position) {
+        String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
+        String[] supportedFormats = {"wav", "3gp"};
+        if (!Arrays.asList(supportedFormats).contains(fileExtension)) {
+            boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), "Unsupported Format");
+
+            // Switch back to main thread to update UI or notify adapter
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (updateSuccess) {
+                    Log.d("hellorecorder", "Recording updated successfully.");
+                    audioItem.setDescription("Unsupported Format"); // Assuming the setDescription method updates COL_DES
+                    audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
+
+                    recordingList.set(position, audioItem);
+
+                    // Notify adapter about the item change
+                    notifyItemChanged(position);
+                } else {
+                    Log.d("hellorecorder", "Failed to update the recording.+Unsupported Format");
+                }
+            });
+            return ;
+        }
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.execute(() -> {
             try {
-                // Perform speech recognition in the background
                 String transcription = Vosk_Model.recognizeSpeech(convertToWav(audioItem.getUrl(), context));
 
                 if (transcription != null && !transcription.isEmpty()) {
@@ -279,7 +302,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         }
                     });
                 } else {
-                    boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), transcription);
+                    boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), "Unable to generate Transcription");
 
                     // Switch back to main thread to update UI or notify adapter
                     new Handler(Looper.getMainLooper()).post(() -> {
@@ -288,8 +311,6 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             audioItem.setDescription("Unable to generate Transcription"); // Assuming the setDescription method updates COL_DES
                             audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
                             recordingList.set(position, audioItem);
-
-                            // Notify adapter about the item change
                             notifyItemChanged(position);
                         } else {
                             Log.d("hellorecorder", "Failed to update the recording.");
@@ -297,7 +318,6 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     });
                 }
             } catch (Exception e) {
-                // Handle errors
                 new Handler(Looper.getMainLooper()).post(() ->
 
                         Log.d("hellorecorder", "Error during speech recognition: " + e.getMessage())
@@ -305,8 +325,6 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 audioItem.setDescription("Error during speech recognition: " + e.getMessage());
                 audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
                 recordingList.set(position, audioItem);
-
-                // Notify adapter about the item change
                 notifyItemChanged(position);
             }
         });
@@ -459,7 +477,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         ImageView expand_button,add_to_list,delete;
 
         CardView recordingCard;
-        ProgressBar transcription_progress;
+        LinearLayout transcription_progress;
         public AudioViewHolder(@NonNull View itemView) {
             super(itemView);
             transcription_progress=itemView.findViewById(R.id.transcription_progress);

@@ -105,17 +105,43 @@
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+
                 >
 
-                <ProgressBar
+                <LinearLayout
                     android:id="@+id/transcription_progress"
-                    android:layout_width="30sp"
-                    android:layout_height="30sp"
+                    android:layout_width="0dp"
+                    android:layout_height="40sp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="@+id/Description"
+                    app:layout_constraintEnd_toEndOf="@+id/Description"
+                    app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
 
-                </ProgressBar>
+                    <ProgressBar
+
+                        android:layout_width="30sp"
+                        android:layout_height="match_parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="@+id/Description"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                    </ProgressBar>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:text="Transcribing..."
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:layout_marginLeft="10sp"
+                        android:layout_height="match_parent">
+
+                    </TextView>
+
+                </LinearLayout>
+
 
                 <TextView
                     android:id="@+id/Description"
