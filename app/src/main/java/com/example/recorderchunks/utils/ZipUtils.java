@@ -27,4 +27,25 @@ public class ZipUtils {
         zis.closeEntry();
         zis.close();
     }
+    public static void unzipFile(File zipFile, File targetDir) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                File outFile = new File(targetDir, entry.getName());
+                if (entry.isDirectory()) {
+                    outFile.mkdirs();
+                } else {
+                    outFile.getParentFile().mkdirs();
+                    try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, length);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

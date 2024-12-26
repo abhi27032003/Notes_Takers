@@ -71,19 +71,17 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="added functionality-5th commit(13/13)">
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Model_Class/SharedViewModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/deploymentTargetSelector.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deploymentTargetSelector.xml" afterDir="false" />
+    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="updated project">
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Activity/RecordingService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Audio_Models/ModelDownloader.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Audio_Models/ModelMetadata.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/MyApplication.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Add_notes_Activity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Add_notes_Activity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Notes_Fragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Notes_Fragment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Manage_Prompt.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Manage_Prompt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/utils/AudioUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/utils/AudioUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_manage_prompt.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_manage_prompt.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_add_notes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_add_notes_.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_show_notes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_show_notes.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/item_recorder.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_recorder.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/utils/RecordingUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/utils/RecordingUtils.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,7 +91,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=LocalEmulator, isTemplate=false, identifier=path=C:\Users\abhis\.android\avd\Pixel_3a_API_34_extension_level_7_x86_64.avd)]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=DMQCJZHMHABMDQCQ)]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -394,7 +392,15 @@
       <option name="project" value="LOCAL" />
       <updated>1735052938603</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="updated project">
+      <option name="closed" value="true" />
+      <created>1735146203392</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1735146203392</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -425,7 +431,8 @@
     <MESSAGE value="basic project structure -4th commit(11/11)--vosk" />
     <MESSAGE value="added functionality-4th commit(11/11)--vosk" />
     <MESSAGE value="added functionality-5th commit(13/13)" />
-    <option name="LAST_COMMIT_MESSAGE" value="added functionality-5th commit(13/13)" />
+    <MESSAGE value="updated project" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated project" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -457,17 +464,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>555</line>
+          <line>606</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>312</line>
+          <line>318</line>
           <option name="timeStamp" value="18" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>408</line>
+          <line>414</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -477,8 +484,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>444</line>
+          <line>450</line>
           <option name="timeStamp" value="27" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Notes_Fragment.java</url>
+          <line>106</line>
+          <option name="timeStamp" value="28" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Add_Event.java</url>
@@ -527,7 +539,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>595</line>
+          <line>646</line>
           <properties class="com.example.recorderchunks.Background_Allow.Add_notes_Fragment">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -536,7 +548,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>648</line>
+          <line>699</line>
           <properties class="com.example.recorderchunks.Background_Allow.Add_notes_Fragment">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -560,6 +572,15 @@
             <option name="WATCH_EXIT" value="false" />
           </properties>
           <option name="timeStamp" value="26" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Activity/RecordingService.java</url>
+          <line>98</line>
+          <properties class="com.example.recorderchunks.Activity.RecordingService" method="createNotification">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="29" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

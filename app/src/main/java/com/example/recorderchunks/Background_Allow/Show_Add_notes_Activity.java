@@ -3,6 +3,7 @@ package com.example.recorderchunks.Background_Allow;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -21,7 +22,11 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
     private static final String[] REQUIRED_PERMISSIONS = new String[]{
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.FOREGROUND_SERVICE,              // For foreground services
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION
+
     };
 
     private ActivityResultLauncher<String[]> permissionLauncher;
@@ -54,16 +59,24 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
 
     private void checkAndRequestPermissions() {
         List<String> permissionsToRequest = new ArrayList<>();
+
+        // Iterate through the required permissions
         for (String permission : REQUIRED_PERMISSIONS) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(permission);
             }
         }
 
+        // Check if the list is not empty, then request permissions
         if (!permissionsToRequest.isEmpty()) {
+            // Use the permission launcher for requesting multiple permissions
             permissionLauncher.launch(permissionsToRequest.toArray(new String[0]));
+        } else {
+            // Optional: Handle the case where all permissions are already granted
+            Log.d("Permissions", "All required permissions are granted.");
         }
     }
+
 
     public void setFragment(Fragment fragment) {
         getSupportFragmentManager()

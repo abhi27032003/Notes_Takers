@@ -23,6 +23,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -76,7 +77,11 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
         ///////////////////////////////////////////////////////////////////////
         recording_event_no=new recording_event_no();
         current_event ce=new current_event();
-        recordingViewModel = new ViewModelProvider(requireActivity()).get(RecordingViewModel.class);
+        recordingViewModel = new ViewModelProvider(
+                (ViewModelStoreOwner) requireActivity().getApplication(),
+                ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().getApplication())
+        ).get(RecordingViewModel.class);
+
         databaseHelper = new DatabaseHelper(getContext());
         recordingUtils = RecordingManager.getInstance(
                 requireContext(),this
@@ -94,10 +99,48 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
         recording_small_card=view.findViewById(R.id.recording_small_card);
         textView_small_Timer=view.findViewById(R.id.textView_small_Timer);
         constraintLayout = view.findViewById(R.id.constraint);
+
+        //update the ui based on the recording view model
         recordingViewModel.getElapsedSeconds().observe(getViewLifecycleOwner(), elapsedTime -> {
-            // Update UI when elapsed time changes
             updateTimerText(elapsedTime);
         });
+        recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
+            if(isrecording)
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                    }
+                    else
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+
+                    }
+                });
+            }
+            else
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                    }
+                    else
+                    {
+                        recording_small_card.setVisibility(View.GONE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+
+                    }
+                });
+
+            }
+        });
+
+
 
 
         // Enable dragging for a card
@@ -136,7 +179,6 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
                 }
             }
         });
-
         play_pause_recording_small_animation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -161,7 +203,6 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
                 }
             }
         });
-
         stop_recording_small_animation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -195,7 +236,6 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
 
             }
         });
-
         if (Boolean.TRUE.equals(recordingViewModel.getIsRecording().getValue())) {
             // Recording in progress: Show the recording UI
             recording_small_card.setVisibility(View.VISIBLE);

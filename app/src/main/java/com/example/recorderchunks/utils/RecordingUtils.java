@@ -1,6 +1,7 @@
 package com.example.recorderchunks.utils;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
@@ -8,7 +9,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
+
+import com.example.recorderchunks.Activity.RecordingService;
+import com.example.recorderchunks.Background_Allow.Add_notes_Fragment;
 import com.example.recorderchunks.DatabaseHelper;
+import com.example.recorderchunks.Model_Class.RecordingViewModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +35,14 @@ public class RecordingUtils {
     private RecordingCallback recordingCallback;
     private boolean isRecordingCompleted = false;
 
+
     public RecordingUtils(Context context,  RecordingCallback recordingCallback) {
         this.context = context;
 
         this.databaseHelper = new DatabaseHelper(context);
         this.recordingCallback = recordingCallback;
+
+
     }
     public interface RecordingCallback {
         void onRecordingStarted(String filePath);
@@ -43,9 +53,6 @@ public class RecordingUtils {
 
 
     public void startRecording() {
-        // Notification and animation setup
-        NotificationUtils.createNotificationChannel(context);
-        NotificationUtils.showRecordingNotification(context);
 
 
         // Set up the audio file path
@@ -78,6 +85,8 @@ public class RecordingUtils {
             recordingCallback.onRecordingStarted(audioFilePath);
         }
         isRecordingCompleted = false;
+        Intent serviceIntent = new Intent(context, RecordingService.class);
+        context.startService(serviceIntent);
     }
 
     public void pauseRecording() {
@@ -85,6 +94,7 @@ public class RecordingUtils {
             try {
                 mediaRecorder.pause();
                 isPaused = true;
+
                 Log.d("AudioRecorder", "Recording paused");
                 if (recordingCallback != null) {
                     recordingCallback.onRecordingPaused();
@@ -102,6 +112,7 @@ public class RecordingUtils {
             try {
                 mediaRecorder.resume();
                 isPaused = false;
+
                 Log.d("AudioRecorder", "Recording resumed");
                 if (recordingCallback != null) {
                     recordingCallback.onRecordingResumed();
@@ -117,7 +128,7 @@ public class RecordingUtils {
 
 
     public void stopRecording(int eventId) {
-        NotificationUtils.cancelRecordingNotification(context);
+        RecordingService.isStopping=true;
 
         if (mediaRecorder != null) {
             try {
@@ -186,6 +197,10 @@ public class RecordingUtils {
         if (recordingCallback != null && isRecordingCompleted) {
             recordingCallback.onRecordingSaved(eventId);
         }
+        RecordingService.isStopping=true;
+        Intent serviceIntent = new Intent(context, RecordingService.class);
+        context.stopService(serviceIntent);
+
 
     }
 

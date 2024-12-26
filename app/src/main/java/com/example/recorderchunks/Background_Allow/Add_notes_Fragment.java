@@ -23,6 +23,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -46,6 +47,7 @@ import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
 import com.example.recorderchunks.AI_Transcription.GeminiCallback;
+import com.example.recorderchunks.Activity.RecordingService;
 import com.example.recorderchunks.Adapter.AudioRecyclerAdapter;
 import com.example.recorderchunks.Add_Event;
 import com.example.recorderchunks.DatabaseHelper;
@@ -94,7 +96,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     Button recordButton;
     private Spinner prompt_spinner;
     private RecordingUtils recordingUtils;
-    private RecordingViewModel recordingViewModel;
+    public static RecordingViewModel recordingViewModel;
     private recording_event_no recording_event_no;
 
 
@@ -149,7 +151,11 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         promptDatabaseHelper=new Prompt_Database_Helper(getContext());
         is_recording=new is_recording();
         sharedPreferences = getActivity().getSharedPreferences("ApiKeysPref", MODE_PRIVATE);
-        recordingViewModel = new ViewModelProvider(requireActivity()).get(RecordingViewModel.class);
+        recordingViewModel = new ViewModelProvider(
+                (ViewModelStoreOwner) requireActivity().getApplication(),
+                ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().getApplication())
+        ).get(RecordingViewModel.class);
+
         recordingUtils = RecordingManager.getInstance(
                 requireContext(),this
 
@@ -489,6 +495,9 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     recording_small_card.setVisibility(View.VISIBLE);
                     reloadPosition(recording_small_card);
 
+                    Intent serviceIntent = new Intent(getContext(), RecordingService.class);
+                    getContext().startService(serviceIntent);
+
                 } else {
                     recordButton.setText("Start Recording");
                     recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
@@ -510,6 +519,48 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             // Update UI when elapsed time changes
             updateTimerText(elapsedTime);
         });
+        recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
+            if(isrecording)
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                    }
+                    else
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+
+                    }
+                });
+            }
+            else
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                    }
+                    else
+                    {
+                        recording_small_card.setVisibility(View.GONE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+                        recordingList.clear();
+                        recordingList = databaseHelper.getRecordingsByEventId(event_id);
+                        recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
+                        updateSelectedItemsDisplay(new ArrayList<>());
+                        recyclerView.setAdapter(recordingAdapter);
+                        recordingAdapter.notifyDataSetChanged();
+
+                    }
+                });
+
+            }
+        });
+
 
         //Stop Recording via small Card
         play_pause_recording_small_animation.setOnClickListener(new View.OnClickListener() {
