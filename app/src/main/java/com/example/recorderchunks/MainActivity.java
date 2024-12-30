@@ -44,8 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Set up OnClickListener for "Add Event" button
         goTo_Add_event_Page.setOnClickListener(v -> {
-            Intent i = new Intent(MainActivity.this, Add_Event.class);
-            startActivity(i);
+
         });
 
         // Initialize Database Helper

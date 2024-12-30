@@ -49,9 +49,7 @@
         <activity
             android:name=".Showdetails"
             android:exported="false" />
-        <activity
-            android:name=".Add_Event"
-            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

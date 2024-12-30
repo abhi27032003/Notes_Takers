@@ -3,19 +3,19 @@ package com.example.recorderchunks.Background_Allow;
 import static android.content.Context.MODE_PRIVATE;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.get_gemini_note;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.getoutput_chatgpt;
+import static com.example.recorderchunks.API_Updation.SELECTED_LANGUAGE;
+import static com.example.recorderchunks.API_Updation.getLanguagesFromMetadata;
 import static com.example.recorderchunks.utils.AudioUtils.getAudioDuration;
 import static com.example.recorderchunks.utils.AudioUtils.getFileExtension;
 import static com.example.recorderchunks.utils.AudioUtils.getFileName;
 
-import android.app.Application;
-import android.content.Context;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
@@ -27,11 +27,8 @@ import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.os.Handler;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,21 +42,19 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.RequestQueue;
 import com.example.recorderchunks.AI_Transcription.GeminiCallback;
 import com.example.recorderchunks.Activity.RecordingService;
 import com.example.recorderchunks.Adapter.AudioRecyclerAdapter;
-import com.example.recorderchunks.Add_Event;
+import com.example.recorderchunks.Adapter.OnBackPressedListener;
 import com.example.recorderchunks.DatabaseHelper;
-import com.example.recorderchunks.MainActivity;
 import com.example.recorderchunks.Manage_Prompt;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.Model_Class.RecordingViewModel;
-import com.example.recorderchunks.Model_Class.SharedViewModel;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.Model_Class.is_recording;
 import com.example.recorderchunks.Model_Class.recording_event_no;
+import com.example.recorderchunks.Model_Class.recording_language;
 import com.example.recorderchunks.Prompt_Database_Helper;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.activity_text_display;
@@ -67,8 +62,6 @@ import com.example.recorderchunks.utils.RecordingManager;
 import com.example.recorderchunks.utils.RecordingUtils;
 import com.github.file_picker.FilePicker;
 import com.github.file_picker.FileType;
-
-import org.vosk.Model;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -78,7 +71,7 @@ import java.util.Date;
 import java.util.Locale;
 
 
-public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter.OnSelectionChangedListener,RecordingUtils.RecordingCallback {
+public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter.OnSelectionChangedListener,RecordingUtils.RecordingCallback, OnBackPressedListener {
     LinearLayout event_description_view, all_transcription_view;
     Toolbar toolbar;
     private boolean isExpanded = false; // To track collapse/expand state
@@ -89,7 +82,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     private ImageView listvbutton;
     DatabaseHelper databaseHelper;
     Prompt_Database_Helper promptDatabaseHelper;
-    private Button datePickerBtn, timePickerBtn, make_note, stop_recording_animation, saveEventButton, import_button, hide_recording_animation;
+    private Button datePickerBtn, timePickerBtn, make_note, stop_recording_animation, saveEventButton, import_button, hide_recording_animation,showalltranscription,showdescription;
     private static final int REQUEST_CODE_SPEECH_INPUT = 100;
     ImageView stop_recording_small_animation,play_pause_recording_small_animation;
 
@@ -134,7 +127,9 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     private int lastAction;
     private SharedPreferences sharedPreferences2;
     private ConstraintLayout constraintLayout;
-
+    private Spinner languageSpinner;
+     private recording_language recordingLanguage;
+    private current_event ce;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -146,7 +141,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
         //database helpers and other initializations
         recording_event_no=new recording_event_no();
-        current_event ce = new current_event();
+        ce = new current_event();
+        recordingLanguage=new recording_language();
         databaseHelper = new DatabaseHelper(getContext());
         promptDatabaseHelper=new Prompt_Database_Helper(getContext());
         is_recording=new is_recording();
@@ -162,7 +158,9 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         );
         recordingList = new ArrayList<>();
         sharedPreferences2 = getActivity().getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-//        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        //onbackpressed handler
+
 
 
 
@@ -191,8 +189,69 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         stop_recording_small_animation=view.findViewById(R.id.stop_recording_small_animation);
         play_pause_recording_small_animation=view.findViewById(R.id.play_pause_recording_small_animation);
         constraintLayout = view.findViewById(R.id.constraint);
+        showalltranscription=view.findViewById(R.id.showalltranscription);
+        showdescription = view.findViewById(R.id.showdescription);
+        languageSpinner=view.findViewById(R.id.language_spinner);
+
+        //do task of language selection
+        String[] languagesl = getLanguagesFromMetadata(getContext());
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                getActivity(),
+                android.R.layout.simple_spinner_item,
+                languagesl
+        );
+        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, null);  // Default value is null
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        languageSpinner.setAdapter(adapter);
+        languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Get the selected language
+
+                recordingLanguage.setRecording_language(languageSpinner.getSelectedItem().toString());
 
 
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Handle case when no selection is made (optional)
+            }
+        });
+        if (savedLanguage != null) {
+            // Find the index of the saved language in the languages array
+            for (int i = 0; i < languagesl.length; i++) {
+                if (languagesl[i].equals(savedLanguage)) {
+                    // Set the spinner to the saved language
+                    languageSpinner.setSelection(i);
+                    recordingLanguage.setRecording_language(languagesl[i]);
+                    break;
+                }
+            }
+        }
+
+
+        //show transcription and description on click
+        showalltranscription.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), activity_text_display.class);
+                intent.putExtra("text", alltranscription.getText().toString());
+                intent.putExtra("Title","All Transcription");
+
+                startActivity(intent);
+            }
+        });
+        showdescription.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), activity_text_display.class);
+                intent.putExtra("text", eventDescription.getText().toString());
+                intent.putExtra("Title","Description");
+
+                startActivity(intent);
+            }
+        });
 
         // Set OnTouchListener for the CardView
         reloadPosition(recording_small_card);
@@ -238,6 +297,9 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         if(nextEventId==maxrecording_event)
         {
             databaseHelper.deleteAllRecordingsByEventId(nextEventId);
+            deleteSelectionState(nextEventId);
+
+
 
 
         }
@@ -249,9 +311,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         event_id = ce.getCurrent_event_no();
         if (event_id != -1) {
             load_data();
+
         }
         else{
             event_id=databaseHelper.getNextEventId();
+            recordingLanguage.setRecording_language(savedLanguage);
+
         }
 
         //Setup all Prompts Spinner
@@ -309,10 +374,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         if(eventDescription.getText().toString().isEmpty())
         {
             event_description_view.setVisibility(View.GONE);
+            showdescription.setVisibility(View.GONE);
         }
         if(alltranscription.getText().toString().contains("No items selected") || alltranscription.getText().toString().isEmpty())
         {
             all_transcription_view.setVisibility(View.GONE);
+            showalltranscription.setVisibility(View.GONE);
         }
 
         //Event Description and Summary button event
@@ -383,12 +450,14 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     }
                 }
                 String selectedApi = sharedPreferences.getString("SelectedApi", "use Gemini Ai");
-                event_description_view.setVisibility(View.VISIBLE);
+               // event_description_view.setVisibility(View.VISIBLE);
+                showdescription.setVisibility(View.VISIBLE);
 
                 switch (selectedApi) {
                     case "use ChatGpt":
                         eventDescription.setText(getoutput_chatgpt(prompt+":"+alltranscription.getText().toString(),getContext()));
-                        event_description_view.setVisibility(View.VISIBLE);
+                        //event_description_view.setVisibility(View.VISIBLE);
+                        showdescription.setVisibility(View.VISIBLE);
                         break;
                     default:
                         get_gemini_note(getContext(),prompt+":"+alltranscription.getText().toString(),new GeminiCallback() {
@@ -403,7 +472,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
                             }
                         });
-                        event_description_view.setVisibility(View.VISIBLE);
+                        //event_description_view.setVisibility(View.VISIBLE);
+                        showdescription.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -830,7 +900,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         String length = getAudioDuration(audioPath);  // Get audio duration in seconds
         boolean isRecorded = false;                   // Set to false since it's imported
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy 'at' HH:mm");
-        String description =".";
+        String description ="";
         // Get the current date and time
         Date date = new Date();
 
@@ -845,7 +915,11 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 length,     // Duration of the recording
                 audioPath,  // Full path of the audio file
                 isRecorded,
-                "no"// Imported, not recorded
+                "no",
+                description,
+                "no",
+                languageSpinner.getSelectedItem().toString()
+
         );
 
 
@@ -968,6 +1042,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         if (selectedItems.isEmpty()) {
             alltranscription.setText("No items selected");
             all_transcription_view.setVisibility(View.GONE);
+            showalltranscription.setVisibility(View.GONE);
             make_note.setVisibility(View.GONE);
 
         } else {
@@ -975,13 +1050,15 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             if(des.equals(""))
             {
                 all_transcription_view.setVisibility(View.GONE);
+                showalltranscription.setVisibility(View.GONE);
                 make_note.setVisibility(View.GONE);
 
             }
             else
             {
                 alltranscription.setText(TextUtils.join(", ", selectedItems));
-                all_transcription_view.setVisibility(View.VISIBLE);
+                //all_transcription_view.setVisibility(View.VISIBLE);
+                showalltranscription.setVisibility(View.VISIBLE);
                 make_note.setVisibility(View.VISIBLE);
             }
 
@@ -989,13 +1066,158 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
         }
     }
+    public void deleteSelectionState(int id) {
+        // Get the key corresponding to the given ID
+        String key = "selected_items_" + id;
+        SharedPreferences sharedPreferences=getActivity().getSharedPreferences("PromptSelectionPrefs", MODE_PRIVATE);
+        // Check if the key exists before attempting to delete
+        if (sharedPreferences.contains(key)) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.remove(key); // Remove the specific selection state
+            editor.apply(); // Save changes
+        }
+    }
+
     @Override
     public void onSelectionChanged(ArrayList<String> updatedSelection) {
         updateSelectedItemsDisplay(updatedSelection);
 
     }
+    private boolean shouldInterceptBackPress() {
+        Toast.makeText(getContext(), "usaved changes", Toast.LENGTH_SHORT).show();
+        return true; // Replace with actual condition
+    }
 
 
 
+
+    @Override
+    public boolean onBackPressed() {
+        usd();
+
+        return true;
+    }
+    private void usd() {
+        if(event_id==ce.getCurrent_event_no())
+        {
+            ((Show_Add_notes_Activity) getActivity()).setFragment(new Show_Notes_Fragment());
+
+
+
+        }
+        else
+        {
+            boolean isRecordingCompleted = is_recording.getIs_Recording();
+            boolean hasUnsavedChanges = !datePickerBtn.getText().toString().toLowerCase().contains("pick") ||
+                    !timePickerBtn.getText().toString().toLowerCase().contains("pick") ||
+                    !eventTitle.getText().toString().isEmpty();
+
+            if (hasUnsavedChanges || isRecordingCompleted || !recordingList.isEmpty()) {
+                if (isRecordingCompleted) {
+                    showRecordingInProgressDialog();
+                } else {
+                    showUnsavedChangesDialog();
+                }
+            } else {
+
+                ((Show_Add_notes_Activity) getActivity()).setFragment(new Show_Notes_Fragment());
+            }
+        }
+
+
+    }
+    private void showRecordingInProgressDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Recording in Progress")
+                .setMessage("Recording in progress. Do you want to save Recording before exiting?")
+                .setPositiveButton("Save", (dialog, which) -> handleSaveRecording())
+                .setNegativeButton("Discard", (dialog, which) ->
+                        {
+                            handleStopRecording();
+                            resetRecordingState();
+                            discardChangesAndNavigateBack();
+                        }
+
+                        )
+                .setNeutralButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
+    }
+
+    /**
+     * Show a dialog for unsaved changes.
+     */
+    private void showUnsavedChangesDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Unsaved Changes")
+                .setMessage("You have unsaved changes. Do you want to save them before exiting?")
+                .setPositiveButton("Save", (dialog, which) -> handleSaveChanges())
+                .setNegativeButton("Discard", (dialog, which) -> discardChangesAndNavigateBack())
+                .setNeutralButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
+    }
+
+    /**
+     * Handle saving the recording and associated data.
+     */
+    private void handleSaveRecording() {
+        recordingUtils.stopRecording(recording_event_no.getRecording_event_no());
+        resetRecordingState();
+        if (!is_recording.getIs_Recording()) {
+            saveEventDetails();
+        } else {
+            Toast.makeText(getContext(), "Please complete the recording first", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void handleStopRecording() {
+        recordingUtils.stopRecording(recording_event_no.getRecording_event_no());
+
+    }
+
+    /**
+     * Handle saving unsaved changes.
+     */
+    private void handleSaveChanges() {
+        if (!is_recording.getIs_Recording()) {
+            saveEventDetails();
+        } else {
+            Toast.makeText(getContext(), "Please complete the recording first", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Save event details to the database.
+     */
+    private void saveEventDetails() {
+        String title = eventTitle.getText().toString();
+        String eventDescriptiont = eventDescription.getText().toString();
+        String selectedDate = datePickerBtn.getText().toString();
+        String selectedTime = timePickerBtn.getText().toString();
+        saveEventData(title, eventDescriptiont, selectedDate, selectedTime, event_id);
+    }
+
+    /**
+     * Discard changes and navigate back to the previous fragment.
+     */
+    private void discardChangesAndNavigateBack() {
+        databaseHelper.deleteAllRecordingsByEventId(event_id);
+        ((Show_Add_notes_Activity) getActivity()).setFragment(new Show_Notes_Fragment());
+    }
+
+    /**
+     * Reset the recording state.
+     */
+    private void resetRecordingState() {
+        recordingViewModel.setRecording(false);
+        recordingViewModel.setPaused(false);
+        recordingViewModel.resetTimer();
+        updateTimerText(0);
+        recordingViewModel.updateElapsedSeconds(0);
+        recording_small_card.setVisibility(View.GONE);
+        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+        recordButton.setText("Start Recording");
+        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
+    }
 }
 

@@ -1,5 +1,8 @@
 package com.example.recorderchunks;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -10,12 +13,24 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import com.example.recorderchunks.Audio_Models.ModelDownloader;
+import com.example.recorderchunks.Audio_Models.ModelMetadata;
+import com.example.recorderchunks.Audio_Models.Vosk_Model;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import nl.bryanderidder.themedtogglebuttongroup.ThemedButton;
 import nl.bryanderidder.themedtogglebuttongroup.ThemedToggleButtonGroup;
@@ -29,11 +44,16 @@ public class API_Updation extends AppCompatActivity {
     private static final String PREF_NAME = "ApiKeysPref";
     public static final String KEY_CHATGPT = "ChatGptApiKey";
     public static final String KEY_GEMINI = "GeminiApiKey";
+    public static final String SELECTED_LANGUAGE = "SelectedLanguage";
+
     public static final String KEY_SELECTED_API = "SelectedApi";
 
     private SharedPreferences sharedPreferences;
     private Spinner languageSpinner;
     Switch api_switch;
+
+    TextView uuid_text,signature_text;
+    ImageView uuid_image, signature_image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,9 +62,10 @@ public class API_Updation extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.appBar);
         setSupportActionBar(toolbar);
         api_switch=findViewById(R.id.api_switch);
+        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
 
         languageSpinner = findViewById(R.id.language_spinner);
-        String[] languages = {"English", "Spanish", "French", "German", "Chinese"};
+        String[] languages = getLanguagesFromMetadata(API_Updation.this);
 
         // Create an ArrayAdapter using the language list
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -52,6 +73,9 @@ public class API_Updation extends AppCompatActivity {
                 android.R.layout.simple_spinner_item,
                 languages
         );
+        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, null);  // Default value is null
+
+
 
         // Set the layout for dropdown items
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -65,7 +89,10 @@ public class API_Updation extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 // Get the selected language
                 String selectedLanguage = languages[position];
-                Toast.makeText(API_Updation.this, "Selected Language: " + selectedLanguage, Toast.LENGTH_SHORT).show();
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(SELECTED_LANGUAGE, selectedLanguage);
+                editor.apply();
+                startModelDownload(selectedLanguage);
 
 
             }
@@ -75,7 +102,16 @@ public class API_Updation extends AppCompatActivity {
                 // Handle case when no selection is made (optional)
             }
         });
-
+        if (savedLanguage != null) {
+            // Find the index of the saved language in the languages array
+            for (int i = 0; i < languages.length; i++) {
+                if (languages[i].equals(savedLanguage)) {
+                    // Set the spinner to the saved language
+                    languageSpinner.setSelection(i);
+                    break;
+                }
+            }
+        }
 
 
         // Enable back button in toolbar
@@ -89,6 +125,11 @@ public class API_Updation extends AppCompatActivity {
         btnUpdate = findViewById(R.id.btn_update);
         toggleGroup = findViewById(R.id.time);
         manage_prompt=findViewById(R.id.manage_prompt);
+        uuid_image=findViewById(R.id.uuid_copy);
+        signature_image=findViewById(R.id.signature_copy);
+
+        uuid_text=findViewById(R.id.uuid_text);
+        signature_text=findViewById(R.id.signature_text);
         manage_prompt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -98,10 +139,11 @@ public class API_Updation extends AppCompatActivity {
             }
         });
 
-        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+
 
         // Load saved data if available
         loadSavedData();
+        displayUuidAndSignature();
 
         // Save button functionality
         btnSave.setOnClickListener(v -> saveData());
@@ -109,6 +151,11 @@ public class API_Updation extends AppCompatActivity {
         // Update button functionality
         btnUpdate.setOnClickListener(v -> updateData());
 
+        // UUID copy
+        uuid_image.setOnClickListener(v -> copyTextToClipboard("UUID",uuid_text.getText().toString()));
+
+        // Signature copy
+        signature_image.setOnClickListener(v -> copyTextToClipboard("Signature",signature_text.getText().toString()));
         // Handle toggle button selection
 
         api_switch.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -129,6 +176,60 @@ public class API_Updation extends AppCompatActivity {
             // Optional: Show a Toast message
             Toast.makeText(this, "Selected API: " + selectedApi, Toast.LENGTH_SHORT).show();
         });
+    }
+    private void startModelDownload(String selectedLanguage) {
+        // Start downloading the model in the background
+        new Thread(() -> {
+            try {
+                // Call the download method for the selected language
+                //ModelDownloader.downloadModel(API_Updation.this, selectedLanguage);
+
+                // Once the model is downloaded, set up the model (assuming the model setup happens here)
+                //setupModelForLanguage(selectedLanguage);
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(API_Updation.this, "Error downloading model", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+    private void copyTextToClipboard(String label,String textToCopy) {
+        // Get the system ClipboardManager
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+
+        // Create a ClipData object containing the text to copy
+        ClipData clip = ClipData.newPlainText(label, textToCopy);
+
+        // Set the ClipData to the clipboard
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(clip);
+            // Optionally, show a toast message to notify the user
+            Toast.makeText(this, label+" copied to clipboard", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void displayUuidAndSignature() {
+        // Get the shared preferences
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("preferences", Context.MODE_PRIVATE);
+
+        // Get stored uuid and signature
+        String storedUuid = prefs.getString("uuid", null);
+        String storedSignature = prefs.getString("signature", null);
+
+
+        // Check if uuid and signature are present and set the text accordingly
+        if (storedUuid != null && storedSignature != null) {
+            // If both uuid and signature are found, display them
+            uuid_text.setText(storedUuid);
+            signature_text.setText(storedSignature);
+            uuid_image.setVisibility(View.VISIBLE);
+            signature_image.setVisibility(View.VISIBLE);
+        } else {
+            // If not found, display "Not available"
+            uuid_text.setText("Not available");
+            signature_text.setText("Not available");
+            uuid_image.setVisibility(View.GONE);
+            signature_image.setVisibility(View.GONE);
+        }
     }
 
     private void loadSavedData() {
@@ -170,6 +271,31 @@ public class API_Updation extends AppCompatActivity {
         editor.apply();
 
         Toast.makeText(this, "Data saved successfully", Toast.LENGTH_SHORT).show();
+    }
+    public static String[] getLanguagesFromMetadata(Context context) {
+        try {
+            // Fetch all models from metadata
+            JSONArray models = ModelMetadata.getModelMetadata();
+            List<String> languageList = new ArrayList<>();
+
+            // Iterate through models and extract unique languages
+            for (int i = 0; i < models.length(); i++) {
+                JSONObject model = models.getJSONObject(i);
+                String language = model.getString("language");
+
+                // Add language to list if not already added
+                if (!languageList.contains(language)) {
+                    languageList.add(language);
+                }
+            }
+
+            // Convert List to String[] and return
+            return languageList.toArray(new String[0]);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new String[0]; // Return empty array in case of error
+        }
     }
 
     private void updateData() {

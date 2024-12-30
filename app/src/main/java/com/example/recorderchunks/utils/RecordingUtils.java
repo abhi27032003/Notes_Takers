@@ -16,6 +16,8 @@ import com.example.recorderchunks.Activity.RecordingService;
 import com.example.recorderchunks.Background_Allow.Add_notes_Fragment;
 import com.example.recorderchunks.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.RecordingViewModel;
+import com.example.recorderchunks.Model_Class.is_recording;
+import com.example.recorderchunks.Model_Class.recording_language;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,12 +37,17 @@ public class RecordingUtils {
     private RecordingCallback recordingCallback;
     private boolean isRecordingCompleted = false;
 
+    public is_recording is_recording;
+    private recording_language recordingLanguage;
+
 
     public RecordingUtils(Context context,  RecordingCallback recordingCallback) {
         this.context = context;
 
         this.databaseHelper = new DatabaseHelper(context);
         this.recordingCallback = recordingCallback;
+        this.recordingLanguage =new recording_language();
+        this.is_recording=new is_recording();
 
 
     }
@@ -53,6 +60,7 @@ public class RecordingUtils {
 
 
     public void startRecording() {
+        is_recording.setIs_recording(true);
 
 
         // Set up the audio file path
@@ -129,6 +137,7 @@ public class RecordingUtils {
 
     public void stopRecording(int eventId) {
         RecordingService.isStopping=true;
+        is_recording.setIs_recording(false);
 
         if (mediaRecorder != null) {
             try {
@@ -149,7 +158,7 @@ public class RecordingUtils {
             String uniqueCode = date.replace("-", "") + time.replace(":", "") + duration;
             String recordingName = "Recording_" + uniqueCode;
             String format = audioFilePath.substring(audioFilePath.lastIndexOf('.') + 1);
-            String description = ".";
+            String description = "";
 
             // Get next event ID
             int nextEventId = databaseHelper.getNextEventId();
@@ -167,7 +176,10 @@ public class RecordingUtils {
                         String.valueOf(duration),
                         audioFilePath,
                         true,
-                        "no"
+                        "no",
+                        description,
+                        "no",
+                        recordingLanguage.getRecording_language()
                 );
             } else {
                 isSaved = databaseHelper.insertRecording(
@@ -179,7 +191,10 @@ public class RecordingUtils {
                         String.valueOf(duration),
                         audioFilePath,
                         true,
-                        "no"
+                        "no",
+                        description,
+                        "no",
+                        recordingLanguage.getRecording_language()
                 );
             }
 

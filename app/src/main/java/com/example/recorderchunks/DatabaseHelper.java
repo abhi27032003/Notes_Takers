@@ -17,7 +17,7 @@ import java.util.List;
 // Database Helper Class
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "EventDatabase.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////       Events       /////////////////////////////////////////////////////////
@@ -47,6 +47,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_DATE = "creation_d_and_t";
     public static final String COL_IS_RECORDED = "is_recorded";
     public static final String COL_IS_TRANSCRIBED= "is_transcribed";
+    public static final String COL_IS_TRANSCRIBED_API= "is_transcribed_api";
+    public static final String COL_DES_API = "description_api";
+    public static final String COL_LANGUAGE = "language";
+
+
 
 
     public DatabaseHelper(Context context) {
@@ -80,6 +85,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COL_DES + " TEXT,"
                 + COL_IS_RECORDED + " INTEGER,"
                 + COL_IS_TRANSCRIBED + " TEXT,"
+                + COL_DES_API + " TEXT,"
+                + COL_IS_TRANSCRIBED_API+ " TEXT,"
+                + COL_LANGUAGE+ " TEXT,"
+
+
 
                 + "FOREIGN KEY(" + COL_EVENT_ID + ") REFERENCES " + TABLE_NAME + "(" + COL_ID + ")"
                 + ")";
@@ -228,7 +238,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result > 0;
     }
 
-    public boolean insertRecording(int eventId,String d_and_t, String description,String name, String format, String length, String url, boolean isRecorded,String is_transcribed) {
+    public boolean insertRecording(int eventId,String d_and_t, String description,String name, String format, String length, String url, boolean isRecorded,String is_transcribed,String description_api,String is_transcriptes_api,String language) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COL_EVENT_ID, eventId);
@@ -242,6 +252,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         values.put(COL_IS_RECORDED, isRecorded ? 1 : 0);
         values.put(COL_IS_TRANSCRIBED,is_transcribed);
+        values.put(COL_DES_API, description_api);
+        values.put(COL_IS_TRANSCRIBED_API,is_transcriptes_api);
+        values.put(COL_LANGUAGE,language);
 
         long result = db.insert(TABLE_RECORDINGS, null, values);
         return result != -1;
@@ -271,9 +284,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         cursor.getString(cursor.getColumnIndex(COL_LENGTH)),
                         cursor.getString(cursor.getColumnIndex(COL_URL)),
                         cursor.getInt(cursor.getColumnIndex(COL_IS_RECORDED)) == 1,
-                        cursor.getString(cursor.getColumnIndex(COL_IS_TRANSCRIBED))
+                        cursor.getString(cursor.getColumnIndex(COL_IS_TRANSCRIBED)),
+                        cursor.getString(cursor.getColumnIndex(COL_DES_API)),
+                        cursor.getString(cursor.getColumnIndex(COL_IS_TRANSCRIBED_API)),
+                        cursor.getString(cursor.getColumnIndex(COL_LANGUAGE))
 
-                        );
+
+
+                );
                 recordingsList.add(recording);
             } while (cursor.moveToNext());
         }
@@ -322,6 +340,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(COL_IS_TRANSCRIBED, "yes");
         values.put(COL_DES, description);
+
+        // Define the where clause and arguments
+        String whereClause = "recording_id = ?";
+        String[] whereArgs = new String[]{String.valueOf(recordingId)};
+
+        // Perform the update
+        int rowsAffected = db.update(TABLE_RECORDINGS, values, whereClause, whereArgs);
+
+        // Return true if at least one row is affected, false otherwise
+        return rowsAffected > 0;
+    }
+    public boolean updaterecording_details_api( int recordingId, String description) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_IS_TRANSCRIBED_API, "yes");
+        values.put(COL_DES_API, description);
 
         // Define the where clause and arguments
         String whereClause = "recording_id = ?";

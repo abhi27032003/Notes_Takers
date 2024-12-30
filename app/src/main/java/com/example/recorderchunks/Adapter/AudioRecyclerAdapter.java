@@ -1,16 +1,12 @@
 package com.example.recorderchunks.Adapter;
 
-import static com.example.recorderchunks.Audio_Models.Vosk_Model.recognizeSpeech;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
-import static com.google.android.material.internal.ContextUtils.getActivity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.media.Image;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -20,7 +16,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,22 +23,18 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import androidx.cardview.widget.CardView;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.jean.jcplayer.model.JcAudio;
 import com.example.jean.jcplayer.view.JcPlayerView;
-import com.example.recorderchunks.Add_Event;
+
+import com.example.recorderchunks.AI_Transcription.AudioChunkHelper;
+import com.example.recorderchunks.AI_Transcription.TranscriptionUtils;
 import com.example.recorderchunks.Audio_Models.Vosk_Model;
 import com.example.recorderchunks.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.Recording;
-import com.example.recorderchunks.Model_Class.recording_event_no;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.AudioUtils;
-import com.google.android.material.datepicker.OnSelectionChangedListener;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,17 +88,23 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     public void onBindViewHolder(@NonNull AudioViewHolder holder, int position) {
         holder.itemView.setFocusable(false);
         Vosk_Model.initializeVoskModel(context);
-
-
         holder.playbackProgressBar.setFocusable(false);
 
         Recording audioItem = recordingList.get(position);
         loadSelectionState(audioItem.getEventId());
+
+//        List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 30000);
+//        for (String path : chunkPaths) {
+//            Toast.makeText(context, "Chunk created at: " + path, Toast.LENGTH_SHORT).show();
+//        }
+
         if(audioItem.getIs_transcribed().equals("no"))
         {
             holder.transcription_progress.setVisibility(View.VISIBLE);
+            holder.transcription_progress_api.setVisibility(View.VISIBLE);
             try {
                 handleTranscription(audioItem,position);
+
             }catch (Exception e)
             {
                 Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -119,6 +116,58 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             holder.transcription_progress.setVisibility(View.GONE);
 
         }
+        if(audioItem.getIs_transcribed_api().equals("no"))
+        {
+            holder.transcription_progress_api.setVisibility(View.VISIBLE);
+            holder.Description_api.setText("");
+
+            try {
+                String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
+                String[] supportedFormats = {"wav", "3gp", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
+
+                if (Arrays.asList(supportedFormats).contains(fileExtension)) {
+                    TranscriptionUtils.transcribeAudio(context,audioItem.getUrl(), new TranscriptionUtils.TranscriptionCallback() {
+                        @Override
+                        public void onSuccess(String transcription) {
+                            holder.transcription_progress_api.setVisibility(View.GONE);
+                            holder.Description_api.setText(transcription);
+                            databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),transcription);
+                            audioItem.setIs_transcribed_api("yes");
+                            audioItem.setDescription_api(transcription);
+
+                        }
+
+                        @Override
+                        public void onError(String errorMessage) {
+                            holder.transcription_progress_api.setVisibility(View.GONE);
+                            holder.Description_api.setText(errorMessage.toString());
+                            audioItem.setDescription_api("error "+errorMessage.toString());
+                            audioItem.setIs_transcribed_api("yes");
+
+                        }
+                    });
+
+                }
+                else {
+                    databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),"Unsupported format");
+                    audioItem.setIs_transcribed_api("yes");
+                    audioItem.setDescription_api("Unsupported format");
+                    holder.Description_api.setText("Unsupported format");
+                }
+
+
+            }catch (Exception e)
+            {
+              //  Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+
+        }
+        else
+        {
+            holder.transcription_progress_api.setVisibility(View.GONE);
+
+        }
+
 
         if (selectedItems.contains(audioItem.getDescription())) {
             holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
@@ -219,7 +268,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
         holder.recordingLabel.setText(audioItem.getName());
-        holder.ceation_d_and_t.setText("Created at : "+audioItem.getDate());
+        holder.ceation_d_and_t.setText("Created at : "+audioItem.getDate()+" in "+audioItem.getLanguage());
         holder.total_time.setText(" / "+convertSecondsToTime(Integer.parseInt(AudioUtils.getAudioDuration(audioItem.getUrl()))));
         holder.Description.setText(audioItem.getDescription());
         holder.expand_button.setOnClickListener(v -> {
@@ -231,6 +280,19 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 // Collapse the TextView
                 holder.Description.setMaxLines(1);
                 holder.expand_button.setImageResource(R.mipmap.expand);
+            }
+        });
+
+        ////////////api///////////////////////////////////////
+        holder.expand_button_api.setOnClickListener(v -> {
+            if (holder.Description_api.getMaxLines() == 1) {
+                // Expand the TextView
+                holder.Description_api.setMaxLines(Integer.MAX_VALUE);
+                holder.expand_button_api.setImageResource(R.mipmap.collapse);
+            } else {
+                // Collapse the TextView
+                holder.Description_api.setMaxLines(1);
+                holder.expand_button_api.setImageResource(R.mipmap.expand);
             }
         });
 
@@ -473,11 +535,11 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         TextView playbackTimer;
         Button Start_Transcription;
         JcPlayerView JcPlayerView;
-        TextView recordingLabel,ceation_d_and_t,total_time,Description;
-        ImageView expand_button,add_to_list,delete;
+        TextView recordingLabel,ceation_d_and_t,total_time,Description,Description_api;
+        ImageView expand_button,add_to_list,delete,expand_button_api;
 
         CardView recordingCard;
-        LinearLayout transcription_progress;
+        LinearLayout transcription_progress,transcription_progress_api;
         public AudioViewHolder(@NonNull View itemView) {
             super(itemView);
             transcription_progress=itemView.findViewById(R.id.transcription_progress);
@@ -494,6 +556,10 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             expand_button=itemView.findViewById(R.id.expand_btn);
             delete=itemView.findViewById(R.id.deleteButton);
             add_to_list=itemView.findViewById(R.id.add_to_list);
+            expand_button_api=itemView.findViewById(R.id.expand_btn_api);
+            transcription_progress_api=itemView.findViewById(R.id.transcription_progress_api);
+            Description_api=itemView.findViewById(R.id.Description_api);
+
 
 
         }

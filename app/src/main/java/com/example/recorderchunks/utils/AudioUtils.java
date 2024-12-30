@@ -9,6 +9,7 @@ import android.widget.Toast;
 import com.arthenica.mobileffmpeg.FFmpeg;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -135,7 +136,7 @@ public class AudioUtils {
             return outputPath;
         } else {
 
-            return null;
+            return "null";
         }
     }
 
@@ -168,6 +169,15 @@ public class AudioUtils {
         // For non-WAV files, convert them to WAV
         String outputPath = AudioUtils.convertToWavFilePath(inputPath);
         return performConversion(inputPath, outputPath,context);
+    }
+    public static byte[] getFileDataFromFile(File file) {
+        byte[] data = new byte[(int) file.length()];
+        try (FileInputStream fis = new FileInputStream(file)) {
+            fis.read(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return data;
     }
 
 
