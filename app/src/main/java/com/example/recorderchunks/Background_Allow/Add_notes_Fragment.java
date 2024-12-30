@@ -597,11 +597,15 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     {
                         recording_small_card.setVisibility(View.VISIBLE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                        recordButton.setText("Stop Recording");
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
                     }
                     else
                     {
                         recording_small_card.setVisibility(View.VISIBLE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+                        recordButton.setText("Stop Recording");
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
 
                     }
                 });
@@ -613,6 +617,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     {
                         recording_small_card.setVisibility(View.VISIBLE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                        recordButton.setText("Stop Recording");
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
                     }
                     else
                     {
@@ -623,6 +629,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                         recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
                         updateSelectedItemsDisplay(new ArrayList<>());
                         recyclerView.setAdapter(recordingAdapter);
+                        recordButton.setText("Start Recording");
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
                         recordingAdapter.notifyDataSetChanged();
 
                     }

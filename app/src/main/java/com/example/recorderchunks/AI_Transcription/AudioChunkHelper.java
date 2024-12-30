@@ -30,7 +30,7 @@ public class AudioChunkHelper {
                 String fileExtension = getFileExtension(audioFile);
                 File chunkFile = new File(chunkFolder, "chunk" + chunkNumber + fileExtension);
 
-                // FFmpeg command to split the audio
+                 // FFmpeg command to split the audio
                 String ffmpegCommand = "ffmpeg -i " + audioFile.getAbsolutePath() + " -ss " + startMs / 1000
                         + " -t " + chunkSizeMs / 1000 + " " + chunkFile.getAbsolutePath();
 

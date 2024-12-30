@@ -61,7 +61,7 @@ public class RecordingUtils {
 
     public void startRecording() {
         is_recording.setIs_recording(true);
-
+        RecordingService.isStopping=false;
 
         // Set up the audio file path
         File audioDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC);

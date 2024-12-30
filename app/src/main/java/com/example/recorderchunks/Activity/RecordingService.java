@@ -102,12 +102,12 @@ public class RecordingService extends Service {
         // Toggle Pause/Resume button
         Intent toggleIntent = new Intent(this, RecordingService.class).setAction(ACTION_TOGGLE_PAUSE_RESUME);
         PendingIntent togglePendingIntent = PendingIntent.getService(
-                this, 0, toggleIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                this, 0, toggleIntent, PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_MUTABLE);
 
         // Stop button
         Intent stopIntent = new Intent(this, RecordingService.class).setAction(ACTION_STOP);
         PendingIntent stopPendingIntent = PendingIntent.getService(
-                this, 1, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                this, 1, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_MUTABLE);
 
         String toggleActionText = isPaused ? "Resume" : "Pause";
 
@@ -142,7 +142,7 @@ public class RecordingService extends Service {
         recordingViewModel.setRecording(false);
         recordingViewModel.pauseTimer();
         isPaused = true;
-        stopNotificationUpdates();
+        startNotificationUpdates();
         updateNotification();
     }
 
