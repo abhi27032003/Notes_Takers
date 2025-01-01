@@ -7,14 +7,13 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
-
     <application
-        android:allowBackup="true"
         android:name=".MyApplication"
+        android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -23,14 +22,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RecorderChunks"
         tools:targetApi="31">
+        <activity
+            android:name=".Activity.Show_all_ai_notes"
+            android:exported="false" />
 
         <service
             android:name=".Activity.RecordingService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
+
         <activity
             android:name=".Background_Allow.Show_Add_notes_Activity"
-            android:exported="true" >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -38,23 +41,16 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activity_text_display"
+            android:name=".Activity.activity_text_display"
             android:exported="false" />
         <activity
-            android:name=".Manage_Prompt"
+            android:name=".Activity.Manage_Prompt"
             android:exported="false" />
         <activity
-            android:name=".API_Updation"
-            android:exported="false" />
-        <activity
-            android:name=".Showdetails"
+            android:name=".Activity.API_Updation"
             android:exported="false" />
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
 
-        </activity>
     </application>
 
 </manifest>

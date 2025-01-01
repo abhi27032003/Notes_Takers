@@ -1,5 +1,7 @@
 package com.example.recorderchunks.Adapter;
 
+import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
+import static com.example.recorderchunks.Activity.API_Updation.getLanguagesFromMetadata;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
 
 import android.app.Activity;
@@ -13,10 +15,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,7 +35,9 @@ import com.example.jean.jcplayer.view.JcPlayerView;
 import com.example.recorderchunks.AI_Transcription.AudioChunkHelper;
 import com.example.recorderchunks.AI_Transcription.TranscriptionUtils;
 import com.example.recorderchunks.Audio_Models.Vosk_Model;
+import com.example.recorderchunks.Helpeerclasses.Chunks_Database_Helper;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
+import com.example.recorderchunks.Model_Class.ChunkTranscription;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.AudioUtils;
@@ -57,8 +64,10 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     private OnSelectionChangedListener selectionChangedListener;
 
     private DatabaseHelper databaseHelper;
+    private Chunks_Database_Helper chunks_database_helper;
 
     Vosk_Model vm;
+
 
 
 
@@ -75,6 +84,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         this.selectionChangedListener = listener;
         this.vm=new Vosk_Model();
         this.databaseHelper=new DatabaseHelper(context);
+        this.chunks_database_helper=new Chunks_Database_Helper(context);
     }
 
     @NonNull
@@ -92,11 +102,11 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         Recording audioItem = recordingList.get(position);
         loadSelectionState(audioItem.getEventId());
+        /////////////////////////////////////////////////chunking and api calling logic
 
         List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
-        for (String path : chunkPaths) {
-            Toast.makeText(context, "Chunk created at: " + path, Toast.LENGTH_SHORT).show();
-        }
+        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf");
+
 
         if(audioItem.getIs_transcribed().equals("no"))
         {
@@ -167,6 +177,48 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             holder.transcription_progress_api.setVisibility(View.GONE);
 
         }
+        ////////////////////////////////////language spinner
+        String[] languagesl = getLanguagesFromMetadata(context);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                context,
+                android.R.layout.simple_spinner_item,
+                languagesl
+        );
+        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, null);  // Default value is null
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        holder.languageSpinner.setAdapter(adapter);
+        holder.languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Get the selected language
+
+
+                if(databaseHelper.updateLanguageByRecordingId(audioItem.getRecordingId(),languagesl[position]))
+                {  holder.languageSpinner.setSelection(position);
+                    audioItem.setLanguage(languagesl[position]);
+
+                }
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Handle case when no selection is made (optional)
+            }
+        });
+        if (savedLanguage != null) {
+            // Find the index of the saved language in the languages array
+            for (int i = 0; i < languagesl.length; i++) {
+                if (languagesl[i].equals(audioItem.getLanguage())) {
+                    // Set the spinner to the saved language
+                    holder.languageSpinner.setSelection(i);
+
+                    break;
+                }
+            }
+        }
+        ///////////////////////////////////////////////////////////
+
 
 
         if (selectedItems.contains(audioItem.getDescription())) {
@@ -309,6 +361,42 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             holder.Start_Transcription.setText("Imported");
             holder.Start_Transcription.setBackgroundColor(context.getResources().getColor(R.color.nav));
         }
+
+    }
+
+    private void transcribe_and_chunkify_audio(List<String> chunkPaths, int recordingId, String uuid) {
+        boolean added_to_db =chunks_database_helper.addChunksBatch(chunkPaths,recordingId,uuid);
+        boolean allInProgress = true;
+        if(added_to_db)
+        {
+            List<ChunkTranscription> chunks = chunks_database_helper.getChunksByRecordingId(recordingId);
+            for (ChunkTranscription chunkTranscription:chunks) {
+                String status=chunkTranscription.getTranscriptionStatus();
+                if(status.contains("not")||status.contains("started")||status.contains("not_started"))
+                {
+                    allInProgress=false;
+                    send_chunk_for_transcription(chunkTranscription.getChunkPath(),chunkTranscription.getChunkId());
+                }
+
+            }
+
+
+        }
+        else {
+            transcribe_and_chunkify_audio(chunkPaths,recordingId,uuid);
+
+        }
+        if(allInProgress)
+        {
+            get_transcription(recordingId);
+        }
+    }
+
+    private void get_transcription(int recordingId) {
+
+    }
+
+    private void send_chunk_for_transcription(String chunkPath, String chunkId) {
 
     }
 
@@ -540,6 +628,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         CardView recordingCard;
         LinearLayout transcription_progress,transcription_progress_api;
+        Spinner languageSpinner;
+
         public AudioViewHolder(@NonNull View itemView) {
             super(itemView);
             transcription_progress=itemView.findViewById(R.id.transcription_progress);
@@ -559,6 +649,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             expand_button_api=itemView.findViewById(R.id.expand_btn_api);
             transcription_progress_api=itemView.findViewById(R.id.transcription_progress_api);
             Description_api=itemView.findViewById(R.id.Description_api);
+            languageSpinner=itemView.findViewById(R.id.language_spinner);
 
 
 

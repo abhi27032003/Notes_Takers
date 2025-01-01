@@ -24,7 +24,7 @@ import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.recorderchunks.API_Updation;
+import com.example.recorderchunks.Activity.API_Updation;
 import com.example.recorderchunks.Adapter.EventAdapter;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.Event;

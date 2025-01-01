@@ -3,8 +3,7 @@ package com.example.recorderchunks.Background_Allow;
 import static android.content.Context.MODE_PRIVATE;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.get_gemini_note;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.getoutput_chatgpt;
-import static com.example.recorderchunks.API_Updation.SELECTED_LANGUAGE;
-import static com.example.recorderchunks.API_Updation.getLanguagesFromMetadata;
+import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 import static com.example.recorderchunks.utils.AudioUtils.getAudioDuration;
 import static com.example.recorderchunks.utils.AudioUtils.getFileExtension;
 import static com.example.recorderchunks.utils.AudioUtils.getFileName;
@@ -42,10 +41,12 @@ import android.widget.Toast;
 
 import com.example.recorderchunks.AI_Transcription.GeminiCallback;
 import com.example.recorderchunks.Activity.RecordingService;
+import com.example.recorderchunks.Activity.Show_all_ai_notes;
 import com.example.recorderchunks.Adapter.AudioRecyclerAdapter;
 import com.example.recorderchunks.Adapter.OnBackPressedListener;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
-import com.example.recorderchunks.Manage_Prompt;
+import com.example.recorderchunks.Helpeerclasses.Notes_Database_Helper;
+import com.example.recorderchunks.Activity.Manage_Prompt;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.Model_Class.RecordingViewModel;
@@ -55,7 +56,7 @@ import com.example.recorderchunks.Model_Class.recording_event_no;
 import com.example.recorderchunks.Model_Class.recording_language;
 import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
 import com.example.recorderchunks.R;
-import com.example.recorderchunks.activity_text_display;
+import com.example.recorderchunks.Activity.activity_text_display;
 import com.example.recorderchunks.utils.RecordingManager;
 import com.example.recorderchunks.utils.RecordingUtils;
 import com.github.file_picker.FilePicker;
@@ -189,44 +190,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         constraintLayout = view.findViewById(R.id.constraint);
         showalltranscription=view.findViewById(R.id.showalltranscription);
         showdescription = view.findViewById(R.id.showdescription);
-        languageSpinner=view.findViewById(R.id.language_spinner);
-
-        //do task of language selection
-        String[] languagesl = getLanguagesFromMetadata(getContext());
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                getActivity(),
-                android.R.layout.simple_spinner_item,
-                languagesl
-        );
-        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, null);  // Default value is null
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        languageSpinner.setAdapter(adapter);
-        languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                // Get the selected language
-
-                recordingLanguage.setRecording_language(languageSpinner.getSelectedItem().toString());
 
 
-            }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // Handle case when no selection is made (optional)
-            }
-        });
-        if (savedLanguage != null) {
-            // Find the index of the saved language in the languages array
-            for (int i = 0; i < languagesl.length; i++) {
-                if (languagesl[i].equals(savedLanguage)) {
-                    // Set the spinner to the saved language
-                    languageSpinner.setSelection(i);
-                    recordingLanguage.setRecording_language(languagesl[i]);
-                    break;
-                }
-            }
-        }
+        //set default recording language
+        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, "English");  // Default value is null
+        recordingLanguage.setRecording_language(savedLanguage);
 
 
         //show transcription and description on click
@@ -243,8 +212,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         showdescription.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getContext(), activity_text_display.class);
-                intent.putExtra("text", eventDescription.getText().toString());
+                Intent intent = new Intent(getContext(), Show_all_ai_notes.class);
+                intent.putExtra("text", String.valueOf(event_id));
                 intent.putExtra("Title","Description");
 
                 startActivity(intent);
@@ -437,6 +406,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         make_note.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Notes_Database_Helper notesDatabaseHelper=new Notes_Database_Helper(getContext());
                 String prompt="";// If the EditText is empty, load the saved prompt from SharedPreferences
                 if (TextUtils.isEmpty(prompt)) {
                     prompt = prompt_message;
@@ -461,12 +431,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                         get_gemini_note(getContext(),prompt+":"+alltranscription.getText().toString(),new GeminiCallback() {
                             @Override
                             public void onSuccess(String result) {
-                                eventDescription.setText(result);
+                                notesDatabaseHelper.addNote(result,event_id);
                             }
 
                             @Override
                             public void onFailure(String error) {
-                                eventDescription.setText(error);
+                                notesDatabaseHelper.addNote(error,event_id);
 
                             }
                         });

@@ -1,4 +1,4 @@
-package com.example.recorderchunks;
+package com.example.recorderchunks.Activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -16,6 +16,7 @@ import android.widget.Toast;
 import com.example.recorderchunks.Adapter.PromptAdapter;
 import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
 import com.example.recorderchunks.Model_Class.Prompt;
+import com.example.recorderchunks.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

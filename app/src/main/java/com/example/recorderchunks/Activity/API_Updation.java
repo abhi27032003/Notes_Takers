@@ -1,4 +1,4 @@
-package com.example.recorderchunks;
+package com.example.recorderchunks.Activity;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -22,9 +23,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-import com.example.recorderchunks.Audio_Models.ModelDownloader;
 import com.example.recorderchunks.Audio_Models.ModelMetadata;
-import com.example.recorderchunks.Audio_Models.Vosk_Model;
+import com.example.recorderchunks.R;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -32,7 +32,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import nl.bryanderidder.themedtogglebuttongroup.ThemedButton;
 import nl.bryanderidder.themedtogglebuttongroup.ThemedToggleButtonGroup;
 
 public class API_Updation extends AppCompatActivity {
@@ -54,6 +53,7 @@ public class API_Updation extends AppCompatActivity {
 
     TextView uuid_text,signature_text;
     ImageView uuid_image, signature_image;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,7 +139,21 @@ public class API_Updation extends AppCompatActivity {
             }
         });
 
-
+        //accordian feature for ui
+        LinearLayout accordionContent = findViewById(R.id.accordion_content);
+        TextView accordionToggle = findViewById(R.id.accordion_toggle);
+        ImageView expandIcon = findViewById(R.id.expand_icon);
+        accordionToggle.setOnClickListener(v -> {
+            if (accordionContent.getVisibility() == View.GONE) {
+                accordionContent.setVisibility(View.VISIBLE);
+                accordionToggle.setText("Hide User Details");
+                expandIcon.setImageResource(R.mipmap.collapse); // Update icon for collapse
+            } else {
+                accordionContent.setVisibility(View.GONE);
+                accordionToggle.setText("Show User Details");
+                expandIcon.setImageResource(R.mipmap.expand); // Update icon for expand
+            }
+        });
 
         // Load saved data if available
         loadSavedData();

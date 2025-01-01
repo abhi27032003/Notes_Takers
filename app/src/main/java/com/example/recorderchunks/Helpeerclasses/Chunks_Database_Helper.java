@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.recorderchunks.Model_Class.ChunkTranscription;
 
@@ -132,4 +133,48 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_CHUNKS, COL_RECORDING_ID + " = ?", new String[]{String.valueOf(recordingId)});
     }
+
+    public boolean addChunksBatch(List<String> chunkPaths, int recordingId, String uuid) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction(); // Start transaction
+        try {
+            for (String chunkPath : chunkPaths) {
+                if (chunkPath.contains("chunks already created") || chunkPath.equals("chunks already created")) {
+                    // Skip this chunk if the path indicates no new chunks
+                    continue;
+                }
+
+                // Check if the chunk already exists
+                String query = "SELECT COUNT(*) FROM " + TABLE_CHUNKS +
+                        " WHERE " + COL_CHUNK_PATH + " = ? AND " + COL_RECORDING_ID + " = ?";
+                Cursor cursor = db.rawQuery(query, new String[]{chunkPath, String.valueOf(recordingId)});
+
+                boolean chunkExists = false;
+                if (cursor.moveToFirst()) {
+                    chunkExists = cursor.getInt(0) > 0; // Check if count > 0
+                }
+                cursor.close();
+
+                // If the chunk does not exist, insert it
+                if (!chunkExists) {
+                    ContentValues values = new ContentValues();
+                    values.put(COL_CHUNK_ID, uuid + chunkPath); // Generate unique chunk ID
+                    values.put(COL_RECORDING_ID, recordingId);
+                    values.put(COL_STATUS, "not_started"); // Default status
+                    values.put(COL_CHUNK_PATH, chunkPath);
+                    db.insert(TABLE_CHUNKS, null, values); // Insert each chunk
+                }
+            }
+            db.setTransactionSuccessful(); // Commit transaction
+            return true; // Return true if all chunks are processed successfully
+        } catch (Exception e) {
+            Log.e("DBHelper", "Error in batch insertion: " + e.getMessage());
+            return false; // Return false if an error occurs
+        } finally {
+            db.endTransaction(); // End transaction
+            db.close();
+        }
+    }
+
+
 }

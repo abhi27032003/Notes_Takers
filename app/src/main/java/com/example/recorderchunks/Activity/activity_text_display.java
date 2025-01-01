@@ -1,4 +1,4 @@
-package com.example.recorderchunks;
+package com.example.recorderchunks.Activity;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -12,6 +12,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import com.example.recorderchunks.R;
 
 public class activity_text_display extends AppCompatActivity {
 

@@ -28,33 +28,40 @@ public class AudioChunkHelper {
                 chunkFolder.mkdirs(); // Create folder if it doesn't exist
             }
 
+
             // Generate chunks
             for (int startMs = 0; startMs < duration; startMs += chunkSizeMs) {
                 int chunkNumber = startMs / chunkSizeMs + 1;
                 String fileExtension = getFileExtension(audioFile);
                 File chunkFile = new File(chunkFolder, "chunk" + chunkNumber + fileExtension);
+                if(chunkFile.exists()) {
+                    String command = String.format(
+                            "-i \"%s\" -ss %.2f -t %.2f \"%s\"",
+                            audioFile.getAbsolutePath(), // Input audio file path
+                            startMs / 1000.0,            // Start time in seconds
+                            chunkSizeMs / 1000.0,        // Chunk size in seconds
+                            chunkFile.getAbsolutePath()  // Output chunk file path
+                    );
 
-                String command = String.format(
-                        "-i \"%s\" -ss %.2f -t %.2f \"%s\"",
-                        audioFile.getAbsolutePath(), // Input audio file path
-                        startMs / 1000.0,            // Start time in seconds
-                        chunkSizeMs / 1000.0,        // Chunk size in seconds
-                        chunkFile.getAbsolutePath()  // Output chunk file path
-                );
-
-                int rc = FFmpeg.execute(command);
-
-
-                // String ffmpegLogs = FFmpeg.getLastCommandOutput();
-                if (rc == 0) {
-                    chunkPaths.add(chunkFile.getAbsolutePath());
+                    int rc = FFmpeg.execute(command);
 
 
+                    // String ffmpegLogs = FFmpeg.getLastCommandOutput();
+                    if (rc == 0) {
+                        chunkPaths.add(chunkFile.getAbsolutePath());
+
+
+                    }
+                    else
+                    {
+                        chunkPaths.add("unable to chunkify");
+                    }
                 }
-                else
-                {
-                    chunkPaths.add("unable to chunkify");
+                else {
+                    chunkPaths.add("chunks already created");
                 }
+
+
 
             }
         } catch (Exception e) {

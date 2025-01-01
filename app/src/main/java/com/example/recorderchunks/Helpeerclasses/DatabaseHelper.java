@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.Recording;
@@ -303,6 +304,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int rowsDeleted = db.delete(TABLE_RECORDINGS, COL_EVENT_ID + " = ?", new String[]{String.valueOf(recordingId)});
         return rowsDeleted > 0;
     }
+    public boolean updateLanguageByRecordingId(int recordingId, String newLanguage) {
+        SQLiteDatabase db = null;
+
+        try {
+
+            db = this.getWritableDatabase();
+
+            ContentValues values = new ContentValues();
+            values.put(COL_LANGUAGE, newLanguage);
+            int rowsAffected = db.update(
+                    TABLE_RECORDINGS,        // Table name
+                    values,                  // Values to update
+                    COL_RECORDING_ID + "=?", // WHERE clause
+                    new String[]{String.valueOf(recordingId)} // WHERE arguments
+            );
+            return rowsAffected > 0;
+        } catch (Exception e) {
+            Log.e("DatabaseError", "Error updating language: " + e.getMessage());
+            return false;
+        } finally {
+            if (db != null) {
+                db.close();
+            }
+        }
+    }
+
     @SuppressLint("Range")
     public int getNextEventId() {
         SQLiteDatabase db = this.getReadableDatabase();
