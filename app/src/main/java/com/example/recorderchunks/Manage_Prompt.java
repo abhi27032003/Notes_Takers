@@ -1,27 +1,20 @@
 package com.example.recorderchunks;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.AlertDialog;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.InputType;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.recorderchunks.Adapter.PromptAdapter;
+import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
 import com.example.recorderchunks.Model_Class.Prompt;
 
 import java.text.SimpleDateFormat;

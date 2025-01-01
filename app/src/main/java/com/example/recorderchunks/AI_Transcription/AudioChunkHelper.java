@@ -1,6 +1,10 @@
 package com.example.recorderchunks.AI_Transcription;
 import android.util.Log;
 import android.media.MediaPlayer;
+import android.widget.Toast;
+
+import com.arthenica.mobileffmpeg.FFmpeg;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,15 +34,28 @@ public class AudioChunkHelper {
                 String fileExtension = getFileExtension(audioFile);
                 File chunkFile = new File(chunkFolder, "chunk" + chunkNumber + fileExtension);
 
-                 // FFmpeg command to split the audio
-                String ffmpegCommand = "ffmpeg -i " + audioFile.getAbsolutePath() + " -ss " + startMs / 1000
-                        + " -t " + chunkSizeMs / 1000 + " " + chunkFile.getAbsolutePath();
+                String command = String.format(
+                        "-i \"%s\" -ss %.2f -t %.2f \"%s\"",
+                        audioFile.getAbsolutePath(), // Input audio file path
+                        startMs / 1000.0,            // Start time in seconds
+                        chunkSizeMs / 1000.0,        // Chunk size in seconds
+                        chunkFile.getAbsolutePath()  // Output chunk file path
+                );
 
-                Process process = Runtime.getRuntime().exec(ffmpegCommand);
-                process.waitFor(); // Wait for the process to finish
+                int rc = FFmpeg.execute(command);
 
-                // Add the chunk file path to the list
-                chunkPaths.add(chunkFile.getAbsolutePath());
+
+                // String ffmpegLogs = FFmpeg.getLastCommandOutput();
+                if (rc == 0) {
+                    chunkPaths.add(chunkFile.getAbsolutePath());
+
+
+                }
+                else
+                {
+                    chunkPaths.add("unable to chunkify");
+                }
+
             }
         } catch (Exception e) {
             Log.e("AudioChunkHelper", "Error splitting audio: " + e.getMessage());

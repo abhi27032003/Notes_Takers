@@ -23,9 +23,8 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.recorderchunks.Manage_Prompt;
 import com.example.recorderchunks.Model_Class.Prompt;
-import com.example.recorderchunks.Prompt_Database_Helper;
+import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
 import com.example.recorderchunks.R;
 
 import java.text.SimpleDateFormat;

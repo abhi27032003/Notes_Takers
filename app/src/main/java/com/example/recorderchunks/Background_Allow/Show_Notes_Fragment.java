@@ -4,19 +4,16 @@ package com.example.recorderchunks.Background_Allow;
 import static android.content.Context.MODE_PRIVATE;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -29,10 +26,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.recorderchunks.API_Updation;
 import com.example.recorderchunks.Adapter.EventAdapter;
-import com.example.recorderchunks.DatabaseHelper;
+import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.RecordingViewModel;
-import com.example.recorderchunks.Model_Class.SharedViewModel;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.Model_Class.recording_event_no;
 import com.example.recorderchunks.R;

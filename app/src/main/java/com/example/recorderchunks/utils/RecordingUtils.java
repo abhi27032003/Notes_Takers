@@ -6,21 +6,14 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
-
 import com.example.recorderchunks.Activity.RecordingService;
-import com.example.recorderchunks.Background_Allow.Add_notes_Fragment;
-import com.example.recorderchunks.DatabaseHelper;
-import com.example.recorderchunks.Model_Class.RecordingViewModel;
+import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.is_recording;
 import com.example.recorderchunks.Model_Class.recording_language;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;

@@ -14,7 +14,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.recorderchunks.Background_Allow.Add_notes_Fragment;
-import com.example.recorderchunks.DatabaseHelper;
+import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.R;

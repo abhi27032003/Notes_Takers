@@ -308,29 +308,32 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/cardDateTimePicker" />
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/showdescription"
+                android:id="@+id/showdescription"                android:paddingEnd="5dp"
+
+
                 android:layout_width="match_parent"
                 android:layout_marginLeft="10sp"
+                app:iconSize="30sp"
                 android:layout_marginBottom="10sp"
-                app:iconTintMode="multiply"
                 android:layout_marginRight="10sp"
                 android:layout_height="50sp"
                 android:backgroundTint="@color/nav"
-                android:text="Show Event Description"
+                android:text="AI generated Notes"
                 android:textColor="@color/third"
                 android:textAlignment="viewStart"
-                app:iconPadding="10dp"
+                app:iconPadding="0dp"
                 android:includeFontPadding="false"
                 android:textSize="15sp"
                 android:paddingLeft="10dp"
-                app:icon="@mipmap/policy"
+                android:paddingRight="5sp"
+                app:icon="@mipmap/next"
+                app:iconTintMode="multiply"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintWidth_percent="0.49">
-
-
-            </com.google.android.material.button.MaterialButton>
+                app:layout_constraintWidth_percent="0.49"
+                app:iconGravity="end"
+                />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/showalltranscription"
@@ -338,16 +341,19 @@
                 app:iconTintMode="multiply"
                 android:layout_marginLeft="10sp"
                 android:layout_marginRight="10sp"
+                app:iconSize="30sp"
                 android:layout_height="50sp"
                 android:backgroundTint="@color/nav"
                 android:text="Show All Transcriptions"
                 android:textColor="@color/third"
                 android:textAlignment="viewStart"
-                app:iconPadding="10dp"
+                app:iconGravity="end"
+                app:iconPadding="0dp"
+                android:paddingEnd="5dp"
                 android:includeFontPadding="false"
                 android:textSize="15sp"
                 android:paddingLeft="10dp"
-                app:icon="@mipmap/transcription"
+                app:icon="@mipmap/next"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"

@@ -30,7 +30,7 @@ import com.example.jean.jcplayer.view.JcPlayerView;
 import com.example.recorderchunks.AI_Transcription.AudioChunkHelper;
 import com.example.recorderchunks.AI_Transcription.TranscriptionUtils;
 import com.example.recorderchunks.Audio_Models.Vosk_Model;
-import com.example.recorderchunks.DatabaseHelper;
+import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.AudioUtils;
@@ -93,10 +93,10 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         Recording audioItem = recordingList.get(position);
         loadSelectionState(audioItem.getEventId());
 
-//        List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 30000);
-//        for (String path : chunkPaths) {
-//            Toast.makeText(context, "Chunk created at: " + path, Toast.LENGTH_SHORT).show();
-//        }
+        List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
+        for (String path : chunkPaths) {
+            Toast.makeText(context, "Chunk created at: " + path, Toast.LENGTH_SHORT).show();
+        }
 
         if(audioItem.getIs_transcribed().equals("no"))
         {
