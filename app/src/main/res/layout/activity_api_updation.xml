@@ -15,7 +15,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:title="Update Details"
+        app:title="@string/update_details"
         app:navigationIcon="@drawable/baseline_arrow_back_24" >
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -36,14 +36,14 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="VIP Research Group"
+                    android:text="@string/brand_name"
                     android:textColor="@color/secondary"
                     android:textSize="20sp"
                     android:textStyle="normal"></TextView>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="30sp"
-                    android:text="Update Details"
+                    android:text="@string/update_details"
                     android:textStyle="bold"
                     android:textColor="@color/third"
                     android:textSize="25sp"
@@ -77,17 +77,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appBar"
             >
-
-            <TextView
-                android:id="@+id/tv_heading"
-                android:layout_width="wrap_content"
-                android:layout_gravity="start"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:text="Enter API Keys and Prompt"
-                android:textColor="#000000"
-                android:textSize="20sp"
-                android:textStyle="bold" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
@@ -126,7 +115,7 @@
                                 android:focusable="true"
                                 android:gravity="center_vertical"
                                 android:padding="10dp"
-                                android:text="Show User Details"
+                                android:text="@string/show_user_details"
                                 android:textColor="@color/nav"
                                 android:textSize="18sp"
                                 android:textStyle="bold"
@@ -277,7 +266,7 @@
                         android:textColorHint="@color/white"
                         app:boxBackgroundColor="@color/nav"
                         app:boxStrokeColor="@color/secondary"
-                        android:hint="ChatGpt Api Key"
+                        android:hint="@string/chatgpt_api_key"
                         android:padding="2dp"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -296,7 +285,7 @@
                         android:layout_height="wrap_content"
                         android:layout_margin="5sp"
 
-                        android:hint="Gemini Api Key"
+                        android:hint="@string/gemini_api_key"
                         android:textColorHint="@color/white"
                         app:boxBackgroundColor="@color/nav"
                         android:padding="2dp"
@@ -322,7 +311,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/white"
-                        android:text="Select Language"
+                        android:text="@string/select_language"
                         android:textSize="16sp"
                         android:layout_margin="8sp"
                         />
@@ -345,7 +334,34 @@
                             android:layout_marginBottom="16dp" />
 
                     </androidx.cardview.widget.CardView>
+                    <TextView
+                        android:id="@+id/select_app_language_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/white"
+                        android:text="Select app Language"
+                        android:textSize="16sp"
+                        android:layout_margin="8sp"
+                        />
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="40sp"
+                        app:cardCornerRadius="10sp"
+                        android:layout_margin="8sp"
 
+
+                        >
+                        <Spinner
+                            android:id="@+id/app_language_spinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="40sp"
+
+                            android:backgroundTint="@color/secondary"
+                            android:background="@color/secondary"
+                            android:spinnerMode="dropdown"
+                            android:layout_marginBottom="16dp" />
+
+                    </androidx.cardview.widget.CardView>
 
                     <Button
                         android:id="@+id/manage_prompt"
@@ -354,7 +370,7 @@
                         android:backgroundTint="@color/button"
                         android:layout_margin="16sp"
                         android:padding="16dp"
-                        android:text="Manage Prompt"
+                        android:text="@string/manage_prompt"
                         android:textColor="#FFFFFF"
                         android:textSize="16sp"
                         android:textStyle="bold"
@@ -369,7 +385,7 @@
                         >
                         <TextView
                             android:layout_width="wrap_content"
-                            android:text="Gemini"
+                            android:text="@string/gemini"
                             android:textColor="@color/white"
                             android:textSize="20sp"
                             android:layout_margin="8sp"
@@ -386,7 +402,7 @@
                         </Switch>
                         <TextView
                             android:layout_width="wrap_content"
-                            android:text="ChatGpt"
+                            android:text="@string/chatgpt"
                             android:layout_margin="5sp"
                             android:textColor="@color/white"
                             android:textSize="20sp"
@@ -433,7 +449,7 @@
         android:layout_height="50sp"
         android:backgroundTint="@color/button"
         android:padding="8dp"
-        android:text="Save"
+        android:text="@string/save"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:layout_marginLeft="16sp"
@@ -450,7 +466,7 @@
         android:layout_height="50sp"
         android:backgroundTint="@color/nav"
         android:padding="8dp"
-        android:text="Update"
+        android:text="@string/update"
         android:layout_marginBottom="16sp"
         android:textColor="#FFFFFF"
         android:textSize="16sp"

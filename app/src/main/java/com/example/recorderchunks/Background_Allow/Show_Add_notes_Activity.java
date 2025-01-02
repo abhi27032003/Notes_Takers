@@ -21,9 +21,12 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.recorderchunks.Activity.API_Updation;
 import com.example.recorderchunks.Adapter.OnBackPressedListener;
+import com.example.recorderchunks.Helpeerclasses.LocaleHelper;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.BuildUtils;
+import com.yariksoffice.lingver.Lingver;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,6 +37,7 @@ import java.util.List;
 public class Show_Add_notes_Activity extends AppCompatActivity {
 
     // Permissions needed for the app
+    public  static int reload=0;
     private static final String[] REQUIRED_PERMISSIONS = new String[]{
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -43,13 +47,20 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
             Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION
 
     };
-
+    public static final String SELECTED_APP_LANGUAGE = "SelectedappLanguage";
+    private static final String PREF_NAME = "ApiKeysPref";
+    private SharedPreferences sharedPreferences;
     private ActivityResultLauncher<String[]> permissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_add_notes);
+        //////
+        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        String savedAppLanguage = sharedPreferences.getString(SELECTED_APP_LANGUAGE, "English");
+        String localeCode = getLocaleCode(savedAppLanguage);
+        LocaleHelper.setLocale(Show_Add_notes_Activity.this, localeCode);
 
         // Initialize the permissions launcher
         permissionLauncher = registerForActivityResult(
@@ -220,5 +231,39 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         } else {
             super.onBackPressed(); // Default back press behavior
         }
+    }
+    private String getLocaleCode(String language) {
+        switch (language) {
+            case "English":
+                return "en"; // English
+            case "French":
+                return "fr"; // French
+            case "Chinese":
+                return "zh"; // Chinese
+            case "Hindi":
+                return "hi"; // Hindi
+            case "Spanish":
+                return "es"; // Spanish
+            default:
+                return "en"; // Default to English if no match
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        String savedAppLanguage = sharedPreferences.getString(SELECTED_APP_LANGUAGE, "English");
+        String localeCode = getLocaleCode(savedAppLanguage);
+        LocaleHelper.setLocale(Show_Add_notes_Activity.this, localeCode);
+        super.onResume();
+    }
+
+    @Override
+    protected void onRestart() {
+        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        String savedAppLanguage = sharedPreferences.getString(SELECTED_APP_LANGUAGE, "English");
+        String localeCode = getLocaleCode(savedAppLanguage);
+        LocaleHelper.setLocale(Show_Add_notes_Activity.this, localeCode);
+        super.onRestart();
     }
 }

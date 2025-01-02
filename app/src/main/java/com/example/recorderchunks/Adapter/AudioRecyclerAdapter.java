@@ -59,7 +59,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     private static final Handler handler = new Handler();
     private static Runnable updateSeekBarRunnable;
     public static ArrayList<String> selectedItems;
-    private static SharedPreferences sharedPreferences;
+    private static SharedPreferences sharedPreferences,sharedPreferences2;
     private static final String PREFS_NAME = "PromptSelectionPrefs";
     private OnSelectionChangedListener selectionChangedListener;
 
@@ -85,6 +85,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         this.vm=new Vosk_Model();
         this.databaseHelper=new DatabaseHelper(context);
         this.chunks_database_helper=new Chunks_Database_Helper(context);
+        this.sharedPreferences2 = context.getSharedPreferences("ApiKeysPref", Context.MODE_PRIVATE);
     }
 
     @NonNull
@@ -178,27 +179,49 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         }
         ////////////////////////////////////language spinner
-        String[] languagesl = getLanguagesFromMetadata(context);
+        String[] languagesl = {
+                "English",
+                "French",
+                "Chinese",
+                "Hindi",
+                "Spanish"
+        };
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 context,
                 android.R.layout.simple_spinner_item,
                 languagesl
         );
-        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, null);  // Default value is null
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         holder.languageSpinner.setAdapter(adapter);
+
+        // Fetch the saved language from shared preferences
+        String savedLanguage = sharedPreferences2.getString(SELECTED_LANGUAGE, null);
+       // Toast.makeText(context, "Saved Language: " + savedLanguage, Toast.LENGTH_SHORT).show();
+
+        if (savedLanguage != null) {
+            // Find the index of the saved language in the array
+            for (int i = 0; i < languagesl.length; i++) {
+                if (languagesl[i].equals(audioItem.getLanguage())) {
+                    holder.languageSpinner.setSelection(i);
+                    break;
+                }
+            }
+        }
+
+        // Set listener for spinner
         holder.languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                // Get the selected language
-
-
-                if(databaseHelper.updateLanguageByRecordingId(audioItem.getRecordingId(),languagesl[position]))
-                {  holder.languageSpinner.setSelection(position);
-                    audioItem.setLanguage(languagesl[position]);
-
+                String selectedLanguage = languagesl[position];
+                // Update database only if the language changes
+                if (!selectedLanguage.equals(audioItem.getLanguage())) {
+                    boolean isUpdated = databaseHelper.updateLanguageByRecordingId(audioItem.getRecordingId(), selectedLanguage);
+                    if (isUpdated) {
+                        // Update local data
+                        audioItem.setLanguage(selectedLanguage);
+                    } else {
+                    }
                 }
-
             }
 
             @Override
@@ -206,17 +229,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 // Handle case when no selection is made (optional)
             }
         });
-        if (savedLanguage != null) {
-            // Find the index of the saved language in the languages array
-            for (int i = 0; i < languagesl.length; i++) {
-                if (languagesl[i].equals(audioItem.getLanguage())) {
-                    // Set the spinner to the saved language
-                    holder.languageSpinner.setSelection(i);
 
-                    break;
-                }
-            }
-        }
         ///////////////////////////////////////////////////////////
 
 

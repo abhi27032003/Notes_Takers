@@ -1,0 +1,49 @@
+<resources>
+    <string name="brand_name">Groupe de Recherche VIP</string>
+    <string name="app_name">Prise de Notes</string>
+    <string name="update_details">Mettre à jour les détails</string>
+    <string name="chatgpt_api_key">Clé API ChatGpt</string>
+    <string name="gemini_api_key">Clé API Gemini</string>
+    <string name="select_language">Choisir la langue</string>
+    <string name="manage_prompt">"Gérer l'invite"</string>
+    <string name="gemini">Gemini</string>
+    <string name="chatgpt">ChatGpt</string>
+    <string name="save">Enregistrer</string>
+    <string name="update">Mettre à jour</string>
+    <string name="modify_prompts">Modifier les invites</string>
+    <string name="event_title">"Titre de l'événement"</string>
+    <string name="pick_date">Choisir une date</string>
+    <string name="pick_time">"Choisir l'heure"</string>
+    <string name="selected_date_time">Date et heure sélectionnées :</string>
+    <string name="ai_generated_notes">Notes générées par IA</string>
+    <string name="show_all_transcriptions">Afficher toutes les transcriptions</string>
+    <string name="create_prompt">Créez votre première invite</string>
+    <string name="start_recording">"Commencer l'enregistrement"</string>
+    <string name="import_file">Importer un fichier</string>
+    <string name="make_note_ai">"Faire une note avec l'IA"</string>
+    <string name="save_event">"Enregistrer l'événement"</string>
+    <string name="stop_recording">"Arrêter l'enregistrement</string>
+    <string name="recorded">Enregistré</string>
+    <string name="imported">Importé</string>
+    <string name="unable_to_generate_transcription">Impossible de générer la transcription</string>
+    <string name="create_note">Créer une note</string>
+    <string name="unsaved_changes">Modifications non enregistrées</string>
+    <string name="discard">Abandonner</string>
+    <string name="cancel">Annuler</string>
+    <string name="unsaved_changes_prompt">Vous avez des modifications non enregistrées. Voulez-vous les enregistrer avant de quitter ?</string>
+    <string name="close_app_prompt">"Voulez-vous fermer l'application ?</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+    <string name="recording_in_progress">Enregistrement en cours</string>
+    <string name="recording_save_prompt">Enregistrement en cours. Voulez-vous enregistrer avant de quitter ?</string>
+    <string name="notes_details">Détails des notes</string>
+    <string name="all_transcriptions">Toutes les transcriptions</string>
+    <string name="choose_prompt">Choisir une invite</string>
+
+    <string name="show_user_details">"Afficher les détails de l'utilisateur</string>
+    <string name="hide_user_details">"Masquer les détails de l'utilisateur</string>
+    <string name="created_on">Créé le</string>
+    <string name="description">Description</string>
+    <string name="recording_disabled">Enregistrement désactivé</string>
+
+</resources>

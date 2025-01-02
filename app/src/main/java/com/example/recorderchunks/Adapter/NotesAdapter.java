@@ -48,13 +48,23 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
         // Set the listener for "Click to read more"
         holder.readMore.setOnClickListener(new View.OnClickListener() {
+            private boolean isExpanded = false; // Flag to track the state
+
             @Override
             public void onClick(View v) {
-                // Expand the text to show the full note
-                holder.noteTextView.setMaxLines(Integer.MAX_VALUE);
-                holder.readMore.setVisibility(View.GONE); // Hide the "read more" text
+                if (isExpanded) {
+                    // Collapse the text to a limited number of lines
+                    holder.noteTextView.setMaxLines(3); // Set the desired number of lines when collapsed
+                    holder.readMore.setText("Read More.."); // Change the text to "Read More"
+                } else {
+                    // Expand the text to show the full note
+                    holder.noteTextView.setMaxLines(Integer.MAX_VALUE);
+                    holder.readMore.setText("..Show Less"); // Change the text to "Show Less"
+                }
+                isExpanded = !isExpanded; // Toggle the flag
             }
         });
+
 
 
         // Set listeners for the buttons

@@ -40,7 +40,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="30sp"
-                    android:text="VIP Research Group"
+                    android:text="@string/brand_name"
                     android:textStyle="normal"
                     android:textColor="@color/secondary"
                     android:textSize="20sp"
@@ -48,7 +48,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="30sp"
-                    android:text="Note Takers"
+                    android:text="@string/app_name"
                     android:textStyle="bold"
                     android:textColor="@color/third"
                     android:textSize="25sp"

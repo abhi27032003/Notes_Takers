@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.Recording;
@@ -319,7 +320,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     COL_RECORDING_ID + "=?", // WHERE clause
                     new String[]{String.valueOf(recordingId)} // WHERE arguments
             );
+
             return rowsAffected > 0;
+
         } catch (Exception e) {
             Log.e("DatabaseError", "Error updating language: " + e.getMessage());
             return false;

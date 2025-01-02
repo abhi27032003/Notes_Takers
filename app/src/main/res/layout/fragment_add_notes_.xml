@@ -193,7 +193,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
 
-        app:title="Create Event" >
+        app:title="@string/create_note" >
     </androidx.appcompat.widget.Toolbar>
 
 
@@ -225,7 +225,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="10sp"
 
-                android:hint="Event Title"
+                android:hint="@string/event_title"
                 android:padding="2dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -267,7 +267,7 @@
                         app:iconTintMode="multiply"
                         android:backgroundTint="@color/third"
 
-                        android:text="Pick Date"
+                        android:text="@string/pick_date"
                         android:textColor="@color/nav"
                         app:icon="@drawable/baseline_calendar_month_24"
                         app:iconGravity="textStart"
@@ -285,7 +285,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginRight="5sp"
                         android:backgroundTint="@color/third"
-                        android:text="Pick Time"
+                        android:text="@string/pick_time"
                         android:textColor="@color/nav"
                         app:icon="@drawable/baseline_watch_later_24"
                         app:iconGravity="textStart"
@@ -321,7 +321,7 @@
                 android:layout_marginRight="10sp"
                 android:layout_height="50sp"
                 android:backgroundTint="@color/nav"
-                android:text="AI generated Notes"
+                android:text="@string/ai_generated_notes"
                 android:textColor="@color/third"
                 android:textAlignment="viewStart"
                 app:iconPadding="0dp"
@@ -347,7 +347,7 @@
                 app:iconSize="30sp"
                 android:layout_height="50sp"
                 android:backgroundTint="@color/nav"
-                android:text="Show All Transcriptions"
+                android:text="@string/show_all_transcriptions"
                 android:textColor="@color/third"
                 android:textAlignment="viewStart"
                 app:iconGravity="end"
@@ -416,7 +416,7 @@
                         android:paddingLeft="10sp"
                         android:drawablePadding="10sp"
 
-                        android:text="Create your first prompt"
+                        android:text="@string/create_prompt"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -535,7 +535,7 @@
                         android:layout_width="0dp"
                         android:layout_height="50sp"
                         android:backgroundTint="@color/button"
-                        android:text="Start Recording"
+                        android:text="@string/start_recording"
                         android:maxLines="1"
                         app:iconTintMode="multiply"
                         android:textColor="@color/third"
@@ -561,7 +561,7 @@
                         app:iconTintMode="multiply"
                         android:layout_height="50sp"
                         android:backgroundTint="@color/button"
-                        android:text="Import file"
+                        android:text="@string/import_file"
                         app:iconPadding="10dp"
                         android:includeFontPadding="false"
                         android:textSize="15sp"
@@ -617,7 +617,7 @@
                 android:layout_height="50sp"
                 android:layout_margin="10sp"
                 android:backgroundTint="@color/nav"
-                android:text="Make note using AI"
+                android:text="@string/make_note_ai"
 
                 android:textColor="@color/third"
                 app:layout_constraintEnd_toEndOf="@+id/appBar"
@@ -646,7 +646,7 @@
         android:layout_margin="16dp"
 
         android:backgroundTint="@color/button"
-        android:text="Save Event"
+        android:text="@string/save_event"
         android:textColor="@color/third"
         app:iconGravity="textStart"
         app:layout_constraintBottom_toBottomOf="parent"

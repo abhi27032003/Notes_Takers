@@ -48,6 +48,7 @@ import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Helpeerclasses.Notes_Database_Helper;
 import com.example.recorderchunks.Activity.Manage_Prompt;
 import com.example.recorderchunks.Model_Class.Event;
+import com.example.recorderchunks.Model_Class.Note;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.Model_Class.RecordingViewModel;
 import com.example.recorderchunks.Model_Class.current_event;
@@ -204,7 +205,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             public void onClick(View v) {
                 Intent intent = new Intent(getContext(), activity_text_display.class);
                 intent.putExtra("text", alltranscription.getText().toString());
-                intent.putExtra("Title","All Transcription");
+                intent.putExtra("Title",getString(R.string.all_transcriptions));
 
                 startActivity(intent);
             }
@@ -214,7 +215,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             public void onClick(View v) {
                 Intent intent = new Intent(getContext(), Show_all_ai_notes.class);
                 intent.putExtra("text", String.valueOf(event_id));
-                intent.putExtra("Title","Description");
+                intent.putExtra("Title",getString(R.string.description));
 
                 startActivity(intent);
             }
@@ -338,7 +339,9 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         });
 
         //Event Description and summary hide if fields empty
-        if(eventDescription.getText().toString().isEmpty())
+        Notes_Database_Helper notesDatabaseHelper=new Notes_Database_Helper(getContext());
+        ArrayList<Note> notes = notesDatabaseHelper.getNotesByRecordingId(event_id);
+        if(notes.size()<=0)
         {
             event_description_view.setVisibility(View.GONE);
             showdescription.setVisibility(View.GONE);
@@ -361,7 +364,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 if (eventDescription.getText().toString().length() > 200) { // Define your threshold
                     Intent intent = new Intent(getContext(), activity_text_display.class);
                     intent.putExtra("text", eventDescription.getText().toString());
-                    intent.putExtra("Title","Description");
+                    intent.putExtra("Title",getString(R.string.description));
 
                     startActivity(intent);
                 }
@@ -387,7 +390,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 if (alltranscription.getText().toString().length() > 200) { // Define your threshold
                     Intent intent = new Intent(getContext(), activity_text_display.class);
                     intent.putExtra("text", alltranscription.getText().toString());
-                    intent.putExtra("Title","All Transcription");
+                    intent.putExtra("Title",getString(R.string.all_transcriptions));
 
                     startActivity(intent);
                 }
@@ -464,7 +467,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                                 try {
                                     if(event_id!=-1)
                                     {
-                                        saveAudioToDatabase(event_id, selectedFilePath);
+                                        saveAudioToDatabase(event_id, selectedFilePath,savedLanguage);
 
                                     }
 
@@ -487,21 +490,21 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         //if this is not the event for which we are recording audio then make all the buttons disable
         if(recording_event_no.getRecording_event_no()!=event_id && recording_event_no.getRecording_event_no()!=-1)
         {
-            recordButton.setText("Recording Disabled");
+            recordButton.setText(getString(R.string.recording_disabled));
             recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.black));
             recordButton.setEnabled(false);
         }
         else {
             if ((Boolean.TRUE.equals(recordingViewModel.getIsRecording().getValue())||Boolean.TRUE.equals(recordingViewModel.getIsPaused().getValue())) && recording_event_no.getRecording_event_no()==event_id) {
                 // Timer setup
-                recordButton.setText("Stop Recording");
+                recordButton.setText(getString(R.string.stop_recording));
                 recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
                 recording_event_no.setRecording_event_no(event_id);
                 recording_small_card.setVisibility(View.VISIBLE);
                 reloadPosition(recording_small_card);
             } else {
                 // Stop recording
-                recordButton.setText("Start Recording");
+                recordButton.setText(getString(R.string.start_recording));
                 recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
                 recording_small_card.setVisibility(View.GONE);
             }
@@ -524,7 +527,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 if (!Boolean.TRUE.equals(recordingViewModel.getIsRecording().getValue())) {
                     // Timer setup
                     recording_event_no.setRecording_event_no(event_id);
-                    recordButton.setText("Stop Recording");
+                    recordButton.setText(getString(R.string.stop_recording));
                     recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
                     recordingViewModel.setPaused(false);     // Set the paused state to true
                     recordingUtils.startRecording();
@@ -537,7 +540,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     getContext().startService(serviceIntent);
 
                 } else {
-                    recordButton.setText("Start Recording");
+                    recordButton.setText(getString(R.string.start_recording));
                     recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
                     recordingUtils.stopRecording(recording_event_no.getRecording_event_no());
                     recordingViewModel.setRecording(false);
@@ -565,14 +568,14 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     {
                         recording_small_card.setVisibility(View.VISIBLE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.play);
-                        recordButton.setText("Stop Recording");
+                        recordButton.setText(getString(R.string.stop_recording));
                         recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
                     }
                     else
                     {
                         recording_small_card.setVisibility(View.VISIBLE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
-                        recordButton.setText("Stop Recording");
+                        recordButton.setText(getString(R.string.stop_recording));
                         recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
 
                     }
@@ -585,7 +588,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     {
                         recording_small_card.setVisibility(View.VISIBLE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.play);
-                        recordButton.setText("Stop Recording");
+                        recordButton.setText(getString(R.string.stop_recording));
                         recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
                     }
                     else
@@ -597,7 +600,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                         recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
                         updateSelectedItemsDisplay(new ArrayList<>());
                         recyclerView.setAdapter(recordingAdapter);
-                        recordButton.setText("Start Recording");
+                        recordButton.setText(getString(R.string.start_recording));
                         recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
                         recordingAdapter.notifyDataSetChanged();
 
@@ -641,7 +644,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 recordingViewModel.updateElapsedSeconds(0); // Reset elapsed time in ViewModel
                 recording_small_card.setVisibility(View.GONE); // Hide the recording card
                 play_pause_recording_small_animation.setImageResource(R.mipmap.pause); // Set the icon to 'pause'
-                recordButton.setText("Start Recording");
+                recordButton.setText(getString(R.string.start_recording));
                 recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
                 load_recycler(event_id);
 
@@ -847,12 +850,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         Event event = db.getEventById(event_id);
 
         if (event != null) {
-            toolbar.setTitle("Recording Details");
+            toolbar.setTitle(getString(R.string.notes_details));
             saveEventButton.setText("Update Event");
 
             eventTitle.setText(event.getTitle());
             eventDescription.setText(event.getDescription());
-            selectedDateTime.setText("created on : " + event.getCreationDate() + " at  " + event.getCreationTime());
+            selectedDateTime.setText(getString(R.string.created_on) + event.getCreationDate() + " at  " + event.getCreationTime());
             datePickerBtn.setText(event.getEventDate());
             timePickerBtn.setText(event.getEventTime());
             recordingList.clear();
@@ -869,7 +872,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             }
         }
     }
-    private void saveAudioToDatabase(int eventId_c, String audioPath) throws IOException {
+    private void saveAudioToDatabase(int eventId_c, String audioPath,String language) throws IOException {
         DatabaseHelper databaseHelper = new DatabaseHelper(getContext());
         String name = getFileName(audioPath);         // Extract file name from the path
         String format = getFileExtension(audioPath);  // Extract file extension as format
@@ -894,7 +897,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 "no",
                 description,
                 "no",
-                languageSpinner.getSelectedItem().toString()
+                language
 
         );
 
@@ -1084,8 +1087,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         else
         {
             boolean isRecordingCompleted = is_recording.getIs_Recording();
-            boolean hasUnsavedChanges = !datePickerBtn.getText().toString().toLowerCase().contains("pick") ||
-                    !timePickerBtn.getText().toString().toLowerCase().contains("pick") ||
+            boolean hasUnsavedChanges = !datePickerBtn.getText().toString().contains(getString(R.string.pick_date)) ||
+                    !timePickerBtn.getText().toString().contains(getString(R.string.pick_time)) ||
                     !eventTitle.getText().toString().isEmpty();
 
             if (hasUnsavedChanges || isRecordingCompleted || !recordingList.isEmpty()) {
@@ -1104,10 +1107,10 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     }
     private void showRecordingInProgressDialog() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Recording in Progress")
-                .setMessage("Recording in progress. Do you want to save Recording before exiting?")
-                .setPositiveButton("Save", (dialog, which) -> handleSaveRecording())
-                .setNegativeButton("Discard", (dialog, which) ->
+                .setTitle(getString(R.string.recording_in_progress))
+                .setMessage(getString(R.string.recording_save_prompt))
+                .setPositiveButton(getString(R.string.save), (dialog, which) -> handleSaveRecording())
+                .setNegativeButton(getString(R.string.discard), (dialog, which) ->
                         {
                             handleStopRecording();
                             resetRecordingState();
@@ -1115,7 +1118,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                         }
 
                         )
-                .setNeutralButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .setNeutralButton(getString(R.string.cancel), (dialog, which) -> dialog.dismiss())
                 .create()
                 .show();
     }
@@ -1125,11 +1128,11 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
      */
     private void showUnsavedChangesDialog() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Unsaved Changes")
-                .setMessage("You have unsaved changes. Do you want to save them before exiting?")
-                .setPositiveButton("Save", (dialog, which) -> handleSaveChanges())
-                .setNegativeButton("Discard", (dialog, which) -> discardChangesAndNavigateBack())
-                .setNeutralButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .setTitle(getString(R.string.unsaved_changes))
+                .setMessage(getString(R.string.unsaved_changes_prompt))
+                .setPositiveButton(getString(R.string.save), (dialog, which) -> handleSaveChanges())
+                .setNegativeButton(getString(R.string.discard), (dialog, which) -> discardChangesAndNavigateBack())
+                .setNeutralButton(getString(R.string.cancel), (dialog, which) -> dialog.dismiss())
                 .create()
                 .show();
     }
@@ -1192,7 +1195,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         recordingViewModel.updateElapsedSeconds(0);
         recording_small_card.setVisibility(View.GONE);
         play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
-        recordButton.setText("Start Recording");
+        recordButton.setText(getString(R.string.start_recording));
         recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
     }
 }

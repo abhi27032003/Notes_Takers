@@ -3,8 +3,8 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:backgroundTint="@color/third"
-    android:background="@color/third"
+    android:backgroundTint="@color/white"
+    android:background="@color/white"
     android:padding="0dp">
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/appBar"
@@ -37,7 +37,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="VIP Research Group"
+                    android:text="@string/brand_name"
                     android:textColor="@color/secondary"
                     android:textSize="20sp"
                     android:textStyle="normal"></TextView>
@@ -45,7 +45,7 @@
                     android:id="@+id/title"
                     android:layout_width="match_parent"
                     android:layout_height="30sp"
-                    android:text="Modify Prompts"
+                    android:text="@string/modify_prompts"
                     android:textStyle="bold"
                     android:textColor="@color/third"
                     android:textSize="25sp"
@@ -59,9 +59,13 @@
     </androidx.appcompat.widget.Toolbar>
 
     <androidx.cardview.widget.CardView
+        android:layout_marginBottom="20sp"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="5sp"
+        android:layout_marginTop="5sp"
+        android:layout_marginRight="5sp"
+        android:layout_marginLeft="5sp"
+
         android:backgroundTint="@color/button"
         app:cardCornerRadius="10sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -88,7 +92,7 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/notes_recycler"
                     android:layout_width="match_parent"
-                    android:padding="10sp"
+                    android:padding="0sp"
                     android:layout_height="match_parent"
                     >
 

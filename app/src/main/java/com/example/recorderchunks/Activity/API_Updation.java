@@ -24,6 +24,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.recorderchunks.Audio_Models.ModelMetadata;
+import com.example.recorderchunks.Background_Allow.Show_Add_notes_Activity;
+import com.example.recorderchunks.Helpeerclasses.LocaleHelper;
 import com.example.recorderchunks.R;
 
 import org.json.JSONArray;
@@ -44,11 +46,13 @@ public class API_Updation extends AppCompatActivity {
     public static final String KEY_CHATGPT = "ChatGptApiKey";
     public static final String KEY_GEMINI = "GeminiApiKey";
     public static final String SELECTED_LANGUAGE = "SelectedLanguage";
+    public static final String SELECTED_APP_LANGUAGE = "SelectedappLanguage";
+
 
     public static final String KEY_SELECTED_API = "SelectedApi";
 
     private SharedPreferences sharedPreferences;
-    private Spinner languageSpinner;
+    private Spinner languageSpinner,applanguagespinner;
     Switch api_switch;
 
     TextView uuid_text,signature_text;
@@ -65,7 +69,14 @@ public class API_Updation extends AppCompatActivity {
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
 
         languageSpinner = findViewById(R.id.language_spinner);
-        String[] languages = getLanguagesFromMetadata(API_Updation.this);
+        applanguagespinner=findViewById(R.id.app_language_spinner);
+        String[] languages = {
+                "English",
+                "French",
+                "Chinese",
+                "Hindi",
+                "Spanish"
+        };
 
         // Create an ArrayAdapter using the language list
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -73,8 +84,8 @@ public class API_Updation extends AppCompatActivity {
                 android.R.layout.simple_spinner_item,
                 languages
         );
-        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, null);  // Default value is null
-
+        String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, "English");  // Default value is null
+        String savedAppLanguage = sharedPreferences.getString(SELECTED_APP_LANGUAGE, "English");
 
 
         // Set the layout for dropdown items
@@ -82,6 +93,8 @@ public class API_Updation extends AppCompatActivity {
 
         // Attach the adapter to the Spinner
         languageSpinner.setAdapter(adapter);
+        applanguagespinner.setAdapter(adapter);
+
 
         // Set up a listener for item selection
         languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -102,6 +115,32 @@ public class API_Updation extends AppCompatActivity {
                 // Handle case when no selection is made (optional)
             }
         });
+        applanguagespinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Get the selected app language
+                String selectedAppLanguage = languages[position];
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(SELECTED_APP_LANGUAGE, selectedAppLanguage);
+                editor.apply();
+                String localeCode = getLocaleCode(selectedAppLanguage);
+                LocaleHelper.setLocale(API_Updation.this, localeCode);
+                if(Show_Add_notes_Activity.reload<=0)
+                {
+                    recreate();
+                    Show_Add_notes_Activity.reload=10;
+                }
+
+
+                // Handle app language selection (you can add functionality here)
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Handle case when no selection is made (optional)
+            }
+        });
+
         if (savedLanguage != null) {
             // Find the index of the saved language in the languages array
             for (int i = 0; i < languages.length; i++) {
@@ -113,6 +152,15 @@ public class API_Updation extends AppCompatActivity {
             }
         }
 
+        if (savedAppLanguage != null) {
+            for (int i = 0; i < languages.length; i++) {
+                if (languages[i].equals(savedAppLanguage)) {
+                    applanguagespinner.setSelection(i);
+                    break;
+                }
+            }
+        }
+        Show_Add_notes_Activity.reload=10;
 
         // Enable back button in toolbar
         if (getSupportActionBar() != null) {
@@ -143,14 +191,25 @@ public class API_Updation extends AppCompatActivity {
         LinearLayout accordionContent = findViewById(R.id.accordion_content);
         TextView accordionToggle = findViewById(R.id.accordion_toggle);
         ImageView expandIcon = findViewById(R.id.expand_icon);
-        accordionToggle.setOnClickListener(v -> {
+        expandIcon.setOnClickListener(v -> {
             if (accordionContent.getVisibility() == View.GONE) {
                 accordionContent.setVisibility(View.VISIBLE);
-                accordionToggle.setText("Hide User Details");
+                accordionToggle.setText(getString(R.string.hide_user_details));
                 expandIcon.setImageResource(R.mipmap.collapse); // Update icon for collapse
             } else {
                 accordionContent.setVisibility(View.GONE);
-                accordionToggle.setText("Show User Details");
+                accordionToggle.setText(getString(R.string.show_user_details));
+                expandIcon.setImageResource(R.mipmap.expand); // Update icon for expand
+            }
+        });
+        accordionToggle.setOnClickListener(v -> {
+            if (accordionContent.getVisibility() == View.GONE) {
+                accordionContent.setVisibility(View.VISIBLE);
+                accordionToggle.setText(getString(R.string.hide_user_details));
+                expandIcon.setImageResource(R.mipmap.collapse); // Update icon for collapse
+            } else {
+                accordionContent.setVisibility(View.GONE);
+                accordionToggle.setText(getString(R.string.show_user_details));
                 expandIcon.setImageResource(R.mipmap.expand); // Update icon for expand
             }
         });
@@ -315,6 +374,14 @@ public class API_Updation extends AppCompatActivity {
     private void updateData() {
         saveData();
     }
+
+    @Override
+    public void onBackPressed() {
+        Intent i=new Intent(API_Updation.this,Show_Add_notes_Activity.class);
+        startActivity(i);
+        super.onBackPressed();
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
@@ -322,5 +389,21 @@ public class API_Updation extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    private String getLocaleCode(String language) {
+        switch (language) {
+            case "English":
+                return "en"; // English
+            case "French":
+                return "fr"; // French
+            case "Chinese":
+                return "zh"; // Chinese
+            case "Hindi":
+                return "hi"; // Hindi
+            case "Spanish":
+                return "es"; // Spanish
+            default:
+                return "en"; // Default to English if no match
+        }
     }
 }

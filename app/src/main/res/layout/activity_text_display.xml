@@ -37,7 +37,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="VIP Research Group"
+                    android:text="@string/brand_name"
                     android:textColor="@color/secondary"
                     android:textSize="20sp"
                     android:textStyle="normal"></TextView>
@@ -45,7 +45,7 @@
                     android:id="@+id/title"
                     android:layout_width="match_parent"
                     android:layout_height="30sp"
-                    android:text="Modify Prompts"
+                    android:text="@string/modify_prompts"
                     android:textStyle="bold"
                     android:textColor="@color/third"
                     android:textSize="25sp"

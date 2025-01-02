@@ -1,5 +1,48 @@
 <resources>
+    <string name="brand_name">VIP Research Group</string>
     <string name="app_name">Notes Takers</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="update_details">Update Details</string>
+    <string name="chatgpt_api_key">ChatGpt API Key</string>
+    <string name="gemini_api_key">Gemini API Key</string>
+    <string name="select_language">Select Language</string>
+    <string name="manage_prompt">Manage Prompt</string>
+    <string name="gemini">Gemini</string>
+    <string name="chatgpt">ChatGpt</string>
+    <string name="save">Save</string>
+    <string name="update">Update</string>
+    <string name="modify_prompts">Modify Prompts</string>
+    <string name="event_title">Event Title</string>
+    <string name="pick_date">Pick Date</string>
+    <string name="pick_time">Pick Time</string>
+    <string name="selected_date_time">Selected Date and Time:</string>
+    <string name="ai_generated_notes">AI Generated Notes</string>
+    <string name="show_all_transcriptions">Show All Transcriptions</string>
+    <string name="create_prompt">Create your first prompt</string>
+    <string name="start_recording">Start Recording</string>
+    <string name="import_file">Import File</string>
+    <string name="make_note_ai">Make Note Using AI</string>
+    <string name="save_event">Save Event</string>
+    <string name="stop_recording">Stop Recording</string>
+    <string name="recorded">Recorded</string>
+    <string name="imported">Imported</string>
+    <string name="unable_to_generate_transcription">Unable to generate transcription</string>
+    <string name="create_note">Create Note</string>
+    <string name="unsaved_changes">Unsaved Changes</string>
+    <string name="discard">Discard</string>
+    <string name="cancel">Cancel</string>
+    <string name="unsaved_changes_prompt">You have unsaved changes. Do you want to save them before exiting?</string>
+    <string name="close_app_prompt">Do you want to close the app?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="recording_in_progress">Recording in Progress</string>
+    <string name="recording_save_prompt">Recording in progress. Do you want to save the recording before exiting?</string>
+    <string name="notes_details">Notes Details</string>
+    <string name="all_transcriptions">All Transcriptions</string>
+    <string name="choose_prompt">Choose Prompt</string>
+    <string name="show_user_details">Show user Details</string>
+    <string name="hide_user_details">Hide user Details</string>
+    <string name="created_on">Created on</string>
+    <string name="description">Description</string>
+    <string name="recording_disabled">Recording Disabled</string>
+
 </resources>
