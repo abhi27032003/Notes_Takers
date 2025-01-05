@@ -679,7 +679,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         });
 
         //date picker time picker and current date and time
-        selectedDateTime.setText("Current Date and Time: " + current_date_and_time());
+        selectedDateTime.setText(getString(R.string.current_date_time) + current_date_and_time());
         datePickerBtn.setOnClickListener(view2 -> showDatePicker());
         timePickerBtn.setOnClickListener(view2 -> showTimePicker());
 

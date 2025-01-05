@@ -1,5 +1,6 @@
 package com.example.recorderchunks.Adapter;
 
+import static android.provider.Settings.System.getString;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 import static com.example.recorderchunks.Activity.API_Updation.getLanguagesFromMetadata;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
@@ -105,8 +106,6 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         loadSelectionState(audioItem.getEventId());
         /////////////////////////////////////////////////chunking and api calling logic
 
-        List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
-        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf");
 
 
         if(audioItem.getIs_transcribed().equals("no"))
@@ -129,48 +128,9 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         if(audioItem.getIs_transcribed_api().equals("no"))
         {
-            holder.transcription_progress_api.setVisibility(View.VISIBLE);
-            holder.Description_api.setText("");
+            List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
+            transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
 
-            try {
-                String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
-                String[] supportedFormats = {"wav", "3gp", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
-
-                if (Arrays.asList(supportedFormats).contains(fileExtension)) {
-                    TranscriptionUtils.transcribeAudio(context,audioItem.getUrl(), new TranscriptionUtils.TranscriptionCallback() {
-                        @Override
-                        public void onSuccess(String transcription) {
-                            holder.transcription_progress_api.setVisibility(View.GONE);
-                            holder.Description_api.setText(transcription);
-                            databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),transcription);
-                            audioItem.setIs_transcribed_api("yes");
-                            audioItem.setDescription_api(transcription);
-
-                        }
-
-                        @Override
-                        public void onError(String errorMessage) {
-                            holder.transcription_progress_api.setVisibility(View.GONE);
-                            holder.Description_api.setText(errorMessage.toString());
-                            audioItem.setDescription_api("error "+errorMessage.toString());
-                            audioItem.setIs_transcribed_api("yes");
-
-                        }
-                    });
-
-                }
-                else {
-                    databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),"Unsupported format");
-                    audioItem.setIs_transcribed_api("yes");
-                    audioItem.setDescription_api("Unsupported format");
-                    holder.Description_api.setText("Unsupported format");
-                }
-
-
-            }catch (Exception e)
-            {
-              //  Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
 
         }
         else
@@ -333,7 +293,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
         holder.recordingLabel.setText(audioItem.getName());
-        holder.ceation_d_and_t.setText("Created at : "+audioItem.getDate()+" in "+audioItem.getLanguage());
+        holder.ceation_d_and_t.setText(R.string.created_on);
+        holder.ceation_d_and_t.setText(holder.ceation_d_and_t.getText()+" : "+audioItem.getDate());
         holder.total_time.setText(" / "+convertSecondsToTime(Integer.parseInt(AudioUtils.getAudioDuration(audioItem.getUrl()))));
         holder.Description.setText(audioItem.getDescription());
         holder.expand_button.setOnClickListener(v -> {
@@ -366,18 +327,18 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         if(recordingList.get(position).isRecorded())
         {
-            holder.Start_Transcription.setText("Recorded");
+            holder.Start_Transcription.setText(R.string.recorded);
             holder.Start_Transcription.setBackgroundColor(context.getResources().getColor(R.color.secondary));
         }
         else
         {
-            holder.Start_Transcription.setText("Imported");
+            holder.Start_Transcription.setText(R.string.imported);
             holder.Start_Transcription.setBackgroundColor(context.getResources().getColor(R.color.nav));
         }
 
     }
 
-    private void transcribe_and_chunkify_audio(List<String> chunkPaths, int recordingId, String uuid) {
+    private void transcribe_and_chunkify_audio(List<String> chunkPaths, int recordingId, String uuid,AudioViewHolder holder,Recording audioitem) {
         boolean added_to_db =chunks_database_helper.addChunksBatch(chunkPaths,recordingId,uuid);
         boolean allInProgress = true;
         if(added_to_db)
@@ -388,7 +349,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 if(status.contains("not")||status.contains("started")||status.contains("not_started"))
                 {
                     allInProgress=false;
-                    send_chunk_for_transcription(chunkTranscription.getChunkPath(),chunkTranscription.getChunkId());
+                    send_chunk_for_transcription(chunkTranscription.getChunkPath(),chunkTranscription.getChunkId(),"",holder,audioitem);
                 }
 
             }
@@ -396,7 +357,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         }
         else {
-            transcribe_and_chunkify_audio(chunkPaths,recordingId,uuid);
+            transcribe_and_chunkify_audio(chunkPaths,recordingId,uuid,holder,audioitem);
 
         }
         if(allInProgress)
@@ -409,7 +370,49 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
     }
 
-    private void send_chunk_for_transcription(String chunkPath, String chunkId) {
+    private void send_chunk_for_transcription(String chunkPath, String chunkId, String language,AudioViewHolder holder,Recording audioItem) {
+        holder.transcription_progress_api.setVisibility(View.VISIBLE);
+        holder.Description_api.setText("");
+
+        try {
+            String fileExtension = AudioUtils.getFileExtension(chunkPath).toLowerCase();
+            String[] supportedFormats = {"wav", "3gp", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
+
+            if (Arrays.asList(supportedFormats).contains(fileExtension)) {
+                TranscriptionUtils.send_for_transcription(context,chunkPath, new TranscriptionUtils.TranscriptionCallback() {
+                    @Override
+                    public void onSuccess(String transcription) {
+                        holder.transcription_progress_api.setVisibility(View.GONE);
+                        holder.Description_api.setText(transcription);
+                        databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),transcription);
+                        audioItem.setIs_transcribed_api("yes");
+                        audioItem.setDescription_api(transcription);
+
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        holder.transcription_progress_api.setVisibility(View.GONE);
+                        holder.Description_api.setText(errorMessage.toString());
+                        audioItem.setDescription_api("error "+errorMessage.toString());
+                        audioItem.setIs_transcribed_api("yes");
+
+                    }
+                },"husdb"+audioItem.getRecordingId(),"hindi");
+
+            }
+            else {
+                databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),"Unsupported format");
+                audioItem.setIs_transcribed_api("yes");
+                audioItem.setDescription_api("Unsupported format");
+                holder.Description_api.setText("Unsupported format");
+            }
+
+
+        }catch (Exception e)
+        {
+            //  Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
 
     }
 

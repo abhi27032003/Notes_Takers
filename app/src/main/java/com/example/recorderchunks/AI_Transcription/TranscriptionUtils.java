@@ -45,7 +45,7 @@ import okhttp3.Response;
 public class TranscriptionUtils {
 
     private static final String TAG = "TranscriptionUtils";
-    private static final String TRANSCRIPTION_URL = "http://3.210.239.32/transcribe.php";
+    private static final String SEND_TRANSCRIPTION_URL = "http://3.210.239.32/upload.php";
 
     // Callback interface for handling success and failure
     public interface TranscriptionCallback {
@@ -60,7 +60,7 @@ public class TranscriptionUtils {
      * @param filePath The path to the audio file.
      * @param callback The callback to handle success or error.
      */
-    public static void transcribeAudio(Context context, String filePath, TranscriptionCallback callback) {
+    public static void send_for_transcription(Context context, String filePath, TranscriptionCallback callback,String unique_id,String language) {
         File audioFile = new File(filePath);
 
         if (!audioFile.exists() || !audioFile.isFile()) {
@@ -84,12 +84,16 @@ public class TranscriptionUtils {
                         audioFile.getName(), // The file's name
                         RequestBody.create(audioFile, MediaType.parse("audio/*")) // File content with the correct MIME type
                 )
+                .addFormDataPart(
+                        "name", // Key for the additional parameter
+                       unique_id // Value of the additional parameter
+                )
                 .build();
 
 
         // Build the request
         Request request = new Request.Builder()
-                .url(TRANSCRIPTION_URL)
+                .url(SEND_TRANSCRIPTION_URL)
                 .post(requestBody)
                 .build();
 

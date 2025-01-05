@@ -41,8 +41,10 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
     public void onBindViewHolder(NoteViewHolder holder, int position) {
         Note note = noteList.get(position);
         holder.noteTextView.setText(note.getNote());
-        holder.createdOnTextView.setText("Created on: " + note.getCreatedOn());
+        holder.createdOnTextView.setText(R.string.created_on);
+        holder.createdOnTextView.setText(holder.createdOnTextView.getText()+" : " + note.getCreatedOn());
         holder.readMore.setVisibility(View.VISIBLE);
+        holder.readMore.setText(R.string.read_more);
         holder.noteTextView.setMaxLines(4);
         holder.noteTextView.setEllipsize(android.text.TextUtils.TruncateAt.END);
 
@@ -55,11 +57,11 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
                 if (isExpanded) {
                     // Collapse the text to a limited number of lines
                     holder.noteTextView.setMaxLines(3); // Set the desired number of lines when collapsed
-                    holder.readMore.setText("Read More.."); // Change the text to "Read More"
+                    holder.readMore.setText(R.string.read_more); // Change the text to "Read More"
                 } else {
                     // Expand the text to show the full note
                     holder.noteTextView.setMaxLines(Integer.MAX_VALUE);
-                    holder.readMore.setText("..Show Less"); // Change the text to "Show Less"
+                    holder.readMore.setText(R.string.read_less); // Change the text to "Show Less"
                 }
                 isExpanded = !isExpanded; // Toggle the flag
             }

@@ -105,7 +105,7 @@
             </androidx.cardview.widget.CardView>
             <TextView
                 android:layout_width="match_parent"
-                android:text="@string/select_language"
+                android:text="@string/select_transcription_language"
                 android:textSize="15sp"
                 android:layout_marginBottom="5sp"
                 android:layout_marginTop="5sp"

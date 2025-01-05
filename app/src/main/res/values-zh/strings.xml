@@ -45,4 +45,11 @@
     <string name="hide_user_details">隐藏用户详情</string>
     <string name="created_on">创建于</string>
     <string name="description">描述</string>
+    <string name="select_transcription_language">选择转录语言</string>
+    <string name="default_transcription_language">默认转录语言</string>
+    <string name="current_date_time">当前日期和时间</string>
+    <string name="app_language">应用语言</string>
+    <string name="read_more">阅读更多</string>
+    <string name="read_less">收起</string>
+
 </resources>

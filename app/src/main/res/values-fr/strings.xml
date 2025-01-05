@@ -45,5 +45,11 @@
     <string name="created_on">Créé le</string>
     <string name="description">Description</string>
     <string name="recording_disabled">Enregistrement désactivé</string>
+    <string name="select_transcription_language">Sélectionnez la langue de transcription</string>
+    <string name="default_transcription_language">Langue de transcription par défaut</string>
+    <string name="current_date_time">Date et heure actuelles</string>
+    <string name="app_language">"Langue de l'application"</string>
+    <string name="read_more">Lire la suite</string>
+    <string name="read_less">Lire moins</string>
 
 </resources>

@@ -45,4 +45,12 @@
     <string name="hide_user_details">उपयोगकर्ता विवरण छिपाएं</string>
     <string name="created_on">निर्मित किया गया</string>
     <string name="description">विवरण</string>
+    <string name="select_transcription_language">प्रतिलिपि भाषा चुनें</string>
+    <string name="default_transcription_language">डिफ़ॉल्ट प्रतिलिपि भाषा</string>
+    <string name="current_date_time">वर्तमान तिथि और समय</string>
+    <string name="app_language">ऐप भाषा</string>
+    <string name="read_less">कम पढ़ें</string>
+    <string name="read_more">अधिक पढ़ें</string>
+
+
 </resources>

@@ -261,7 +261,7 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/datePickerBtn"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="5sp"
                         app:iconTintMode="multiply"
@@ -281,7 +281,7 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/timePickerBtn"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginRight="5sp"
                         android:backgroundTint="@color/third"
@@ -292,6 +292,7 @@
                         app:iconTint="@color/secondary"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/datePickerBtn"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintWidth_percent="0.45" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
@@ -368,7 +369,7 @@
 
             <TextView
                 android:layout_width="match_parent"
-                android:text="Choose Prompt"
+                android:text="@string/choose_prompt"
                 android:textSize="17sp"
                 android:textStyle="bold"
                 android:layout_marginLeft="12sp"

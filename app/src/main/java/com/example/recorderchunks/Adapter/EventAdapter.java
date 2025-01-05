@@ -65,7 +65,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         }
 
         if (event.getCreationDate() != null) {
-            holder.dateTextView.setText("created on : "+event.getCreationDate()+" at "+event.getCreationTime());
+            holder.dateTextView.setText(R.string.created_on);
+            holder.dateTextView.setText(holder.dateTextView.getText()+" : "+event.getCreationDate()+" at "+event.getCreationTime());
         } else {
             holder.dateTextView.setText("Not Available");
         }
