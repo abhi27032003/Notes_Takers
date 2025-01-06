@@ -46,6 +46,7 @@ public class TranscriptionUtils {
 
     private static final String TAG = "TranscriptionUtils";
     private static final String SEND_TRANSCRIPTION_URL = "http://3.210.239.32/upload.php";
+    private static final String GET_TRANSCRIPTION_URL = "http://3.210.239.32/upload.php";
 
     // Callback interface for handling success and failure
     public interface TranscriptionCallback {
@@ -53,6 +54,10 @@ public class TranscriptionUtils {
         void onError(String errorMessage);
     }
 
+    public interface TranscriptionStatusCallback {
+        void onTranscriptionStatusSuccess(String name, String status, int queuePosition);
+        void onTranscriptionStatusError(String errorMessage);
+    }
     /**
      * Transcribes the given audio file from its file path.
      *
@@ -101,8 +106,8 @@ public class TranscriptionUtils {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                Log.e("NetworkError", "Request failed: " + e.getMessage(), e);
                 if (callback != null) {
-                    // Run on the main thread
                     new Handler(Looper.getMainLooper()).post(() ->
                             callback.onError("Network request failed: " + e.getMessage())
                     );
@@ -111,45 +116,79 @@ public class TranscriptionUtils {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseBody = response.body() != null ? response.body().string() : "";
-                    new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess("response:"+responseBody));
-                } else {
-                    String errorBody = response.body() != null ? response.body().string() : "No response body";
+                try {
+                    if (response.isSuccessful()) {
+                        String responseBody = response.body() != null ? response.body().string() : "";
+                        Log.d("ResponseSuccess", "Body: " + responseBody);
+                        new Handler(Looper.getMainLooper()).post(() ->
+                                callback.onSuccess("Response: " + responseBody)
+                        );
+                    } else {
+                        String errorBody = response.body() != null ? response.body().string() : "No response body";
+                        Log.e("ServerError", "Code: " + response.code() + ", Message: " + response.message());
+                        new Handler(Looper.getMainLooper()).post(() ->
+                                callback.onError("Server error: " + response.message() + " - " + errorBody)
+                        );
+                    }
+                } catch (Exception e) {
+                    Log.e("ResponseError", "Error processing response: " + e.getMessage(), e);
                     new Handler(Looper.getMainLooper()).post(() ->
-                            callback.onError("Server error: " + response.message() + " - " + errorBody)
+                            callback.onError("Error processing response: " + e.getMessage())
                     );
                 }
             }
-
         });
+
     }
-    public static  String getTranscription(String response) {
-        try {
-            // Parse the response string into a JSONObject
-            JSONObject responseJson = new JSONObject(response);
+    public static void getTranscriptionStatus(String name, TranscriptionStatusCallback callback) {
+        OkHttpClient client = new OkHttpClient();
 
-            // Extract the raw_output field
-            String rawOutput = responseJson.getString("raw_output");
+        // Build the request URL with query parameter
+        String url = GET_TRANSCRIPTION_URL + "?name=" + name;
 
-            // Locate the start and end of the embedded JSON containing the transcription
-            int startIndex = rawOutput.indexOf("{");
-            int endIndex = rawOutput.lastIndexOf("}") + 1;
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
 
-            // Extract and parse the embedded JSON
-            if (startIndex != -1 && endIndex != -1) {
-                String embeddedJson = rawOutput.substring(startIndex, endIndex);
-                JSONObject embeddedJsonObject = new JSONObject(embeddedJson);
-
-                // Return the transcription
-                return embeddedJsonObject.getString("transcription");
-            } else {
-                return "Transcription not found in the response.";
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                // Call the callback with an error
+                if (callback != null) {
+                    callback.onTranscriptionStatusError("Network request failed: " + e.getMessage());
+                }
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return "Error parsing response: " + e.getMessage();
-        }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    try {
+                        // Parse JSON response
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+                        String name = jsonResponse.getString("name");
+                        String status = jsonResponse.getString("status");
+                        int queuePosition = jsonResponse.getInt("queue_position");
+
+                        // Call the callback with success data
+                        if (callback != null) {
+                            callback.onTranscriptionStatusSuccess(name, status, queuePosition);
+                        }
+                    } catch (Exception e) {
+                        if (callback != null) {
+                            callback.onTranscriptionStatusError("Failed to parse response: " + e.getMessage());
+                        }
+                    }
+                } else {
+                    // Call the callback with an error
+                    if (callback != null) {
+                        callback.onTranscriptionStatusError("Server error: " + response.message());
+                    }
+                }
+            }
+        });
     }
 
 }

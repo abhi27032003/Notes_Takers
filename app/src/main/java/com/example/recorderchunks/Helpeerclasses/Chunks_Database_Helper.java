@@ -31,7 +31,7 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         String CREATE_TABLE = "CREATE TABLE " + TABLE_CHUNKS + " ("
-                + COL_CHUNK_ID + " TEXT PRIMARY KEY, "
+                + COL_CHUNK_ID + " TEXT, "
                 + COL_RECORDING_ID + " INTEGER, "
                 + COL_STATUS + " TEXT, "
                 + COL_TRANSCRIPTION + " TEXT, "
@@ -125,6 +125,7 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
         cursor.close();
+        Log.e("chunk_path","get chunks by recording id");
         return chunks;
     }
 
@@ -138,43 +139,41 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.beginTransaction(); // Start transaction
         try {
+            // Step 1: Delete all chunks associated with the recordingId
+            int rowsDeleted = db.delete(
+                    TABLE_CHUNKS,
+                    COL_RECORDING_ID + " = ?",
+                    new String[]{String.valueOf(recordingId)}
+            );
+            Log.d("chunk_path", "Deleted " + rowsDeleted + " chunks for recording ID: " + recordingId);
+
+            // Step 2: Insert new chunks
             for (String chunkPath : chunkPaths) {
                 if (chunkPath.contains("chunks already created") || chunkPath.equals("chunks already created")) {
                     // Skip this chunk if the path indicates no new chunks
                     continue;
                 }
 
-                // Check if the chunk already exists
-                String query = "SELECT COUNT(*) FROM " + TABLE_CHUNKS +
-                        " WHERE " + COL_CHUNK_PATH + " = ? AND " + COL_RECORDING_ID + " = ?";
-                Cursor cursor = db.rawQuery(query, new String[]{chunkPath, String.valueOf(recordingId)});
-
-                boolean chunkExists = false;
-                if (cursor.moveToFirst()) {
-                    chunkExists = cursor.getInt(0) > 0; // Check if count > 0
-                }
-                cursor.close();
-
-                // If the chunk does not exist, insert it
-                if (!chunkExists) {
-                    ContentValues values = new ContentValues();
-                    values.put(COL_CHUNK_ID, uuid + chunkPath); // Generate unique chunk ID
-                    values.put(COL_RECORDING_ID, recordingId);
-                    values.put(COL_STATUS, "not_started"); // Default status
-                    values.put(COL_CHUNK_PATH, chunkPath);
-                    db.insert(TABLE_CHUNKS, null, values); // Insert each chunk
-                }
+                ContentValues values = new ContentValues();
+                values.put(COL_CHUNK_ID, uuid + chunkPath); // Generate unique chunk ID
+                values.put(COL_RECORDING_ID, recordingId);
+                values.put(COL_STATUS, "not_started"); // Default status
+                values.put(COL_CHUNK_PATH, chunkPath);
+                values.put(COL_TRANSCRIPTION,"-");
+                db.insert(TABLE_CHUNKS, null, values); // Insert each chunk
             }
-            db.setTransactionSuccessful(); // Commit transaction
+
+            db.setTransactionSuccessful();
+            db.endTransaction();// Commit transaction
             return true; // Return true if all chunks are processed successfully
         } catch (Exception e) {
-            Log.e("DBHelper", "Error in batch insertion: " + e.getMessage());
+            Log.e("chunk_path", "Error in batch insertion: " + e.getMessage());
             return false; // Return false if an error occurs
-        } finally {
-            db.endTransaction(); // End transaction
-            db.close();
         }
+
+
     }
+
 
 
 }

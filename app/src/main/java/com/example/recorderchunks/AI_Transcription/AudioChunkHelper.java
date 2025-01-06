@@ -49,6 +49,7 @@ public class AudioChunkHelper {
                     // String ffmpegLogs = FFmpeg.getLastCommandOutput();
                     if (rc == 0) {
                         chunkPaths.add(chunkFile.getAbsolutePath());
+                        Log.e("chunk_path",chunkFile.getAbsolutePath());
 
 
                     }
@@ -58,7 +59,8 @@ public class AudioChunkHelper {
                     }
                 }
                 else {
-                    chunkPaths.add("chunks already created");
+                    Log.e("chunk_path",chunkFile.getAbsolutePath());
+                    chunkPaths.add(chunkFile.getAbsolutePath());
                 }
 
 

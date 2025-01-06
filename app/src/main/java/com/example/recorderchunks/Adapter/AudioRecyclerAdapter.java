@@ -128,6 +128,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         if(audioItem.getIs_transcribed_api().equals("no"))
         {
+            Log.e("chunk_path","sending for chunking");
             List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
             transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
 
@@ -339,13 +340,21 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     }
 
     private void transcribe_and_chunkify_audio(List<String> chunkPaths, int recordingId, String uuid,AudioViewHolder holder,Recording audioitem) {
+        Log.e("chunk_path",chunkPaths.toString());
+
         boolean added_to_db =chunks_database_helper.addChunksBatch(chunkPaths,recordingId,uuid);
+        Log.e("chunk_path","trying to add to database :"+added_to_db);
+
         boolean allInProgress = true;
         if(added_to_db)
         {
             List<ChunkTranscription> chunks = chunks_database_helper.getChunksByRecordingId(recordingId);
+            Log.e("chunk_path",chunks.toString());
+
             for (ChunkTranscription chunkTranscription:chunks) {
                 String status=chunkTranscription.getTranscriptionStatus();
+                Log.e("chunk_path",chunkTranscription+","+status);
+
                 if(status.contains("not")||status.contains("started")||status.contains("not_started"))
                 {
                     allInProgress=false;
@@ -362,11 +371,24 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         if(allInProgress)
         {
-            get_transcription(recordingId);
+            get_transcription(recordingId,"dfghjk");
         }
     }
 
-    private void get_transcription(int recordingId) {
+    private void get_transcription(int recordingId,String unique_id) {
+        TranscriptionUtils.getTranscriptionStatus(unique_id, new TranscriptionUtils.TranscriptionStatusCallback() {
+            @Override
+            public void onTranscriptionStatusSuccess(String name, String status, int queuePosition) {
+                // Handle successful response
+                //if_ status is success then update transcription of chunk //call update chunk transcription and status
+            }
+
+            @Override
+            public void onTranscriptionStatusError(String errorMessage) {
+                // Handle error response
+
+            }
+        });
 
     }
 
@@ -377,28 +399,34 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         try {
             String fileExtension = AudioUtils.getFileExtension(chunkPath).toLowerCase();
             String[] supportedFormats = {"wav", "3gp", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
+            Log.e("chunk_path",chunkPath+" sending for transcription to server");
+
 
             if (Arrays.asList(supportedFormats).contains(fileExtension)) {
                 TranscriptionUtils.send_for_transcription(context,chunkPath, new TranscriptionUtils.TranscriptionCallback() {
                     @Override
                     public void onSuccess(String transcription) {
+
+                        /// condition for success ->update chunk_id status_to in_pgogress
                         holder.transcription_progress_api.setVisibility(View.GONE);
                         holder.Description_api.setText(transcription);
-                        databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),transcription);
+                        databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),"success : "+transcription);
                         audioItem.setIs_transcribed_api("yes");
-                        audioItem.setDescription_api(transcription);
+                        audioItem.setDescription_api("success : "+transcription);
 
                     }
 
                     @Override
                     public void onError(String errorMessage) {
+
+
                         holder.transcription_progress_api.setVisibility(View.GONE);
-                        holder.Description_api.setText(errorMessage.toString());
+                        holder.Description_api.setText("error "+errorMessage.toString());
                         audioItem.setDescription_api("error "+errorMessage.toString());
                         audioItem.setIs_transcribed_api("yes");
 
                     }
-                },"husdb"+audioItem.getRecordingId(),"hindi");
+                },chunkId,"hindi");
 
             }
             else {
@@ -411,6 +439,9 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         }catch (Exception e)
         {
+            Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+            holder.Description_api.setText("error "+e.getMessage());
+
             //  Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
 
