@@ -96,4 +96,8 @@ public class Notes_Database_Helper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         return db.delete(TABLE_NAME, COLUMN_NOTE_ID + " = ?", new String[]{String.valueOf(noteId)});
     }
+    public int deleteNotebyevent_id(int eventid) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(TABLE_NAME, COLUMN_NOTE_ID + " = ?", new String[]{String.valueOf(eventid)});
+    }
 }

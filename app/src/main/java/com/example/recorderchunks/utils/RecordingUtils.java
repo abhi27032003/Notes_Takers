@@ -1,7 +1,11 @@
 package com.example.recorderchunks.utils;
 
+import static android.content.Context.MODE_PRIVATE;
+import static com.example.recorderchunks.Activity.API_Updation.SELECTED_TRANSCRIPTION_METHOD;
+
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
@@ -32,6 +36,8 @@ public class RecordingUtils {
 
     public is_recording is_recording;
     private recording_language recordingLanguage;
+    private SharedPreferences sharedPreferences;
+
 
 
     public RecordingUtils(Context context,  RecordingCallback recordingCallback) {
@@ -41,6 +47,7 @@ public class RecordingUtils {
         this.recordingCallback = recordingCallback;
         this.recordingLanguage =new recording_language();
         this.is_recording=new is_recording();
+        sharedPreferences = context.getSharedPreferences("SelectedApi", MODE_PRIVATE);
 
 
     }
@@ -156,6 +163,7 @@ public class RecordingUtils {
             // Get next event ID
             int nextEventId = databaseHelper.getNextEventId();
             boolean isSaved;
+            String selectedModel = sharedPreferences.getString(SELECTED_TRANSCRIPTION_METHOD, "Local"); // Default to "Use ChatGPT"
 
             // Save recording in database
             String formattedDate = new SimpleDateFormat("dd/MM/yy 'at' HH:mm", Locale.getDefault()).format(new Date());
@@ -163,7 +171,7 @@ public class RecordingUtils {
                 isSaved = databaseHelper.insertRecording(
                         eventId,
                         formattedDate,
-                        description,
+                        selectedModel,
                         recordingName,
                         format,
                         String.valueOf(duration),
@@ -178,7 +186,7 @@ public class RecordingUtils {
                 isSaved = databaseHelper.insertRecording(
                         nextEventId,
                         formattedDate,
-                        description,
+                        selectedModel,
                         recordingName,
                         format,
                         String.valueOf(duration),

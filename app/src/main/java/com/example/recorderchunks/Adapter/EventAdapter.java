@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.recorderchunks.Background_Allow.Add_notes_Fragment;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
+import com.example.recorderchunks.Helpeerclasses.Notes_Database_Helper;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.R;
@@ -109,6 +110,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
                             DatabaseHelper db=new DatabaseHelper(context);
                             db.deleteEvent(event.getId());
                             db.deleteRecording(event.getId());
+                            Notes_Database_Helper ndh=new Notes_Database_Helper(context);
+                            ndh.deleteNotebyevent_id(event.getId());
                             Toast.makeText(context,"Event Deleted Successfully..",Toast.LENGTH_LONG).show();
                             try {
                                 if (position != RecyclerView.NO_POSITION) { // Ensure position is valid

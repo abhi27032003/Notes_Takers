@@ -1,10 +1,12 @@
 package com.example.recorderchunks.Activity;
 
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.MenuItem;
@@ -23,9 +25,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.example.recorderchunks.Audio_Models.ModelDownloader;
 import com.example.recorderchunks.Audio_Models.ModelMetadata;
 import com.example.recorderchunks.Background_Allow.Show_Add_notes_Activity;
 import com.example.recorderchunks.Helpeerclasses.LocaleHelper;
+import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
 import com.example.recorderchunks.R;
 
 import org.json.JSONArray;
@@ -47,16 +51,21 @@ public class API_Updation extends AppCompatActivity {
     public static final String KEY_GEMINI = "GeminiApiKey";
     public static final String SELECTED_LANGUAGE = "SelectedLanguage";
     public static final String SELECTED_APP_LANGUAGE = "SelectedappLanguage";
+    TextView Gemini_t,Chatgpt_t,Local_t,Server_t,selected_api;
 
 
     public static final String KEY_SELECTED_API = "SelectedApi";
+    public static final String SELECTED_TRANSCRIPTION_METHOD = "SelectedTranscriptionMethod";
 
     private SharedPreferences sharedPreferences;
     private Spinner languageSpinner,applanguagespinner;
-    Switch api_switch;
+    Switch api_switch,model_switch;
 
     TextView uuid_text,signature_text;
     ImageView uuid_image, signature_image;
+    Model_Database_Helper modelDatabaseHelper;
+
+    int i=0;
 
 
     @Override
@@ -66,7 +75,15 @@ public class API_Updation extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.appBar);
         setSupportActionBar(toolbar);
         api_switch=findViewById(R.id.api_switch);
+        Chatgpt_t=findViewById(R.id.Chat);
+        Gemini_t=findViewById(R.id.Gem);
+
+        Local_t=findViewById(R.id.Loc);
+        Server_t=findViewById(R.id.Ser);
+        selected_api=findViewById(R.id.selected_api);
+
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        modelDatabaseHelper=new Model_Database_Helper(API_Updation.this);
 
         languageSpinner = findViewById(R.id.language_spinner);
         applanguagespinner=findViewById(R.id.app_language_spinner);
@@ -77,7 +94,7 @@ public class API_Updation extends AppCompatActivity {
                 "Hindi",
                 "Spanish"
         };
-
+        model_switch=findViewById(R.id.transcription_switch);
         // Create an ArrayAdapter using the language list
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 this,
@@ -86,6 +103,7 @@ public class API_Updation extends AppCompatActivity {
         );
         String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, "English");  // Default value is null
         String savedAppLanguage = sharedPreferences.getString(SELECTED_APP_LANGUAGE, "English");
+        String savedTranscriptionMethod = sharedPreferences.getString(SELECTED_TRANSCRIPTION_METHOD, "Local");
 
 
         // Set the layout for dropdown items
@@ -101,11 +119,79 @@ public class API_Updation extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 // Get the selected language
-                String selectedLanguage = languages[position];
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString(SELECTED_LANGUAGE, selectedLanguage);
-                editor.apply();
-                startModelDownload(selectedLanguage);
+                if(i!=0)
+                {
+                    String selectedLanguage = languages[position];
+                    if(ModelDownloader.isModeldownloading())
+                    {
+                        new AlertDialog.Builder(API_Updation.this)
+                                .setTitle("Change Language")
+                                .setMessage("A Language is currently downloading. If you change the language, the download will stop. Do you want to continue?")
+                                .setPositiveButton("Yes", (dialog, which) -> {
+                                    ModelDownloader.cancelDownload();
+                                    if(modelDatabaseHelper.checkModelDownloadedByLanguage(selectedLanguage))
+                                    {
+                                       // Toast.makeText(API_Updation.this, "Model Downloaded", Toast.LENGTH_SHORT).show();
+                                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                                        editor.putString(SELECTED_LANGUAGE, selectedLanguage);
+                                        editor.apply();
+
+                                    }
+                                    else
+                                    {
+                                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                                        editor.putString(SELECTED_LANGUAGE, selectedLanguage);
+                                        editor.apply();
+                                        startModelDownload(selectedLanguage);
+
+                                    }
+
+                                })
+                                .setNegativeButton("No", (dialog, which) ->
+                                        {
+                                            String sl = sharedPreferences.getString(SELECTED_LANGUAGE, "English");  // Default value is null
+                                            if (sl != null) {
+                                                for (int i = 0; i < languages.length; i++) {
+                                                    if (languages[i].equals(savedLanguage)) {
+                                                        languageSpinner.setSelection(i);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            i=0;
+                                            dialog.dismiss();
+                                        }
+
+                                )
+
+
+                                .show();
+                      //  Toast.makeText(API_Updation.this, "One model is already getting downloaded", Toast.LENGTH_SHORT).show();
+                    }
+                    else
+                    {
+                        if(modelDatabaseHelper.checkModelDownloadedByLanguage(selectedLanguage))
+                        {
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString(SELECTED_LANGUAGE, selectedLanguage);
+                            editor.apply();
+                          //  Toast.makeText(API_Updation.this, "Model Downloaded", Toast.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString(SELECTED_LANGUAGE, selectedLanguage);
+                            editor.apply();
+                            startModelDownload(selectedLanguage);
+                        }
+                    }
+                }
+                else
+                {
+                    i=1;
+                }
+
+
 
 
             }
@@ -125,12 +211,6 @@ public class API_Updation extends AppCompatActivity {
                 editor.apply();
                 String localeCode = getLocaleCode(selectedAppLanguage);
                 LocaleHelper.setLocale(API_Updation.this, localeCode);
-                if(Show_Add_notes_Activity.reload<=0)
-                {
-                    recreate();
-                    Show_Add_notes_Activity.reload=10;
-                }
-
 
                 // Handle app language selection (you can add functionality here)
             }
@@ -160,9 +240,6 @@ public class API_Updation extends AppCompatActivity {
                 }
             }
         }
-        Show_Add_notes_Activity.reload=10;
-
-        // Enable back button in toolbar
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
@@ -181,6 +258,7 @@ public class API_Updation extends AppCompatActivity {
         manage_prompt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                saveData();
 
                 Intent i=new Intent(API_Updation.this, Manage_Prompt.class);
                 startActivity(i);
@@ -214,6 +292,37 @@ public class API_Updation extends AppCompatActivity {
             }
         });
 
+        //accordian feature for api keys
+        LinearLayout accordionContent_api = findViewById(R.id.accordion_content_api);
+        TextView accordionToggle_api = findViewById(R.id.accordion_toggle_api);
+        ImageView expandIcon_api = findViewById(R.id.expand_icon_api);
+        expandIcon_api.setOnClickListener(v -> {
+            if (accordionContent_api.getVisibility() == View.GONE) {
+                accordionContent_api.setVisibility(View.VISIBLE);
+                accordionToggle_api.setText(getString(R.string.hide_api_details));
+                expandIcon_api.setImageResource(R.mipmap.collapse); // Update icon for collapse
+            } else {
+                accordionContent_api.setVisibility(View.GONE);
+                accordionToggle_api.setText(getString(R.string.show_api_details));
+                expandIcon_api.setImageResource(R.mipmap.expand); // Update icon for expand
+            }
+        });
+        accordionToggle_api.setOnClickListener(v -> {
+
+            if (accordionContent_api.getVisibility() == View.GONE) {
+                accordionContent_api.setVisibility(View.VISIBLE);
+                accordionToggle_api.setText(getString(R.string.hide_api_details));
+                expandIcon_api.setImageResource(R.mipmap.collapse); // Update icon for collapse
+            } else {
+                accordionContent_api.setVisibility(View.GONE);
+                accordionToggle_api.setText(getString(R.string.show_api_details));
+                expandIcon_api.setImageResource(R.mipmap.expand); // Update icon for expand
+            }
+        });
+
+
+
+
         // Load saved data if available
         loadSavedData();
         displayUuidAndSignature();
@@ -237,8 +346,10 @@ public class API_Updation extends AppCompatActivity {
             // Use a switch statement to handle the state
             if (isChecked) {
                 selectedApi = "use ChatGpt"; // API when the switch is ON
+                chatgptselected();
             } else {
                 selectedApi = "use Gemini Ai"; // API when the switch is OFF
+                geminiselected();
             }
 
             // Save the selected API to SharedPreferences
@@ -249,19 +360,40 @@ public class API_Updation extends AppCompatActivity {
             // Optional: Show a Toast message
             Toast.makeText(this, "Selected API: " + selectedApi, Toast.LENGTH_SHORT).show();
         });
+        model_switch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            String selectedmodel="";
+
+            // Use a switch statement to handle the state
+            if (isChecked) {
+                selectedmodel = "Server"; // API when the switch is ON
+                Serversideselected();
+            } else {
+                selectedmodel = "Local"; // API when the switch is OFF
+                LocalSideSelected();
+            }
+
+            // Save the selected API to SharedPreferences
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(SELECTED_TRANSCRIPTION_METHOD, selectedmodel);
+            editor.apply();
+
+            // Optional: Show a Toast message
+            Toast.makeText(this, "Selected Model: " + selectedmodel, Toast.LENGTH_SHORT).show();
+        });
+
     }
     private void startModelDownload(String selectedLanguage) {
         // Start downloading the model in the background
         new Thread(() -> {
             try {
                 // Call the download method for the selected language
-                //ModelDownloader.downloadModel(API_Updation.this, selectedLanguage);
+                ModelDownloader.downloadModelFast(API_Updation.this, selectedLanguage,modelDatabaseHelper.getModelDownloadLinkByLanguage(selectedLanguage));
 
                 // Once the model is downloaded, set up the model (assuming the model setup happens here)
                 //setupModelForLanguage(selectedLanguage);
             } catch (Exception e) {
                 e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(API_Updation.this, "Error downloading model", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(API_Updation.this, "Error downloading model"+e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
@@ -308,35 +440,72 @@ public class API_Updation extends AppCompatActivity {
     private void loadSavedData() {
         String chatGptApi = sharedPreferences.getString(KEY_CHATGPT, "");
         String geminiApi = sharedPreferences.getString(KEY_GEMINI, "");
-        String selectedApi = sharedPreferences.getString(KEY_SELECTED_API, "Use ChatGPT"); // Default to "Use ChatGPT"
+        String selectedApi = sharedPreferences.getString(KEY_SELECTED_API, "use Gemini Ai"); // Default to "Use ChatGPT"
+        String selectedModel = sharedPreferences.getString(SELECTED_TRANSCRIPTION_METHOD, "Local"); // Default to "Use ChatGPT"
 
         if (!TextUtils.isEmpty(chatGptApi)) etChatGptApi.setText(chatGptApi);
         if (!TextUtils.isEmpty(geminiApi)) etGeminiApi.setText(geminiApi);
 
         // Set the toggle button state based on the saved API selection
         if ("use ChatGpt".equalsIgnoreCase(selectedApi)) {
-           api_switch.setChecked(true); // Assuming btn1 is for ChatGPT
+           api_switch.setChecked(true);
+           chatgptselected();
+
         } else if ("use Gemini Ai".equalsIgnoreCase(selectedApi)) {
             api_switch.setChecked(false); // Assuming btn1 is for ChatGPT
+            geminiselected();
         }
         else
         {
             api_switch.setChecked(false); // Assuming btn1 is for ChatGPT
+            geminiselected();
+
+        }
+        if ("Server".equalsIgnoreCase(selectedModel)) {
+            model_switch.setChecked(true); // Assuming btn1 is for ChatGPT
+            Serversideselected();
+        } else if ("Local".equalsIgnoreCase(selectedModel)) {
+            model_switch.setChecked(false); // Assuming btn1 is for ChatGPT
+            LocalSideSelected();
+        }
+        else
+        {
+            model_switch.setChecked(false); // Assuming btn1 is for ChatGPT
 
         }
 
-       // Toast.makeText(this, "Loaded saved data", Toast.LENGTH_SHORT).show();
+
+        // Toast.makeText(this, "Loaded saved data", Toast.LENGTH_SHORT).show();
+    }
+    private void chatgptselected()
+    {
+        Chatgpt_t.setTypeface(null, Typeface.BOLD);
+        Gemini_t.setTypeface(null, Typeface.NORMAL);
+        selected_api.setText("ChatGpt");
+
+    }
+    private void geminiselected()
+    {
+        Chatgpt_t.setTypeface(null, Typeface.NORMAL);
+        Gemini_t.setTypeface(null, Typeface.BOLD);
+        selected_api.setText("Gemini");
+
+    }
+    private void Serversideselected()
+    {
+        Local_t.setTypeface(null, Typeface.NORMAL);
+        Server_t.setTypeface(null, Typeface.BOLD);
+    }
+    private  void LocalSideSelected()
+    {
+        Server_t.setTypeface(null, Typeface.NORMAL);
+        Local_t.setTypeface(null, Typeface.BOLD);
     }
 
     private void saveData() {
         String chatGptApi = etChatGptApi.getText().toString().trim();
         String geminiApi = etGeminiApi.getText().toString().trim();
        // String selected_api= etPrompt.getText().toString().trim();
-
-        if (TextUtils.isEmpty(chatGptApi) || TextUtils.isEmpty(geminiApi) ) {
-            Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_CHATGPT, chatGptApi);
@@ -377,6 +546,7 @@ public class API_Updation extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        saveData();
         Intent i=new Intent(API_Updation.this,Show_Add_notes_Activity.class);
         startActivity(i);
         super.onBackPressed();
@@ -385,6 +555,7 @@ public class API_Updation extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
+            saveData();
             onBackPressed();
             return true;
         }

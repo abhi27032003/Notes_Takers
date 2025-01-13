@@ -62,7 +62,7 @@ public class Prompt_Database_Helper extends SQLiteOpenHelper {
     }
     public String[] getAllPromptTexts() {
         SQLiteDatabase db = this.getReadableDatabase();
-        String query = "SELECT " + COLUMN_TEXT + " FROM " + TABLE_PROMPTS;
+        String query = "SELECT " + COLUMN_NAME + " FROM " + TABLE_PROMPTS;
         Cursor cursor = db.rawQuery(query, null);
 
         // Create a list to store the prompt texts
@@ -70,7 +70,7 @@ public class Prompt_Database_Helper extends SQLiteOpenHelper {
 
         if (cursor.moveToFirst()) {
             do {
-                String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
+                String text = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME));
                 promptTexts.add(text);
             } while (cursor.moveToNext());
         }
@@ -158,6 +158,32 @@ public class Prompt_Database_Helper extends SQLiteOpenHelper {
         cursor.close();
         return promptList;
     }
+    // Get the prompt text by prompt name
+    public String getPromptTextByName(String name) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String promptText = null;
+
+        // Query to fetch the prompt text based on the name
+        Cursor cursor = db.query(
+                TABLE_PROMPTS,                      // Table name
+                new String[]{COLUMN_TEXT},          // Columns to fetch
+                COLUMN_NAME + " = ?",               // WHERE clause
+                new String[]{name},                 // WHERE arguments
+                null,                               // Group by
+                null,                               // Having
+                null                                // Order by
+        );
+
+        if (cursor != null && cursor.moveToFirst()) {
+            // Get the prompt text from the cursor
+            promptText = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEXT));
+            cursor.close();
+        }
+
+        db.close();
+        return promptText;
+    }
+
 
     // Prompt class to represent a single prompt entry
 

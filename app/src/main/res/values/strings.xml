@@ -1,6 +1,6 @@
 <resources>
     <string name="brand_name">VIP Research Group</string>
-    <string name="app_name">Notes Takers</string>
+    <string name="app_name">NoteTakers</string>
     <string name="update_details">Update Details</string>
     <string name="chatgpt_api_key">ChatGpt API Key</string>
     <string name="gemini_api_key">Gemini API Key</string>
@@ -50,5 +50,17 @@
     <string name="app_language">App Language</string>
     <string name="read_more">Read More</string>
     <string name="read_less">Read Less</string>
+    <string name="transcription">Transcription</string>
+    <string name="update_transcription">Update The Transcription</string>
+    <string name="hide_api_details">Hide API Details</string>
+    <string name="show_api_details">Show API Details</string>
+    <string name="basic_setting">Basic Setting</string>
+    <string name="transcription_setting">Transcription Setting</string>
+    <string name="notes_api">Notes API</string>
+    <string name="transcription_mode">Transcription Mode</string>
+    <string name="local">Local</string>
+    <string name="server">Server</string>
+    <string name="api_selected">API Selected</string>
+
 
 </resources>

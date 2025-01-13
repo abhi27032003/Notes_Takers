@@ -3,6 +3,7 @@ package com.example.recorderchunks.Audio_Models;
 import android.content.Context;
 import android.widget.Toast;
 
+import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
 import com.example.recorderchunks.utils.ZipUtils;
 
 import org.json.JSONException;
@@ -14,6 +15,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Vosk_Model {
 
@@ -37,54 +41,75 @@ public class Vosk_Model {
     }
 
     //initialize vosk model -> ensure that model is already extracted in folder -> load vosk model
-    public static void initializeVoskModel(Context context) {
-        try {
-            setupModel(context);
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    public static void initializeVoskModel(Context context, String modelName, Runnable onComplete) {
+        executorService.execute(() -> {
             try {
-
-                File modelDir = new File(context.getExternalFilesDir(null), "vosk-model/vosk-model-small-en-in-0.4");
+                File modelDir = new File(context.getExternalFilesDir(null), "models/" + modelName);
                 voskModel = new Model(modelDir.getPath());
-            }
-            catch (Exception e)
-            {
-                Toast.makeText(context,e.getMessage(),Toast.LENGTH_LONG).show();
-            }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(context, "Vosk model failed to load", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    //recognize speech from wav file
-    public static String recognizeSpeech(String wavFilePath) {
-
-        try (FileInputStream fis = new FileInputStream(wavFilePath)) {
-            Recognizer recognizer = new Recognizer(voskModel, 16000);
-            byte[] buffer = new byte[4000]; // Try doubling the size
-            int bytesRead;
-
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                if (recognizer.acceptWaveForm(buffer, bytesRead)) {
-
-                } else {
+                if (onComplete != null) {
+                    onComplete.run(); // Notify success
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(context, "Failed to load Vosk model: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
-            String transcription=extractTextFromResult(recognizer.getFinalResult());
-
-
-
-
-            return transcription;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-
-        }
-        return "Unable to save Transcription";
+        });
     }
 
-    //extract text from vosk transcription json
+    /**
+     * Recognizes speech from a WAV file after ensuring the Vosk model is loaded.
+     * This method waits for the model initialization before proceeding.
+     */
+    public static String recognizeSpeech(Context context, String wavFilePath, String language) {
+
+        Model_Database_Helper modelDatabaseHelper = new Model_Database_Helper(context);
+        String modelName = modelDatabaseHelper.getModelNameByLanguage(language);
+        if(modelDatabaseHelper.checkModelDownloadedByLanguage(language))
+        {
+            CountDownLatch latch = new CountDownLatch(1);
+
+            initializeVoskModel(context, modelName, latch::countDown);
+
+            try {
+                latch.await(); // Wait for model initialization
+
+                if (voskModel == null) {
+                    return "Model initialization failed.";
+                }
+
+                try (FileInputStream fis = new FileInputStream(wavFilePath)) {
+                    Recognizer recognizer = new Recognizer(voskModel, 16000);
+                    byte[] buffer = new byte[4000];
+                    int bytesRead;
+
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        recognizer.acceptWaveForm(buffer, bytesRead);
+                    }
+
+                    return extractTextFromResult(recognizer.getFinalResult());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return "Error during speech recognition.";
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return "Model initialization was interrupted.";
+            }
+        }
+        else
+        {
+            return "Local Model for "+language+" is not available";
+        }
+
+
+    }
+
+    /**
+     * Extracts text from the JSON result of the Vosk recognizer.
+     */
     public static String extractTextFromResult(String jsonResult) {
         try {
             JSONObject result = new JSONObject(jsonResult);
@@ -94,7 +119,4 @@ public class Vosk_Model {
             return "";
         }
     }
-
-
-
 }

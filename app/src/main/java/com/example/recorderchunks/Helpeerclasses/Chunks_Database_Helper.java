@@ -59,8 +59,19 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COL_STATUS, status);
-        db.update(TABLE_CHUNKS, values, COL_CHUNK_ID + " = ?", new String[]{chunkId});
+
+        // Update the database
+        int rowsAffected = db.update(TABLE_CHUNKS, values, COL_CHUNK_ID + " = ?", new String[]{chunkId});
+
+        // Log the result
+        if (rowsAffected > 0) {
+            Log.d("DatabaseUpdate", "Status updated to '" + status + "' for chunk ID: " + chunkId);
+        } else {
+            Log.e("DatabaseUpdate", "Failed to update status for chunk ID: " + chunkId);
+        }
+        db.close();
     }
+
 
     public void updateChunkTranscription(String chunkId, String transcription) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -68,6 +79,7 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
         values.put(COL_TRANSCRIPTION, transcription);
         values.put(COL_STATUS, "done");
         db.update(TABLE_CHUNKS, values, COL_CHUNK_ID + " = ?", new String[]{chunkId});
+        db.close();
     }
 
     public ChunkTranscription getChunkById(String chunkId) {
@@ -84,6 +96,7 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
             cursor.close();
             return chunk;
         }
+        db.close();
         return null;
     }
 
@@ -104,14 +117,36 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
         cursor.close();
+        db.close();
         return chunks;
+    }
+    public void logAllChunks() {
+        List<ChunkTranscription> chunks = getAllChunks(); // Retrieve all chunks from the database
+
+        if (chunks.isEmpty()) {
+            Log.d("ChunkTable", "No chunks found in the database.");
+        } else {
+            for (ChunkTranscription chunk : chunks) {
+                Log.d("ChunkTable",
+                        "Chunk ID: " + chunk.getChunkId() +
+                                ", Recording ID: " + chunk.getRecordingId() +
+                                ", Status: " + chunk.getTranscriptionStatus() +
+                                ", Transcription: " + chunk.getTranscription() +
+                                ", Path: " + chunk.getChunkPath());
+            }
+        }
     }
 
     // New: Get all chunks by recording ID
     public List<ChunkTranscription> getChunksByRecordingId(int recordingId) {
         List<ChunkTranscription> chunks = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_CHUNKS, null, COL_RECORDING_ID + " = ?", new String[]{String.valueOf(recordingId)}, null, null, null);
+        Log.d("getChunksByRecordingId", "Querying for recording ID: " + recordingId);
+
+        Cursor cursor = db.query(TABLE_CHUNKS, null, COL_RECORDING_ID + " = ?",
+                new String[]{String.valueOf(recordingId)}, null, null, null);
+
+        Log.d("getChunksByRecordingId", "Cursor count: " + cursor.getCount());
 
         if (cursor.moveToFirst()) {
             do {
@@ -122,10 +157,15 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
                 chunk.setTranscription(cursor.getString(cursor.getColumnIndexOrThrow(COL_TRANSCRIPTION)));
                 chunk.setChunkPath(cursor.getString(cursor.getColumnIndexOrThrow(COL_CHUNK_PATH)));
                 chunks.add(chunk);
+
+                // Log each chunk
+                Log.d("getChunksByRecordingId", "Retrieved chunk: " + chunk.getChunkId());
             } while (cursor.moveToNext());
+        } else {
+            Log.d("getChunksByRecordingId", "No chunks found for recording ID: " + recordingId);
         }
+
         cursor.close();
-        Log.e("chunk_path","get chunks by recording id");
         return chunks;
     }
 
@@ -133,20 +173,13 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
     public void deleteChunksByRecordingId(int recordingId) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_CHUNKS, COL_RECORDING_ID + " = ?", new String[]{String.valueOf(recordingId)});
+        db.close();
     }
 
     public boolean addChunksBatch(List<String> chunkPaths, int recordingId, String uuid) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.beginTransaction(); // Start transaction
         try {
-            // Step 1: Delete all chunks associated with the recordingId
-            int rowsDeleted = db.delete(
-                    TABLE_CHUNKS,
-                    COL_RECORDING_ID + " = ?",
-                    new String[]{String.valueOf(recordingId)}
-            );
-            Log.d("chunk_path", "Deleted " + rowsDeleted + " chunks for recording ID: " + recordingId);
-
             // Step 2: Insert new chunks
             for (String chunkPath : chunkPaths) {
                 if (chunkPath.contains("chunks already created") || chunkPath.equals("chunks already created")) {
@@ -154,24 +187,77 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
                     continue;
                 }
 
+                String chunkId = uuid + chunkPath; // Generate unique chunk ID
+
+                // Check if chunk_id already exists
+                Cursor cursor = db.query(
+                        TABLE_CHUNKS,
+                        new String[]{COL_CHUNK_ID},
+                        COL_CHUNK_ID + " = ?",
+                        new String[]{chunkId},
+                        null, null, null
+                );
+
+                if (cursor != null && cursor.getCount() > 0) {
+                    // Chunk ID already exists, skip insertion
+                    Log.d("chunk_path", "Chunk ID already exists, skipping: " + chunkId);
+                    cursor.close();
+                    continue;
+                }
+
+                if (cursor != null) {
+                    cursor.close();
+                }
+
+                // Insert new chunk
                 ContentValues values = new ContentValues();
-                values.put(COL_CHUNK_ID, uuid + chunkPath); // Generate unique chunk ID
+                values.put(COL_CHUNK_ID, chunkId); // Unique chunk ID
                 values.put(COL_RECORDING_ID, recordingId);
                 values.put(COL_STATUS, "not_started"); // Default status
                 values.put(COL_CHUNK_PATH, chunkPath);
-                values.put(COL_TRANSCRIPTION,"-");
-                db.insert(TABLE_CHUNKS, null, values); // Insert each chunk
+                values.put(COL_TRANSCRIPTION, "-");
+                db.insert(TABLE_CHUNKS, null, values); // Insert chunk
+                Log.d("chunk_path", "Inserted new chunk: " + chunkId);
             }
 
-            db.setTransactionSuccessful();
-            db.endTransaction();// Commit transaction
+            db.setTransactionSuccessful(); // Commit transaction
             return true; // Return true if all chunks are processed successfully
         } catch (Exception e) {
             Log.e("chunk_path", "Error in batch insertion: " + e.getMessage());
             return false; // Return false if an error occurs
+        } finally {
+            db.endTransaction(); // Ensure transaction ends
+            db.close(); // Close the database
+        }
+    }
+    public int getChunksCountByRecordingIdAndStatus(int recordingId, String status) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT COUNT(*) FROM " + TABLE_CHUNKS +
+                " WHERE " + COL_RECORDING_ID + " = ? AND " + COL_STATUS + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(recordingId), status});
+        int count = 0;
+
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
         }
 
+        db.close();
+        return count;
+    }
+    public int getTotalChunksByRecordingId(int recordingId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT COUNT(*) FROM " + TABLE_CHUNKS + " WHERE " + COL_RECORDING_ID + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(recordingId)});
+        int totalChunks = 0;
 
+        if (cursor != null && cursor.moveToFirst()) {
+            totalChunks = cursor.getInt(0);
+            cursor.close();
+        }
+
+        db.close();
+        return totalChunks;
     }
 
 

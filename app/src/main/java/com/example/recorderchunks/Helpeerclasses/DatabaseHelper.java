@@ -240,7 +240,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result > 0;
     }
 
-    public boolean insertRecording(int eventId,String d_and_t, String description,String name, String format, String length, String url, boolean isRecorded,String is_transcribed,String description_api,String is_transcriptes_api,String language) {
+    public boolean insertRecording(int eventId,String d_and_t, String transcription_method,String name, String format, String length, String url, boolean isRecorded,String is_transcribed,String description_api,String is_transcriptes_api,String language) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COL_EVENT_ID, eventId);
@@ -249,7 +249,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_LENGTH, length);
         values.put(COL_URL, url);
         values.put(COL_DATE, d_and_t);
-        values.put(COL_DES, description);
+        values.put(COL_DES, transcription_method);
 
 
         values.put(COL_IS_RECORDED, isRecorded ? 1 : 0);

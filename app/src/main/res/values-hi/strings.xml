@@ -1,6 +1,6 @@
 <resources>
     <string name="brand_name">वीआईपी रिसर्च ग्रुप</string>
-    <string name="app_name">Notes Takers</string>
+    <string name="app_name">NoteTakers</string>
     <string name="update_details">विवरण अपडेट करें</string>
     <string name="chatgpt_api_key">ChatGpt एपीआई कुंजी</string>
     <string name="gemini_api_key">Gemini एपीआई कुंजी</string>
@@ -51,6 +51,17 @@
     <string name="app_language">ऐप भाषा</string>
     <string name="read_less">कम पढ़ें</string>
     <string name="read_more">अधिक पढ़ें</string>
+    <string name="transcription">प्रतिलिपि</string>
+    <string name="update_transcription">प्रतिलिपि को अपडेट करें</string>
+    <string name="hide_api_details">एपीआई विवरण छुपाएं</string>
+    <string name="show_api_details">एपीआई विवरण दिखाएं</string>
+    <string name="basic_setting">मूल सेटिंग</string>
+    <string name="transcription_setting">प्रतिलिपि सेटिंग</string>
+    <string name="notes_api">नोट्स एपीआई</string>
+    <string name="transcription_mode">प्रतिलिपि मोड</string>
+    <string name="local">स्थानीय</string>
+    <string name="server">सर्वर</string>
+    <string name="api_selected">एपीआई चयनित</string>
 
 
 </resources>

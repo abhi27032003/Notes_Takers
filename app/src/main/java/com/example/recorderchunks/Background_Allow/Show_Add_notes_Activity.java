@@ -1,5 +1,7 @@
 package com.example.recorderchunks.Background_Allow;
 
+import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -22,8 +24,15 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.recorderchunks.Activity.API_Updation;
+import com.example.recorderchunks.Activity.Manage_Prompt;
 import com.example.recorderchunks.Adapter.OnBackPressedListener;
+import com.example.recorderchunks.Adapter.PromptAdapter;
+import com.example.recorderchunks.Audio_Models.ModelDownloader;
+import com.example.recorderchunks.Audio_Models.Vosk_Model;
 import com.example.recorderchunks.Helpeerclasses.LocaleHelper;
+import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
+import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
+import com.example.recorderchunks.Model_Class.Prompt;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.BuildUtils;
 import com.yariksoffice.lingver.Lingver;
@@ -31,7 +40,9 @@ import com.yariksoffice.lingver.Lingver;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Show_Add_notes_Activity extends AppCompatActivity {
@@ -44,10 +55,13 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.FOREGROUND_SERVICE,              // For foreground services
             Manifest.permission.POST_NOTIFICATIONS,
-            Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION
+            Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION,
+            Manifest.permission.WAKE_LOCK
 
     };
     public static final String SELECTED_APP_LANGUAGE = "SelectedappLanguage";
+    public static final String IS_PROMPT_SAVED = "Is_Prompt_saved";
+    public static final String SELECTED_LANGUAGE = "SelectedLanguage";
     private static final String PREF_NAME = "ApiKeysPref";
     private SharedPreferences sharedPreferences;
     private ActivityResultLauncher<String[]> permissionLauncher;
@@ -59,6 +73,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         //////
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         String savedAppLanguage = sharedPreferences.getString(SELECTED_APP_LANGUAGE, "English");
+        String isprompt_saved=sharedPreferences.getString(IS_PROMPT_SAVED, "no");
         String localeCode = getLocaleCode(savedAppLanguage);
         LocaleHelper.setLocale(Show_Add_notes_Activity.this, localeCode);
 
@@ -76,12 +91,58 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                 }
         );
 
+        //if default prompt not saved then save them else not
+        if(isprompt_saved.contains("no"))
+        {
+            add_prompt("General Meeting Notes","Summarize the key points discussed during today's meeting, highlighting any important decisions made, assigned action items with responsible individuals, and the next steps to be taken");
+            add_prompt("Lecture Notes","identify the key points, main arguments, and central theme presented by the lecturer, then rephrase them concisely in your own words, ensuring you capture the essential information without unnecessary details; this can be done by focusing on the most important concepts and supporting evidence discussed during the lecture");
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(IS_PROMPT_SAVED, "yes");
+            editor.apply();
+            //Toast.makeText(this, "Notes Saved", Toast.LENGTH_SHORT).show();
+
+        }
+        else
+        {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(IS_PROMPT_SAVED, "yes");
+            editor.apply();
+          //  Toast.makeText(this, "Notes not Saved", Toast.LENGTH_SHORT).show();
+
+
+        }
+
         // Check and request permissions
         checkAndRequestPermissions();
         getUid();
-
         // Set the default fragment
         setFragment(new Show_Notes_Fragment());
+        check_saved_model_download();
+    }
+
+    private void check_saved_model_download() {
+        Model_Database_Helper modelDatabaseHelper=new Model_Database_Helper(Show_Add_notes_Activity.this);
+        String savedModelLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, "English");
+
+
+        if(modelDatabaseHelper.checkModelDownloadedByLanguage(savedModelLanguage))
+        {
+           // Vosk_Model.initializeVoskModel(Show_Add_notes_Activity.this,modelDatabaseHelper.getModelNameByLanguage(savedModelLanguage));
+
+
+
+        }
+        else
+        {
+            if(!ModelDownloader.isModeldownloading())
+            {
+                startModelDownload(savedModelLanguage,modelDatabaseHelper);
+
+
+            }
+
+        }
+
     }
 
     private void checkAndRequestPermissions() {
@@ -182,7 +243,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
             public void onErrorResponse(VolleyError error) {
                 // Handle errors that occur during the network request
                 Log.w("_DEBUG_ error", error.getCause());
-                Toast.makeText(Show_Add_notes_Activity.this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(Show_Add_notes_Activity.this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -248,6 +309,21 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                 return "en"; // Default to English if no match
         }
     }
+    public void add_prompt(String Title,String Text)
+    {
+
+
+        if (!Title.isEmpty() && !Text.isEmpty()) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy 'at' HH:mm");
+            String date= sdf.format(new Date());
+            Prompt_Database_Helper pdh=new Prompt_Database_Helper(Show_Add_notes_Activity.this);
+            pdh.addPrompt(Title,Text,date);
+
+
+
+        } else {
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -266,4 +342,20 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         LocaleHelper.setLocale(Show_Add_notes_Activity.this, localeCode);
         super.onRestart();
     }
+    private void startModelDownload(String selectedLanguage,Model_Database_Helper modelDatabaseHelper) {
+        // Start downloading the model in the background
+        new Thread(() -> {
+            try {
+                // Call the download method for the selected language
+                ModelDownloader.downloadModelFast(Show_Add_notes_Activity.this, selectedLanguage,modelDatabaseHelper.getModelDownloadLinkByLanguage(selectedLanguage));
+
+                // Once the model is downloaded, set up the model (assuming the model setup happens here)
+                //setupModelForLanguage(selectedLanguage);
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(Show_Add_notes_Activity.this, "Error downloading model"+e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
 }

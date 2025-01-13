@@ -1,6 +1,6 @@
 <resources>
     <string name="brand_name">Grupo de Investigación VIP</string>
-    <string name="app_name">Notes Takers</string>
+    <string name="app_name">NoteTakers</string>
     <string name="update_details">Actualizar detalles</string>
     <string name="chatgpt_api_key">Clave API de ChatGpt</string>
     <string name="gemini_api_key">Clave API de Gemini</string>
@@ -50,4 +50,16 @@
     <string name="app_language">Idioma de la aplicación</string>
     <string name="read_more">Leer más</string>
     <string name="read_less">Leer menos</string>
+    <string name="transcription">Transcripción</string>
+    <string name="update_transcription">Actualizar la transcripción</string>
+    <string name="hide_api_details">Ocultar detalles de la API</string>
+    <string name="show_api_details">Mostrar detalles de la API</string>
+    <string name="basic_setting">Configuración básica</string>
+    <string name="transcription_setting">Configuración de transcripción</string>
+    <string name="notes_api">API de notas</string>
+    <string name="transcription_mode">Modo de transcripción</string>
+    <string name="local">Local</string>
+    <string name="server">Servidor</string>
+    <string name="api_selected">API seleccionada</string>
+
 </resources>

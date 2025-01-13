@@ -12,6 +12,7 @@ import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -46,10 +47,14 @@ public class TranscriptionUtils {
 
     private static final String TAG = "TranscriptionUtils";
     private static final String SEND_TRANSCRIPTION_URL = "http://3.210.239.32/upload.php";
-    private static final String GET_TRANSCRIPTION_URL = "http://3.210.239.32/upload.php";
+    private static final String GET_TRANSCRIPTION_URL = "http://3.210.239.32/status.php";
 
     // Callback interface for handling success and failure
     public interface TranscriptionCallback {
+        void onSuccess(String transcription);
+        void onError(String errorMessage);
+    }
+    public interface Transcription_no_code_Callback {
         void onSuccess(String transcription);
         void onError(String errorMessage);
     }
@@ -65,6 +70,81 @@ public class TranscriptionUtils {
      * @param filePath The path to the audio file.
      * @param callback The callback to handle success or error.
      */
+    public static void send_for_transcription_no_uuid(Context context, String filePath, Transcription_no_code_Callback callback,String unique_id,String language) {
+        File audioFile = new File(filePath);
+
+        if (!audioFile.exists() || !audioFile.isFile()) {
+            if (callback != null) {
+                callback.onError("Invalid file path or file does not exist.");
+            }
+            return;
+        }
+
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS) // Set connection timeout
+                .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)   // Set write timeout (for file upload)
+                .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)    // Set read timeout (for server response)
+                .build();
+
+        // Create a request body with the audio file
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM) // Set the request type as form-data
+                .addFormDataPart(
+                        "audio_file",  // Key for the form field expected by the server
+                        audioFile.getName(), // The file's name
+                        RequestBody.create(audioFile, MediaType.parse("audio/*")) // File content with the correct MIME type
+                )
+                .addFormDataPart(
+                        "language", // Key for the additional parameter
+                        getLanguageCode(language) // Value of the additional parameter
+                )
+                .build();
+
+
+        // Build the request
+        Request request = new Request.Builder()
+                .url("https://notetakers.vipresearch.ca/App_Script/transcribe/transcribe.php")
+                .post(requestBody)
+                .build();
+
+        // Make the network request
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("NetworkError", "Request failed: " + e.getMessage(), e);
+                if (callback != null) {
+                    new Handler(Looper.getMainLooper()).post(() ->
+                            callback.onError("Network request failed: " + e.getMessage())
+                    );
+                }
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try {
+                    if (response.isSuccessful()) {
+                        String responseBody = response.body() != null ? response.body().string() : "";
+                        Log.d("ResponseSuccess", "Body: " + responseBody);
+                        new Handler(Looper.getMainLooper()).post(() ->
+                                callback.onSuccess(getTranscription(responseBody))
+                        );
+                    } else {
+                        String errorBody = response.body() != null ? response.body().string() : "No response body";
+                        Log.e("ServerError", "Code: " + response.code() + ", Message: " + response.message());
+                        new Handler(Looper.getMainLooper()).post(() ->
+                                callback.onError("Server error: " + response.message() + " - " + errorBody)
+                        );
+                    }
+                } catch (Exception e) {
+                    Log.e("ResponseError", "Error processing response: " + e.getMessage(), e);
+                    new Handler(Looper.getMainLooper()).post(() ->
+                            callback.onError("Error processing response: " + e.getMessage())
+                    );
+                }
+            }
+        });
+
+    }
     public static void send_for_transcription(Context context, String filePath, TranscriptionCallback callback,String unique_id,String language) {
         File audioFile = new File(filePath);
 
@@ -163,24 +243,9 @@ public class TranscriptionUtils {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    String responseBody = response.body() != null ? response.body().string() : "";
+                    callback.onTranscriptionStatusSuccess(response.body().string(), "status", 1);
 
-                    try {
-                        // Parse JSON response
-                        JSONObject jsonResponse = new JSONObject(responseBody);
-                        String name = jsonResponse.getString("name");
-                        String status = jsonResponse.getString("status");
-                        int queuePosition = jsonResponse.getInt("queue_position");
 
-                        // Call the callback with success data
-                        if (callback != null) {
-                            callback.onTranscriptionStatusSuccess(name, status, queuePosition);
-                        }
-                    } catch (Exception e) {
-                        if (callback != null) {
-                            callback.onTranscriptionStatusError("Failed to parse response: " + e.getMessage());
-                        }
-                    }
                 } else {
                     // Call the callback with an error
                     if (callback != null) {
@@ -189,6 +254,42 @@ public class TranscriptionUtils {
                 }
             }
         });
+    }
+    public static String getLanguageCode(String language) {
+        // Create a map for the 5 languages and their codes
+        HashMap<String, String> languageMap = new HashMap<>();
+        languageMap.put("English", "en");
+        languageMap.put("French", "fr");
+        languageMap.put("Chinese", "zh");
+        languageMap.put("Hindi", "hi");
+        languageMap.put("Spanish", "es");
+
+        // Return the code if it exists, otherwise return "Code not found"
+        return languageMap.getOrDefault(language, "Code not found");
+    }
+    public static String getTranscription(String jsonResponse) {
+        try {
+            // Parse the JSON response
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+
+            // Get the raw_output field
+            String rawOutput = jsonObject.optString("raw_output", "");
+
+            // Extract the transcription part from raw_output
+            if (!rawOutput.isEmpty()) {
+                int startIndex = rawOutput.indexOf("{\"transcription\":");
+                if (startIndex != -1) {
+                    String transcriptionJson = rawOutput.substring(startIndex);
+                    JSONObject transcriptionObject = new JSONObject(transcriptionJson);
+                    return transcriptionObject.optString("transcription", "No transcription found.");
+                }
+            }
+
+            return "Transcription not found in the raw output.";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error parsing JSON: " + e.getMessage();
+        }
     }
 
 }

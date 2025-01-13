@@ -1,6 +1,7 @@
 package com.example.recorderchunks.Adapter;
 
 import static android.provider.Settings.System.getString;
+import static androidx.core.content.ContextCompat.startActivity;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 import static com.example.recorderchunks.Activity.API_Updation.getLanguagesFromMetadata;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
@@ -8,7 +9,9 @@ import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,21 +26,25 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.jean.jcplayer.view.JcPlayerView;
 
 import com.example.recorderchunks.AI_Transcription.AudioChunkHelper;
 import com.example.recorderchunks.AI_Transcription.TranscriptionUtils;
+import com.example.recorderchunks.Activity.activity_text_display;
 import com.example.recorderchunks.Audio_Models.Vosk_Model;
 import com.example.recorderchunks.Helpeerclasses.Chunks_Database_Helper;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
+import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
 import com.example.recorderchunks.Model_Class.ChunkTranscription;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.R;
@@ -53,12 +60,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.AudioViewHolder> {
+    boolean allTranscriptionProgress = true;
+
     public static ArrayList<Recording> recordingList;
     private final Context context;
     private static MediaPlayer mediaPlayer;
     private static int currentPlayingPosition = -1;
     private static final Handler handler = new Handler();
     private static Runnable updateSeekBarRunnable;
+    private static boolean isExpanded = false;
+    private static boolean isExpanded2 = false;
     public static ArrayList<String> selectedItems;
     private static SharedPreferences sharedPreferences,sharedPreferences2;
     private static final String PREFS_NAME = "PromptSelectionPrefs";
@@ -68,6 +79,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     private Chunks_Database_Helper chunks_database_helper;
 
     Vosk_Model vm;
+    public static final String SELECTED_TRANSCRIPTION_METHOD = "SelectedTranscriptionMethod";
+
 
 
 
@@ -99,46 +112,65 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     @Override
     public void onBindViewHolder(@NonNull AudioViewHolder holder, int position) {
         holder.itemView.setFocusable(false);
-        Vosk_Model.initializeVoskModel(context);
         holder.playbackProgressBar.setFocusable(false);
 
         Recording audioItem = recordingList.get(position);
         loadSelectionState(audioItem.getEventId());
         /////////////////////////////////////////////////chunking and api calling logic
 
+        Transcribe_Local(audioItem,holder,position);
+        Transcribe_Server(audioItem,holder,position);
 
 
-        if(audioItem.getIs_transcribed().equals("no"))
+        //////////////////////////////////// transcrtoption method work
+        String defaultt_method= sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD, "Local");
+        String selectedModel = sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()),defaultt_method); // Default to "Use ChatGPT"
+        if ("Server".equalsIgnoreCase(selectedModel)) {
+            holder.model_switch.setChecked(true); // Assuming btn1 is for ChatGPT
+            Serversideselected(holder);
+            SharedPreferences.Editor editor = sharedPreferences2.edit();
+            editor.putString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Server");
+            editor.apply();
+            Transcribe_Server(audioItem,holder,position);
+
+        } else if ("Local".equalsIgnoreCase(selectedModel)) {
+            holder.model_switch.setChecked(false); // Assuming btn1 is for ChatGPT
+            LocalSideSelected(holder);
+            SharedPreferences.Editor editor = sharedPreferences2.edit();
+            editor.putString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Local");
+            editor.apply();
+            Transcribe_Local(audioItem,holder,position);
+
+        }
+        else
         {
-            holder.transcription_progress.setVisibility(View.VISIBLE);
-            holder.transcription_progress_api.setVisibility(View.VISIBLE);
-            try {
-                handleTranscription(audioItem,position);
+            holder.model_switch.setChecked(false); // Assuming btn1 is for ChatGPT
+            LocalSideSelected(holder);
 
-            }catch (Exception e)
-            {
-                Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        holder.model_switch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            String selectedmodel="";
+
+            // Use a switch statement to handle the state
+            if (isChecked) {
+                selectedmodel = "Server"; // API when the switch is ON
+                Serversideselected(holder);
+                Transcribe_Server(audioItem,holder,position);
+
+            } else {
+                selectedmodel = "Local"; // API when the switch is OFF
+                LocalSideSelected(holder);
+                Transcribe_Local(audioItem,holder,position);
+
             }
 
-        }
-        else
-        {
-            holder.transcription_progress.setVisibility(View.GONE);
+            // Save the selected API to SharedPreferences
+            SharedPreferences.Editor editor = sharedPreferences2.edit();
+            editor.putString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), selectedmodel);
+            editor.apply();
 
-        }
-        if(audioItem.getIs_transcribed_api().equals("no"))
-        {
-            Log.e("chunk_path","sending for chunking");
-            List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
-            transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
+        });
 
-
-        }
-        else
-        {
-            holder.transcription_progress_api.setVisibility(View.GONE);
-
-        }
         ////////////////////////////////////language spinner
         String[] languagesl = {
                 "English",
@@ -168,6 +200,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 }
             }
         }
+        final int[] i = {0};
 
         // Set listener for spinner
         holder.languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -177,7 +210,53 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 // Update database only if the language changes
                 if (!selectedLanguage.equals(audioItem.getLanguage())) {
                     boolean isUpdated = databaseHelper.updateLanguageByRecordingId(audioItem.getRecordingId(), selectedLanguage);
+                    if(i[0] >=0)
+                    {
+                        Model_Database_Helper modelDatabaseHelper=new Model_Database_Helper(context);
+                        if(modelDatabaseHelper.checkModelDownloadedByLanguage(selectedLanguage))
+                        {
+                            //Vosk_Model.initializeVoskModel(context,modelDatabaseHelper.getModelNameByLanguage(selectedLanguage));
+                            holder.Description.setText("");
+                            holder.transcription_progress.setVisibility(View.VISIBLE);
+                            handleTranscription(audioItem,position,holder,selectedLanguage);
+                        }
+                        else
+                        {
+                            holder.Description.setText("Local Model for "+selectedLanguage+" is not available");
+                            boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), "Local Model for "+selectedLanguage+" is not available");
+
+
+                            Toast.makeText(context, "Local Model for "+selectedLanguage+" is not available", Toast.LENGTH_SHORT).show();
+                        }
+
+                        holder.Description_api.setText("");
+                        holder.transcription_progress_api.setVisibility(View.VISIBLE);
+
+
+
+                        TranscriptionUtils.send_for_transcription_no_uuid(context, audioItem.getUrl(), new TranscriptionUtils.Transcription_no_code_Callback() {
+                            @Override
+                            public void onSuccess(String message) {
+                                // Handle success response
+                                holder.Description_api.setText(message);
+                                holder.transcription_progress_api.setVisibility(View.GONE);
+                                databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),message);
+
+
+                            }
+
+                            @Override
+                            public void onError(String errorMessage) {
+                                // Handle error response
+                                holder.Description_api.setText(errorMessage);
+                                holder.transcription_progress_api.setVisibility(View.GONE);
+
+                            }
+                        }, audioItem.getLanguage(),  selectedLanguage);
+                        i[0] = i[0] +1;
+                    }
                     if (isUpdated) {
+
                         // Update local data
                         audioItem.setLanguage(selectedLanguage);
                     } else {
@@ -298,28 +377,62 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         holder.ceation_d_and_t.setText(holder.ceation_d_and_t.getText()+" : "+audioItem.getDate());
         holder.total_time.setText(" / "+convertSecondsToTime(Integer.parseInt(AudioUtils.getAudioDuration(audioItem.getUrl()))));
         holder.Description.setText(audioItem.getDescription());
+        holder.Description_api.setText(audioItem.getDescription_api());
+//////////////////////////////////////////////////////////////////////////////
         holder.expand_button.setOnClickListener(v -> {
-            if (holder.Description.getMaxLines() == 1) {
-                // Expand the TextView
-                holder.Description.setMaxLines(Integer.MAX_VALUE);
-                holder.expand_button.setImageResource(R.mipmap.collapse);
-            } else {
+            if (isExpanded) {
                 // Collapse the TextView
                 holder.Description.setMaxLines(1);
-                holder.expand_button.setImageResource(R.mipmap.expand);
+                holder.Description.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                holder.expand_button.setImageResource(R.mipmap.expand); // Change to expand icon
+                isExpanded = false;
+            } else {
+                // Expand: Show all lines or trigger activity if text exceeds threshold
+                if (holder.Description.getText().toString().length() > 60) { // Define your threshold
+                    Intent intent = new Intent(context, activity_text_display.class);
+                    intent.putExtra("text", holder.Description.getText().toString());
+                    intent.putExtra("Title", context.getString(R.string.transcription));
+                    intent.putExtra("R_id",String.valueOf( audioItem.getRecordingId()));
+                    intent.putExtra("E_id",String.valueOf( audioItem.getEventId()));
+                    intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Local")));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                } else {
+                    holder.Description.setMaxLines(Integer.MAX_VALUE);
+                    holder.Description.setEllipsize(null); // Remove ellipsis
+                    holder.expand_button.setImageResource(R.mipmap.collapse); // Change to collapse icon
+                    isExpanded = true;
+                }
             }
         });
 
+
         ////////////api///////////////////////////////////////
         holder.expand_button_api.setOnClickListener(v -> {
-            if (holder.Description_api.getMaxLines() == 1) {
-                // Expand the TextView
-                holder.Description_api.setMaxLines(Integer.MAX_VALUE);
-                holder.expand_button_api.setImageResource(R.mipmap.collapse);
-            } else {
+            if (isExpanded2) {
                 // Collapse the TextView
                 holder.Description_api.setMaxLines(1);
-                holder.expand_button_api.setImageResource(R.mipmap.expand);
+                holder.Description_api.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                holder.expand_button_api.setImageResource(R.mipmap.expand); // Change to expand icon
+                isExpanded2 = false;
+            } else {
+                // Expand: Show all lines or trigger activity if text exceeds threshold
+                if (holder.Description_api.getText().toString().length() > 60) { // Define your threshold
+                    Intent intent = new Intent(context, activity_text_display.class);
+                    intent.putExtra("text", holder.Description_api.getText().toString());
+                    intent.putExtra("Title", context.getString(R.string.transcription)); // Use context to get string resource
+                    intent.putExtra("R_id",String.valueOf( audioItem.getRecordingId()));
+                    intent.putExtra("E_id",String.valueOf( audioItem.getEventId()));
+                    intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Local")));
+
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                } else {
+                    holder.Description_api.setMaxLines(Integer.MAX_VALUE);
+                    holder.Description_api.setEllipsize(null); // Remove ellipsis
+                    holder.expand_button_api.setImageResource(R.mipmap.collapse); // Change to collapse icon
+                    isExpanded2 = true;
+                }
             }
         });
 
@@ -339,26 +452,111 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
     }
 
+    private void Transcribe_Server(Recording audioItem, AudioViewHolder holder, int position) {
+
+        if(audioItem.getIs_transcribed_api().equals("no"))
+        {
+            holder.Description_api.setText("");
+
+            holder.transcription_progress_api.setVisibility(View.VISIBLE);
+            TranscriptionUtils.send_for_transcription_no_uuid(context, audioItem.getUrl(), new TranscriptionUtils.Transcription_no_code_Callback() {
+                @Override
+                public void onSuccess(String message) {
+                    // Handle success response
+                    holder.Description_api.setText(message);
+                    holder.transcription_progress_api.setVisibility(View.GONE);
+                    databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),message);
+
+
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    // Handle error response
+                    holder.Description_api.setText(errorMessage);
+                    holder.transcription_progress_api.setVisibility(View.GONE);
+
+                }
+            }, audioItem.getLanguage(),  audioItem.getLanguage());
+//            chunks_database_helper.logAllChunks();
+//            Log.e("chunk_path","sending for chunking");
+//            List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
+//            transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
+
+
+        }
+        else
+        {
+            holder.transcription_progress_api.setVisibility(View.GONE);
+
+        }
+    }
+    private void Transcribe_Server_with_chunks(Recording audioItem, AudioViewHolder holder, int position) {
+
+        if(audioItem.getIs_transcribed_api().equals("no"))
+        {
+            holder.Description_api.setText("");
+
+            holder.transcription_progress_api.setVisibility(View.VISIBLE);
+            Log.e("chunk_path","sending for chunking");
+            List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 20000);
+            transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
+
+
+        }
+        else
+        {
+            holder.transcription_progress_api.setVisibility(View.GONE);
+
+        }
+    }
+
+    private void Transcribe_Local(Recording audioItem,AudioViewHolder holder,int position) {
+        //holder.Description.setText("");
+        if(audioItem.getIs_transcribed().equals("no"))
+        {
+            holder.Description_api.setText("");
+            holder.transcription_progress.setVisibility(View.VISIBLE);
+
+            try {
+                handleTranscription(audioItem,position,holder,audioItem.getLanguage());
+
+            }catch (Exception e)
+            {
+                Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+
+        }
+        else
+        {
+            holder.transcription_progress.setVisibility(View.GONE);
+
+        }
+    }
+
     private void transcribe_and_chunkify_audio(List<String> chunkPaths, int recordingId, String uuid,AudioViewHolder holder,Recording audioitem) {
         Log.e("chunk_path",chunkPaths.toString());
 
         boolean added_to_db =chunks_database_helper.addChunksBatch(chunkPaths,recordingId,uuid);
         Log.e("chunk_path","trying to add to database :"+added_to_db);
 
-        boolean allInProgress = true;
+        allTranscriptionProgress = true;
         if(added_to_db)
         {
             List<ChunkTranscription> chunks = chunks_database_helper.getChunksByRecordingId(recordingId);
-            Log.e("chunk_path",chunks.toString());
+            //get total chunks and get transcribed chunks no
 
+            Log.e("chunk_path",chunks.toString());
+            int i=0;
             for (ChunkTranscription chunkTranscription:chunks) {
                 String status=chunkTranscription.getTranscriptionStatus();
-                Log.e("chunk_path",chunkTranscription+","+status);
-
+                Log.i("chunk_path_status",chunkTranscription.getTranscriptionStatus());
+                Log.i("chunk_path_status", String.valueOf(i++));
                 if(status.contains("not")||status.contains("started")||status.contains("not_started"))
                 {
-                    allInProgress=false;
+                    allTranscriptionProgress=false;
                     send_chunk_for_transcription(chunkTranscription.getChunkPath(),chunkTranscription.getChunkId(),"",holder,audioitem);
+
                 }
 
             }
@@ -366,29 +564,51 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         }
         else {
+            allTranscriptionProgress=false;
+
             transcribe_and_chunkify_audio(chunkPaths,recordingId,uuid,holder,audioitem);
 
         }
-        if(allInProgress)
+        if(allTranscriptionProgress)
         {
-            get_transcription(recordingId,"dfghjk");
+            holder.transcription_progress_api.setVisibility(View.GONE);
+            holder.Description_api.setText("Audio sent for transcription waiting for response from API");
+            get_transcription(recordingId);
         }
     }
 
-    private void get_transcription(int recordingId,String unique_id) {
-        TranscriptionUtils.getTranscriptionStatus(unique_id, new TranscriptionUtils.TranscriptionStatusCallback() {
-            @Override
-            public void onTranscriptionStatusSuccess(String name, String status, int queuePosition) {
-                // Handle successful response
-                //if_ status is success then update transcription of chunk //call update chunk transcription and status
+    private void get_transcription(int recordingId) {
+        List<ChunkTranscription> chunks = chunks_database_helper.getChunksByRecordingId(recordingId);
+        Log.e("chunk_path",chunks.toString());
+        int i=0;
+        for (ChunkTranscription chunkTranscription:chunks) {
+            String status=chunkTranscription.getTranscriptionStatus();
+
+
+            Log.i("chunk_path_status",chunkTranscription.getTranscriptionStatus());
+            Log.i("chunk_path_status", String.valueOf(i++));
+            if(status.contains("in")||status.contains("progress")||status.contains("in_progress"))
+            {
+                TranscriptionUtils.getTranscriptionStatus(chunkTranscription.getChunkId(), new TranscriptionUtils.TranscriptionStatusCallback() {
+                    @Override
+                    public void onTranscriptionStatusSuccess(String name, String status, int queuePosition) {
+                        Log.e("chunk_path","status by transcription_api "+name.toString());
+                        //update transcription_status and increase it by 1;
+
+                        //if received transcription then update chunks status to done
+
+                    }
+
+                    @Override
+                    public void onTranscriptionStatusError(String errorMessage) {
+                        // Handle error response
+
+                    }
+                });
+
             }
 
-            @Override
-            public void onTranscriptionStatusError(String errorMessage) {
-                // Handle error response
-
-            }
-        });
+        }
 
     }
 
@@ -398,7 +618,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         try {
             String fileExtension = AudioUtils.getFileExtension(chunkPath).toLowerCase();
-            String[] supportedFormats = {"wav", "3gp", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
+            String[] supportedFormats = {"wav", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
             Log.e("chunk_path",chunkPath+" sending for transcription to server");
 
 
@@ -406,39 +626,35 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 TranscriptionUtils.send_for_transcription(context,chunkPath, new TranscriptionUtils.TranscriptionCallback() {
                     @Override
                     public void onSuccess(String transcription) {
+                        Log.d("chunk_path","success "+transcription+" for "+chunkPath+"\n");
 
-                        /// condition for success ->update chunk_id status_to in_pgogress
-                        holder.transcription_progress_api.setVisibility(View.GONE);
-                        holder.Description_api.setText(transcription);
-                        databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),"success : "+transcription);
-                        audioItem.setIs_transcribed_api("yes");
-                        audioItem.setDescription_api("success : "+transcription);
+                        chunks_database_helper.updateChunkStatus(chunkId,"in_progress");
+                        allTranscriptionProgress=true;
 
                     }
 
                     @Override
                     public void onError(String errorMessage) {
-
-
-                        holder.transcription_progress_api.setVisibility(View.GONE);
-                        holder.Description_api.setText("error "+errorMessage.toString());
-                        audioItem.setDescription_api("error "+errorMessage.toString());
-                        audioItem.setIs_transcribed_api("yes");
+                        Log.d("chunk_path","error "+errorMessage+" for "+chunkPath+"\n");
+                        allTranscriptionProgress=false;
 
                     }
                 },chunkId,"hindi");
 
             }
             else {
+                allTranscriptionProgress=false;
                 databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),"Unsupported format");
                 audioItem.setIs_transcribed_api("yes");
                 audioItem.setDescription_api("Unsupported format");
                 holder.Description_api.setText("Unsupported format");
+
             }
 
 
         }catch (Exception e)
         {
+            allTranscriptionProgress=false;
             Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
             holder.Description_api.setText("error "+e.getMessage());
 
@@ -448,7 +664,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     }
 
 
-    private void handleTranscription(Recording audioItem, int position) {
+    private void handleTranscription(Recording audioItem, int position, AudioViewHolder holder,String language) {
         String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
         String[] supportedFormats = {"wav", "3gp"};
         if (!Arrays.asList(supportedFormats).contains(fileExtension)) {
@@ -460,11 +676,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     Log.d("hellorecorder", "Recording updated successfully.");
                     audioItem.setDescription("Unsupported Format"); // Assuming the setDescription method updates COL_DES
                     audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
-
-                    recordingList.set(position, audioItem);
-
-                    // Notify adapter about the item change
-                    notifyItemChanged(position);
+                    holder.Description.setText("Unsupported Format");
+                    holder.transcription_progress.setVisibility(View.GONE);
                 } else {
                     Log.d("hellorecorder", "Failed to update the recording.+Unsupported Format");
                 }
@@ -474,7 +687,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.execute(() -> {
             try {
-                String transcription = Vosk_Model.recognizeSpeech(convertToWav(audioItem.getUrl(), context));
+                String transcription = Vosk_Model.recognizeSpeech(context,convertToWav(audioItem.getUrl(), context),language);
 
                 if (transcription != null && !transcription.isEmpty()) {
                     // Update the database
@@ -486,13 +699,14 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             Log.d("hellorecorder", "Recording updated successfully.");
                             audioItem.setDescription(transcription); // Assuming the setDescription method updates COL_DES
                             audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
-
-                            recordingList.set(position, audioItem);
+                            holder.Description.setText(transcription);
+                            holder.transcription_progress.setVisibility(View.GONE);
+                            //recordingList.set(position, audioItem);
 
                             // Notify adapter about the item change
-                            notifyItemChanged(position);
+                            //notifyItemChanged(position);
                             AudioRecyclerAdapter.selectedItems.add(transcription);
-                            saveSelectionState(audioItem.getEventId());
+                            saveSelectionStatet(audioItem.getEventId(),position);
                             notifySelectionChanged();
                         } else {
                             Log.d("hellorecorder", "Failed to update the recording.");
@@ -522,7 +736,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 audioItem.setDescription("Error during speech recognition: " + e.getMessage());
                 audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
                 recordingList.set(position, audioItem);
-                notifyItemChanged(position);
+//                notifyItemChanged(position);
             }
         });
 
@@ -604,6 +818,16 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putStringSet("selected_items_"+id, new HashSet<>(selectedItems));
         editor.apply();
+
+
+    }
+    public  void saveSelectionStatet(int id,int position) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putStringSet("selected_items_"+id, new HashSet<>(selectedItems));
+        editor.apply();
+        loadSelectionState(id);
+        notifyItemChanged(position);
+
     }
 
     private void loadSelectionState(int id) {
@@ -670,12 +894,16 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         TextView playbackTimer;
         Button Start_Transcription;
         JcPlayerView JcPlayerView;
-        TextView recordingLabel,ceation_d_and_t,total_time,Description,Description_api;
+        TextView recordingLabel,ceation_d_and_t,total_time,Description,Description_api,transcription_status;
         ImageView expand_button,add_to_list,delete,expand_button_api;
 
         CardView recordingCard;
         LinearLayout transcription_progress,transcription_progress_api;
         Spinner languageSpinner;
+
+        Switch model_switch;
+        TextView Local_t,Server_t;
+        ConstraintLayout local_c,server_C;
 
         public AudioViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -697,8 +925,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             transcription_progress_api=itemView.findViewById(R.id.transcription_progress_api);
             Description_api=itemView.findViewById(R.id.Description_api);
             languageSpinner=itemView.findViewById(R.id.language_spinner);
-
-
+            Local_t=itemView.findViewById(R.id.Loc);
+            Server_t=itemView.findViewById(R.id.Ser);
+            model_switch=itemView.findViewById(R.id.transcription_switch);
+            local_c=itemView.findViewById(R.id.local_c);
+            server_C=itemView.findViewById(R.id.Server_c);
+            transcription_status=itemView.findViewById(R.id.transcription_status);
 
         }
         public void bindAudioData(Recording audioItem, int position) {
@@ -708,6 +940,20 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             playPauseButton.setImageResource(ir.one_developer.file_picker.R.drawable.ic_play);
         }
 
+    }
+    private void Serversideselected(AudioViewHolder holder)
+    {
+        holder.Local_t.setTypeface(null, Typeface.NORMAL);
+        holder.Server_t.setTypeface(null, Typeface.BOLD);
+        holder.server_C.setVisibility(View.VISIBLE);
+        holder.local_c.setVisibility(View.GONE);
+    }
+    private  void LocalSideSelected(AudioViewHolder holder)
+    {
+        holder.Server_t.setTypeface(null, Typeface.NORMAL);
+        holder.Local_t.setTypeface(null, Typeface.BOLD);
+        holder.local_c.setVisibility(View.VISIBLE);
+        holder.server_C.setVisibility(View.GONE);
     }
     private void notifySelectionChanged() {
         if (selectionChangedListener != null) {

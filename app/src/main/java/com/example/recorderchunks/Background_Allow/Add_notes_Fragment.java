@@ -4,6 +4,7 @@ import static android.content.Context.MODE_PRIVATE;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.get_gemini_note;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.getoutput_chatgpt;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
+import static com.example.recorderchunks.Activity.API_Updation.SELECTED_TRANSCRIPTION_METHOD;
 import static com.example.recorderchunks.utils.AudioUtils.getAudioDuration;
 import static com.example.recorderchunks.utils.AudioUtils.getFileExtension;
 import static com.example.recorderchunks.utils.AudioUtils.getFileName;
@@ -412,7 +413,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 Notes_Database_Helper notesDatabaseHelper=new Notes_Database_Helper(getContext());
                 String prompt="";// If the EditText is empty, load the saved prompt from SharedPreferences
                 if (TextUtils.isEmpty(prompt)) {
-                    prompt = prompt_message;
+                    prompt = promptDatabaseHelper.getPromptTextByName(prompt_message);
 
                     if (TextUtils.isEmpty(prompt)) {
                         //   Toast.makeText(this, , Toast.LENGTH_SHORT).show();
@@ -882,6 +883,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         String description ="";
         // Get the current date and time
         Date date = new Date();
+        String selectedModel = sharedPreferences.getString(SELECTED_TRANSCRIPTION_METHOD, "Local"); // Default to "Use ChatGPT"
 
 
         String formattedDate = formatter.format(date);

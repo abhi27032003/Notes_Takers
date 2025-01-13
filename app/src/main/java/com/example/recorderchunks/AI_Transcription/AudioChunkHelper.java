@@ -8,11 +8,14 @@ import com.arthenica.mobileffmpeg.FFmpeg;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AudioChunkHelper {
 
     // Splits the audio file into chunks and returns the list of chunk file paths
     public static List<String> splitAudioIntoChunks(String filePath, int chunkSizeMs) {
+        Log.d("file_path",filePath);
         List<String> chunkPaths = new ArrayList<>();
         try {
             File audioFile = new File(filePath);
@@ -34,7 +37,7 @@ public class AudioChunkHelper {
                 int chunkNumber = startMs / chunkSizeMs + 1;
                 String fileExtension = getFileExtension(audioFile);
                 File chunkFile = new File(chunkFolder, "chunk" + chunkNumber + fileExtension);
-                if(chunkFile.exists()) {
+                if(!chunkFile.exists()) {
                     String command = String.format(
                             "-i \"%s\" -ss %.2f -t %.2f \"%s\"",
                             audioFile.getAbsolutePath(), // Input audio file path
@@ -73,6 +76,7 @@ public class AudioChunkHelper {
     }
 
     // Helper method to get file extension
+
     private static String getFileExtension(File file) {
         String fileName = file.getName();
         int dotIndex = fileName.lastIndexOf(".");
