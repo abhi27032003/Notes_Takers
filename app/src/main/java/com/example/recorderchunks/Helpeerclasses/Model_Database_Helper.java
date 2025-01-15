@@ -7,6 +7,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Model_Database_Helper extends SQLiteOpenHelper {
 
     // Database Name and Version
@@ -151,5 +154,25 @@ public class Model_Database_Helper extends SQLiteOpenHelper {
         }
         return modelName;
     }
+    // Method to get all languages whose download status is "Yes"
+    public List<String> getDownloadedLanguages() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        List<String> downloadedLanguages = new ArrayList<>();
+
+        // Query to fetch languages with "is_downloaded" status as "Yes"
+        String query = "SELECT " + COLUMN_LANGUAGE + " FROM " + TABLE_NAME +
+                " WHERE " + COLUMN_IS_DOWNLOADED + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{"yes"});
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                @SuppressLint("Range") String language = cursor.getString(cursor.getColumnIndex(COLUMN_LANGUAGE));
+                downloadedLanguages.add(language);
+            }
+            cursor.close();
+        }
+        return downloadedLanguages;
+    }
+
     // Other methods (insertModel, updateModel, deleteModel, getAllModels, etc.) remain unchanged
 }

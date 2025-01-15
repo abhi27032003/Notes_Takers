@@ -310,6 +310,48 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
     public void onRecordingResumed() {
 
     }
+
+    @Override
+    public void onResume() {
+        recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
+            if(isrecording)
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                    }
+                    else
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+
+                    }
+                });
+            }
+            else
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                    }
+                    else
+                    {
+                        recording_small_card.setVisibility(View.GONE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+
+                    }
+                });
+
+            }
+        });
+
+        super.onResume();
+    }
+
     private void savePosition(CardView cardView) {
         ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) cardView.getLayoutParams();
         int startMargin = layoutParams.leftMargin;

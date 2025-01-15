@@ -46,8 +46,8 @@ import okhttp3.Response;
 public class TranscriptionUtils {
 
     private static final String TAG = "TranscriptionUtils";
-    private static final String SEND_TRANSCRIPTION_URL = "http://3.210.239.32/upload.php";
-    private static final String GET_TRANSCRIPTION_URL = "http://3.210.239.32/status.php";
+    private static final String SEND_TRANSCRIPTION_URL = "https://notetakers.vipresearch.ca/App_Script/uploads.php";
+    private static final String GET_TRANSCRIPTION_URL = "https://notetakers.vipresearch.ca/App_Script/status.php";
 
     // Callback interface for handling success and failure
     public interface TranscriptionCallback {
@@ -70,6 +70,7 @@ public class TranscriptionUtils {
      * @param filePath The path to the audio file.
      * @param callback The callback to handle success or error.
      */
+
     public static void send_for_transcription_no_uuid(Context context, String filePath, Transcription_no_code_Callback callback,String unique_id,String language) {
         File audioFile = new File(filePath);
 
@@ -103,7 +104,7 @@ public class TranscriptionUtils {
 
         // Build the request
         Request request = new Request.Builder()
-                .url("https://notetakers.vipresearch.ca/App_Script/transcribe/transcribe.php")
+                .url("https://notetakers.vipresearch.ca/App_Script/uploads.php")
                 .post(requestBody)
                 .build();
 
@@ -170,9 +171,24 @@ public class TranscriptionUtils {
                         RequestBody.create(audioFile, MediaType.parse("audio/*")) // File content with the correct MIME type
                 )
                 .addFormDataPart(
-                        "name", // Key for the additional parameter
+                        "recording_name", // Key for the additional parameter
                        unique_id // Value of the additional parameter
                 )
+                .addFormDataPart(
+                        "chunk_id", // Key for the additional parameter
+                        extractNumberBeforeDot(filePath)// Value of the additional parameter
+                )
+                .addFormDataPart(
+                        "language", // Key for the additional parameter
+                        getLanguageCode(language) // Value of the additional parameter
+                )
+                .addFormDataPart(
+                        "user_id", // Key for the additional parameter
+                        "user_id_123" // Value of the additional parameter
+                )
+                //user_id
+                //language
+                //chunk_id
                 .build();
 
 
@@ -201,7 +217,7 @@ public class TranscriptionUtils {
                         String responseBody = response.body() != null ? response.body().string() : "";
                         Log.d("ResponseSuccess", "Body: " + responseBody);
                         new Handler(Looper.getMainLooper()).post(() ->
-                                callback.onSuccess("Response: " + responseBody)
+                                callback.onSuccess(responseBody)
                         );
                     } else {
                         String errorBody = response.body() != null ? response.body().string() : "No response body";
@@ -220,11 +236,12 @@ public class TranscriptionUtils {
         });
 
     }
-    public static void getTranscriptionStatus(String name, TranscriptionStatusCallback callback) {
+    public static void getTranscriptionStatus(String name, TranscriptionStatusCallback callback, String filePath) {
+        File audioFile = new File(filePath);
         OkHttpClient client = new OkHttpClient();
 
         // Build the request URL with query parameter
-        String url = GET_TRANSCRIPTION_URL + "?name=" + name;
+        String url = "https://notetakers.vipresearch.ca/App_Script/status.php?recording_name=" + name + "&user_id=" + "user_id_123" + "&chunk_id=" +extractNumberBeforeDot(filePath);
 
         Request request = new Request.Builder()
                 .url(url)
@@ -266,6 +283,30 @@ public class TranscriptionUtils {
 
         // Return the code if it exists, otherwise return "Code not found"
         return languageMap.getOrDefault(language, "Code not found");
+    }
+    public static String extractNumberBeforeDot(String filePath) {
+        StringBuilder number = new StringBuilder();
+
+        // Find the position of the last dot in the file path
+        int lastDotIndex = filePath.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return null; // Return null if there's no dot in the path
+        }
+
+        // Traverse the string backward from the dot
+        for (int i = lastDotIndex - 1; i >= 0; i--) {
+            char c = filePath.charAt(i);
+            // If it's a digit, add it to the number
+            if (Character.isDigit(c)) {
+                number.append(c);
+            } else if (number.length() > 0) {
+                // Break once digits stop (ensures only trailing numbers are captured)
+                break;
+            }
+        }
+
+        // Reverse the collected digits since they were added in reverse order
+        return number.reverse().toString();
     }
     public static String getTranscription(String jsonResponse) {
         try {

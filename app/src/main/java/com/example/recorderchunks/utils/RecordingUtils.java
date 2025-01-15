@@ -171,7 +171,7 @@ public class RecordingUtils {
                 isSaved = databaseHelper.insertRecording(
                         eventId,
                         formattedDate,
-                        selectedModel,
+                        description,
                         recordingName,
                         format,
                         String.valueOf(duration),
@@ -186,7 +186,7 @@ public class RecordingUtils {
                 isSaved = databaseHelper.insertRecording(
                         nextEventId,
                         formattedDate,
-                        selectedModel,
+                        description,
                         recordingName,
                         format,
                         String.valueOf(duration),

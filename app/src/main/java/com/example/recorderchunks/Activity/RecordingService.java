@@ -137,21 +137,21 @@ public class RecordingService extends Service {
     }
 
     private void pauseRecording() {
+        isPaused = true;
         recordingUtils.pauseRecording();
         recordingViewModel.setPaused(true);
         recordingViewModel.setRecording(false);
         recordingViewModel.pauseTimer();
-        isPaused = true;
         startNotificationUpdates();
         updateNotification();
     }
 
     private void resumeRecording() {
+        isPaused = false;
         recordingUtils.resumeRecording();
         recordingViewModel.setPaused(false);
         recordingViewModel.setRecording(true);
         recordingViewModel.resumeTimer();
-        isPaused = false;
         startNotificationUpdates();
         updateNotification();
     }

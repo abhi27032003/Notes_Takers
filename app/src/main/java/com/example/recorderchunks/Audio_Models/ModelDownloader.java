@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.os.Environment;
 import android.os.PowerManager;
 import android.util.Log;
 
@@ -15,34 +14,18 @@ import androidx.core.app.NotificationManagerCompat;
 import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
 import com.example.recorderchunks.utils.ZipUtils;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
-import android.content.Context;
 import android.os.Build;
-import android.util.Log;
 import android.widget.Toast;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
+
 import androidx.core.content.ContextCompat;
 import android.content.pm.PackageManager;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
@@ -56,10 +39,10 @@ public class ModelDownloader {
     private static Thread downloadThread;
     private static PowerManager.WakeLock wakeLock;  // Declare WakeLock
 
-    private static void createNotificationChannel(Context context) {
+    private static void createNotificationChannel(Context context, String language) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            String channelId = "model_download_channel"; // Same as in your notification
+            String channelId = "model_download_channel"+language; // Same as in your notification
             CharSequence channelName = "Model Download";
             int importance = NotificationManager.IMPORTANCE_LOW;
             NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
@@ -95,138 +78,12 @@ public class ModelDownloader {
         }
     }
 
-    public static void downloadModel(Context context, String language, String modelUrl) {
-        if (isDownloading) {
-            Log.d("ModelDownloader", "Download already in progress.");
-            return;
-        }
-
-        // Request notification permission if needed
-        requestNotificationPermission(context);
-
-        isDownloading = true;
-        PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ModelDownloader::DownloadWakeLock");
-        wakeLock.acquire(10 * 60 * 1000L /*10 minutes*/);  // Set the timeout to 10 minutes, adjust as needed
-
-
-        downloadThread = new Thread(() -> {
-            try {
-                // Fetch the model name based on the language and URL
-                String modelName = "UnknownModel"; // Default model name if not found
-                switch (language.toLowerCase()) {
-                    case "english":
-                        modelName = "vosk-model-small-en-us-0.15";
-                        break;
-                    case "chinese":
-                        modelName = "vosk-model-small-cn-0.22";
-                        break;
-                    case "french":
-                        modelName = "vosk-model-small-fr-0.22";
-                        break;
-                    case "spanish":
-                        modelName = "vosk-model-small-es-0.42";
-                        break;
-                    case "hindi":
-                        modelName = "vosk-model-small-hi-0.22";
-                        break;
-                    default:
-                        Log.e("ModelDownloader", "Unsupported language: " + language);
-                        return;
-                }
-
-                File modelDir = new File(context.getFilesDir(), "models/" + modelName);
-                if (modelDir.exists()) {
-                    Log.d("ModelDownloader", "Model for " + language + " already exists.");
-                    return;
-                }
-
-                // Prepare zip file location
-                File zipFile = new File(context.getFilesDir(), "models/" + modelName + ".zip");
-                zipFile.getParentFile().mkdirs();
-
-                // Create a notification manager for progress updates
-                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-                String CHANNEL_ID = "model_download_channel";
-                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                        .setSmallIcon(android.R.drawable.stat_sys_download)
-                        .setContentTitle("Downloading " + language + " Model")
-                        .setContentText("Starting download...")
-                        .setProgress(100, 0, false)
-                        .setOngoing(true);
-
-                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
-                notificationManager.notify(1, notificationBuilder.build());
-
-                // Download the model file
-                HttpURLConnection connection = (HttpURLConnection) new URL(modelUrl).openConnection();
-                connection.connect();
-                long fileSize = connection.getContentLength();
-
-                try (InputStream input = connection.getInputStream();
-                     FileOutputStream output = new FileOutputStream(zipFile)) {
-
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    long totalDownloaded = 0;
-
-                    while ((bytesRead = input.read(buffer)) != -1) {
-                        totalDownloaded += bytesRead;
-                        output.write(buffer, 0, bytesRead);
-
-                        // Check for cancellation
-                        if (!isDownloading) {
-                            Log.d("ModelDownloader", "Download cancelled.");
-                            zipFile.delete();
-                            return;
-                        }
-
-                        // Update notification progress
-                        int progress = (int) ((totalDownloaded * 100) / fileSize);
-                        notificationBuilder.setProgress(100, progress, false)
-                                .setContentText("Downloaded " + progress + "%");
-                        notificationManager.notify(1, notificationBuilder.build());
-                    }
-                }
-
-                // Notify completion
-                notificationBuilder.setContentText("Download complete")
-                        .setProgress(0, 0, false)
-                        .setOngoing(false);
-                notificationManager.notify(1, notificationBuilder.build());
-
-                // Unzip the downloaded file
-                ZipUtils.unzipFile(zipFile, modelDir);
-                zipFile.delete();
-
-                Log.d("ModelDownloader", "Model for " + language + " downloaded and extracted.");
-            } catch (Exception e) {
-                Log.e("ModelDownloader", "Error downloading model: " + e.getMessage(), e);
-            } finally {
-                if (wakeLock != null && wakeLock.isHeld()) {
-                    wakeLock.release();
-                }
-                isDownloading = false;
-            }
-        });
-
-        downloadThread.start();
-    }
     public static void downloadModelFast(Context context, String language, String modelUrl) {
         if (isDownloading) {
             Log.d("ModelDownloader", "Download already in progress.");
             return;
         }
-        createNotificationChannel(context);
+        createNotificationChannel(context,language);
         // Request notification permission if needed
         requestNotificationPermission(context);
 
@@ -284,7 +141,7 @@ public class ModelDownloader {
 
                 // Create a notification manager for progress updates
                 NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-                String CHANNEL_ID = "model_download_channel";
+                String CHANNEL_ID = "model_download_channel"+language;
                 NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
                         .setSmallIcon(android.R.drawable.stat_sys_download)
                         .setContentTitle("Downloading " + language + " Model")
@@ -338,29 +195,24 @@ public class ModelDownloader {
 
                         // Update notification progress
                         int progress = (int) ((totalDownloaded * 100) / fileSize);
-                        if(progress>=100)
-                        {
-                            // Notify completion
-                            notificationBuilder.setContentText("Download complete")
-                                    .setProgress(0, 0, false)
-                                    .setOngoing(false);
-                            notificationManager.notify(1, notificationBuilder.build());
-                            ZipUtils.unzipFile(zipFile, modelDir);
-                            zipFile.delete();
-                            model_langage = "not available";
-                            updateModelDownloadStatus(context, language, modelDir.getAbsolutePath(),modelName);
+                        Log.d("ModelDownloader",String.valueOf(progress));
 
-                        }
-                        else
-                        {
+                        if (progress % 10 == 0 || progress == 100) { // Log at 10% intervals and at 100%
                             notificationBuilder.setProgress(100, progress, false)
                                     .setContentText("Downloaded " + progress + "%");
                             notificationManager.notify(1, notificationBuilder.build());
-
                         }
 
 
                     }
+                    notificationBuilder.setContentTitle("Download Complete")
+                            .setContentText("Downloaded " + language + " Model")
+                            .setProgress(0, 0, false); // Clear the progress bar
+                    notificationManager.notify(1, notificationBuilder.build());
+                    ZipUtils.unzipFile(zipFile, modelDir);
+                    zipFile.delete();
+                    model_langage = "not available";
+                    updateModelDownloadStatus(context, language, modelDir.getAbsolutePath(),modelName);
                 }
                 catch (Exception e)
                 {

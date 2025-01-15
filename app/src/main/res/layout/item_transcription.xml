@@ -11,8 +11,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="8dp">
-
         <TextView
+            android:id="@+id/tvCreationTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Creation Time"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp"
+            android:textColor="@android:color/darker_gray"/>
+        <TextView
+            android:visibility="gone"
             android:id="@+id/tvTranscriptionId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -28,13 +36,6 @@
             android:textSize="14sp"
             android:layout_marginTop="4dp"/>
 
-        <TextView
-            android:id="@+id/tvCreationTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Creation Time"
-            android:textSize="12sp"
-            android:layout_marginTop="4dp"
-            android:textColor="@android:color/darker_gray"/>
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>

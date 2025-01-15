@@ -24,7 +24,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.recorderchunks.Adapter.LanguageAdapter;
 import com.example.recorderchunks.Audio_Models.ModelDownloader;
 import com.example.recorderchunks.Audio_Models.ModelMetadata;
 import com.example.recorderchunks.Background_Allow.Show_Add_notes_Activity;
@@ -52,7 +55,8 @@ public class API_Updation extends AppCompatActivity {
     public static final String SELECTED_LANGUAGE = "SelectedLanguage";
     public static final String SELECTED_APP_LANGUAGE = "SelectedappLanguage";
     TextView Gemini_t,Chatgpt_t,Local_t,Server_t,selected_api;
-
+    private RecyclerView recyclerView;
+    private LanguageAdapter adapter;
 
     public static final String KEY_SELECTED_API = "SelectedApi";
     public static final String SELECTED_TRANSCRIPTION_METHOD = "SelectedTranscriptionMethod";
@@ -74,10 +78,21 @@ public class API_Updation extends AppCompatActivity {
         setContentView(R.layout.activity_api_updation);
         Toolbar toolbar = findViewById(R.id.appBar);
         setSupportActionBar(toolbar);
+
+
+        // Recycler view setup for downloaded models
+        recyclerView = findViewById(R.id.recycler_view);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        recyclerView.setLayoutManager(layoutManager);
+        Model_Database_Helper dbHelper = new Model_Database_Helper(this);
+        List<String> downloadedLanguages = dbHelper.getDownloadedLanguages();
+        adapter = new LanguageAdapter(downloadedLanguages);
+        recyclerView.setAdapter(adapter);
+
+        ///////////////////////////////
         api_switch=findViewById(R.id.api_switch);
         Chatgpt_t=findViewById(R.id.Chat);
         Gemini_t=findViewById(R.id.Gem);
-
         Local_t=findViewById(R.id.Loc);
         Server_t=findViewById(R.id.Ser);
         selected_api=findViewById(R.id.selected_api);

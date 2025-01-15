@@ -567,6 +567,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
                     if(ispaused)
                     {
+
                         recording_small_card.setVisibility(View.VISIBLE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.play);
                         recordButton.setText(getString(R.string.stop_recording));
@@ -594,6 +595,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     }
                     else
                     {
+
                         recording_small_card.setVisibility(View.GONE);
                         play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
                         recordingList.clear();
@@ -694,8 +696,58 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     }
     @Override
     public void onResume() {
-        super.onResume();
 
+        recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
+            if(isrecording)
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                        recordButton.setText(getString(R.string.stop_recording));
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
+                    }
+                    else
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+                        recordButton.setText(getString(R.string.stop_recording));
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
+
+                    }
+                });
+            }
+            else
+            {
+                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                    if(ispaused)
+                    {
+                        recording_small_card.setVisibility(View.VISIBLE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                        recordButton.setText(getString(R.string.stop_recording));
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
+                    }
+                    else
+                    {
+
+                        recording_small_card.setVisibility(View.GONE);
+                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+                        recordingList.clear();
+                        recordingList = databaseHelper.getRecordingsByEventId(event_id);
+                        recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
+                        updateSelectedItemsDisplay(new ArrayList<>());
+                        recyclerView.setAdapter(recordingAdapter);
+                        recordButton.setText(getString(R.string.start_recording));
+                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
+                        recordingAdapter.notifyDataSetChanged();
+
+                    }
+                });
+
+            }
+        });
         recordingList.clear();
         recordingList.addAll(databaseHelper.getRecordingsByEventId(event_id));
 
@@ -719,6 +771,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         else {
             no_item_text.setVisibility(View.GONE);
         }
+        super.onResume();
     }
     private void savePosition(CardView cardView) {
         ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) cardView.getLayoutParams();
@@ -1200,5 +1253,6 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         recordButton.setText(getString(R.string.start_recording));
         recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
     }
+
 }
 

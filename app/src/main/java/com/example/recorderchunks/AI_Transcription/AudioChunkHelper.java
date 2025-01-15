@@ -1,4 +1,5 @@
 package com.example.recorderchunks.AI_Transcription;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.media.MediaPlayer;
 import android.widget.Toast;
@@ -74,7 +75,27 @@ public class AudioChunkHelper {
         }
         return chunkPaths; // Return the list of chunk file paths
     }
+    public static void splitAudioInBackground(final String filePath, final int chunkSizeMs, final splitCallback callback) {
+        new AsyncTask<Void, Void, List<String>>() {
+            @Override
+            protected List<String> doInBackground(Void... voids) {
+                return splitAudioIntoChunks(filePath, chunkSizeMs);
+            }
 
+            @Override
+            protected void onPostExecute(List<String> chunkPaths) {
+                // Notify the callback with the results on the main thread
+                if (callback != null) {
+                    callback.onChunksGenerated(chunkPaths);
+                }
+            }
+        }.execute();
+    }
+
+    // Define a callback interface
+    public interface splitCallback {
+        void onChunksGenerated(List<String> chunkPaths);
+    }
     // Helper method to get file extension
 
     private static String getFileExtension(File file) {
