@@ -5,23 +5,28 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.recorderchunks.Background_Allow.Add_notes_Fragment;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Helpeerclasses.Notes_Database_Helper;
+import com.example.recorderchunks.Helpeerclasses.TagStorage;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
@@ -30,7 +35,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
     private FragmentManager fragmentManager;
 
-
+    private TagStorage tagStorage;
 
 
 
@@ -38,6 +43,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         this.fragmentManager=fragmentManager;
         this.context = context;
         this.events = events;
+        tagStorage = new TagStorage(context);
 
     }
 
@@ -133,6 +139,20 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
             }
         });
 
+        //set tags
+        // Fetch selectedTags (example setup, replace with your actual logic)
+        List<String> selectedTags = tagStorage.getTags(String.valueOf(event.getId())) != null
+                ? tagStorage.getTags(String.valueOf(event.getId())).get("selected_tags")
+                : new ArrayList<>();
+
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
+        holder.recyclerView.setLayoutManager(layoutManager);
+
+// Set the adapter
+        HorizontalRecyclerViewAdapter adapter3 = new HorizontalRecyclerViewAdapter(context, selectedTags);
+        holder.recyclerView.setAdapter(adapter3);
+
     }
 
 
@@ -147,20 +167,20 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         TextView titleTextView, descriptionTextView, dateTextView;
         MaterialButton eventDate,eventTime;
         ImageView deleteEvent;
-        private FloatingActionButton playPauseButton;
-        private SeekBar playbackProgressBar;
-        private TextView playbackTimer;
+        ListView listView ;
+        RecyclerView recyclerView ;
+
         public ViewHolder(View itemView) {
             super(itemView);
+            recyclerView= itemView.findViewById(R.id.horizontalRecyclerView);
             titleTextView = itemView.findViewById(R.id.eventTitle);
             descriptionTextView = itemView.findViewById(R.id.eventDescription);
             dateTextView = itemView.findViewById(R.id.eventCreationDate);
             eventDate = itemView.findViewById(R.id.eventDate);
             eventTime = itemView.findViewById(R.id.eventTime);
             deleteEvent=itemView.findViewById(R.id.deleteButton);
-            playPauseButton = itemView.findViewById(R.id.playPauseButton);
-            playbackProgressBar = itemView.findViewById(R.id.playbackProgressBar);
-            playbackTimer = itemView.findViewById(R.id.playbackTimer);
+
+
         }
     }
 }

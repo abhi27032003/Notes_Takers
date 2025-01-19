@@ -69,6 +69,7 @@ public class activity_text_display extends AppCompatActivity {
          Recording_id = getIntent().getStringExtra("R_id");
          Event_id = getIntent().getStringExtra("E_id");
          Transcrition_mode = getIntent().getStringExtra("T_mode");
+
          Recording_Recycler_id=Recording_id+Transcrition_mode;
         // Display the text in the TextView
         if (text != null) {
@@ -88,7 +89,7 @@ public class activity_text_display extends AppCompatActivity {
                 fullText.setEnabled(true);
 
                 rvTranscriptionHistory.setLayoutManager(new LinearLayoutManager(this));
-                String recordingId = getIntent().getStringExtra("RECORDING_ID");
+
                 List<TranscriptionHistory> transcriptionHistories = dbHelper.getAllTranscriptionsByRecordingId(Recording_Recycler_id);
                 adapter = new TranscriptionAdapter(transcriptionHistories);
                 rvTranscriptionHistory.setAdapter(adapter);
@@ -107,9 +108,21 @@ public class activity_text_display extends AppCompatActivity {
         update.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                databaseHelper.updateRecordingDetails(Integer.parseInt(Recording_id),fullText.getText().toString());
-                updateSelectionState(Integer.parseInt(Event_id),text,fullText.getText().toString());
+                if(Transcrition_mode.contains("Local"))
+                {
+                    databaseHelper.updateRecordingDetails(Integer.parseInt(Recording_id),fullText.getText().toString());
+                    updateSelectionState(Integer.parseInt(Event_id),text,fullText.getText().toString());
+                }
+                else
+                {
+                    databaseHelper.updaterecording_details_api(Integer.parseInt(Recording_id),fullText.getText().toString());
+                    updateSelectionState(Integer.parseInt(Event_id),text,fullText.getText().toString());
+
+                }
+                saveStateoftranscription();
+
                 Toast.makeText(activity_text_display.this, "Transcription updated successfully", Toast.LENGTH_SHORT).show();
+
                 finish();
             };
         });

@@ -6,6 +6,7 @@ import static com.example.recorderchunks.AI_Transcription.AudioChunkHelper.split
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 import static com.example.recorderchunks.Activity.API_Updation.getLanguagesFromMetadata;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
+import static com.example.recorderchunks.utils.AudioUtils.convertToWavFilePath;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -37,7 +38,6 @@ import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.jean.jcplayer.view.JcPlayerView;
 
 import com.example.recorderchunks.AI_Transcription.AudioChunkHelper;
 import com.example.recorderchunks.AI_Transcription.TranscriptionUtils;
@@ -51,14 +51,19 @@ import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.AudioUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -213,6 +218,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     boolean isUpdated = databaseHelper.updateLanguageByRecordingId(audioItem.getRecordingId(), selectedLanguage);
                     if(i[0] >=0)
                     {
+                        ///////////////////////////// recording local change language
                         Model_Database_Helper modelDatabaseHelper=new Model_Database_Helper(context);
                         if(modelDatabaseHelper.checkModelDownloadedByLanguage(selectedLanguage))
                         {
@@ -230,30 +236,14 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                            // Toast.makeText(context, "Local Model for "+selectedLanguage+" is not available", Toast.LENGTH_SHORT).show();
                         }
 
+                        ///////////////////////////// recording server change language
+
                         holder.Description_api.setText("");
                         holder.transcription_progress_api.setVisibility(View.VISIBLE);
+                        audioItem.setLanguage(selectedLanguage);
+                        Transcribe_Server_with_chunks(audioItem,holder,position);
 
 
-
-                        TranscriptionUtils.send_for_transcription_no_uuid(context, audioItem.getUrl(), new TranscriptionUtils.Transcription_no_code_Callback() {
-                            @Override
-                            public void onSuccess(String message) {
-                                // Handle success response
-                                holder.Description_api.setText(message);
-                                holder.transcription_progress_api.setVisibility(View.GONE);
-                                databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),message);
-
-
-                            }
-
-                            @Override
-                            public void onError(String errorMessage) {
-                                // Handle error response
-                                holder.Description_api.setText(errorMessage);
-                                holder.transcription_progress_api.setVisibility(View.GONE);
-
-                            }
-                        }, audioItem.getLanguage(),  selectedLanguage);
                         i[0] = i[0] +1;
                     }
                     if (isUpdated) {
@@ -315,7 +305,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         /////////////////////////////////////////
         holder.playPauseButton.setOnClickListener(v -> {
             if (currentPlayingPosition == position) {
-                togglePlayPause(holder);
+
             } else {
 
                 playNewAudio(holder, audioItem, position);
@@ -424,7 +414,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     intent.putExtra("Title", context.getString(R.string.transcription)); // Use context to get string resource
                     intent.putExtra("R_id",String.valueOf( audioItem.getRecordingId()));
                     intent.putExtra("E_id",String.valueOf( audioItem.getEventId()));
-                    intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Local")));
+                    intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Server")));
 
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(intent);
@@ -453,70 +443,73 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
     }
 
-    private void Transcribe_Server(Recording audioItem, AudioViewHolder holder, int position) {
-
-        if(audioItem.getIs_transcribed_api().equals("no"))
-        {
-            holder.Description_api.setText("");
-
-            holder.transcription_progress_api.setVisibility(View.VISIBLE);
-            TranscriptionUtils.send_for_transcription_no_uuid(context, audioItem.getUrl(), new TranscriptionUtils.Transcription_no_code_Callback() {
-                @Override
-                public void onSuccess(String message) {
-                    // Handle success response
-                    holder.Description_api.setText(message);
-                    holder.transcription_progress_api.setVisibility(View.GONE);
-                    databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),message);
-
-
-                }
-
-                @Override
-                public void onError(String errorMessage) {
-                    // Handle error response
-                    holder.Description_api.setText(errorMessage);
-                    holder.transcription_progress_api.setVisibility(View.GONE);
-
-                }
-            }, audioItem.getLanguage(),  audioItem.getLanguage());
-//            chunks_database_helper.logAllChunks();
-//            Log.e("chunk_path","sending for chunking");
-//            List<String> chunkPaths = AudioChunkHelper.splitAudioIntoChunks(audioItem.getUrl(), 2000);
-//            transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
-
-
-        }
-        else
-        {
-            holder.transcription_progress_api.setVisibility(View.GONE);
-
-        }
-    }
     private void Transcribe_Server_with_chunks(Recording audioItem, AudioViewHolder holder, int position) {
+        String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
+        String[] supportedFormats = {"wav", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
+        String changetowavformat="3gp";
 
-        if(audioItem.getIs_transcribed_api().equals("no"))
-        {
-            holder.Description_api.setText("");
 
-            holder.transcription_progress_api.setVisibility(View.VISIBLE);
-            holder.transcription_status.setText("Sending for chunking..");
-            Log.e("chunk_path","sending for chunking");
-            splitAudioInBackground(audioItem.getUrl(), 20000, new AudioChunkHelper.splitCallback() {
-                @Override
-                public void onChunksGenerated(List<String> chunkPaths) {
-                    transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
 
-                    // Do something with the chunkPaths, e.g., update UI
-                }
-            });
+        if (Arrays.asList(supportedFormats).contains(fileExtension)) {
+            if(audioItem.getIs_transcribed_api().equals("no"))
+            {
+                holder.Description_api.setText("");
 
+                holder.transcription_progress_api.setVisibility(View.VISIBLE);
+                holder.transcription_status.setText("Sending for chunking..");
+                Log.e("chunk_path","sending for chunking");
+                splitAudioInBackground(audioItem.getUrl(), 20000, new AudioChunkHelper.splitCallback() {
+                    @Override
+                    public void onChunksGenerated(List<String> chunkPaths) {
+                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
+
+                        // Do something with the chunkPaths, e.g., update UI
+                    }
+                });
+
+
+            }
+            else
+            {
+                holder.transcription_progress_api.setVisibility(View.GONE);
+                holder.Description_api.setText(audioItem.getDescription_api());
+
+            }
+        }
+        else if(fileExtension.contains(changetowavformat)) {
+            if(audioItem.getIs_transcribed_api().equals("no"))
+            {
+                holder.Description_api.setText("");
+                holder.transcription_progress_api.setVisibility(View.VISIBLE);
+                holder.transcription_status.setText("Sending for chunking..");
+                Log.e("chunk_path","sending for chunking");
+                splitAudioInBackground(convertToWav(audioItem.getUrl(),context), 20000, new AudioChunkHelper.splitCallback() {
+                    @Override
+                    public void onChunksGenerated(List<String> chunkPaths) {
+                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
+
+                    }
+                });
+
+
+            }
+            else
+            {
+                holder.transcription_progress_api.setVisibility(View.GONE);
+                holder.Description_api.setText(audioItem.getDescription_api());
+
+            }
 
         }
         else
         {
+            databaseHelper.updaterecording_details_api(audioItem.getRecordingId(),"Unsupported format");
+            audioItem.setIs_transcribed_api("yes");
+            audioItem.setDescription_api("Unsupported format "+fileExtension);
+            holder.Description_api.setText("Unsupported format");
             holder.transcription_progress_api.setVisibility(View.GONE);
-
         }
+
     }
 
     private void Transcribe_Local(Recording audioItem,AudioViewHolder holder,int position) {
@@ -580,55 +573,146 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         if(allTranscriptionProgress)
         {
-            holder.transcription_progress_api.setVisibility(View.GONE);
+            //holder.transcription_progress_api.setVisibility(View.GONE);
             holder.transcription_status.setText("Audio sent for transcription waiting for response from API");
             get_transcription(recordingId,holder);
         }
     }
 
-    private void get_transcription(int recordingId,AudioViewHolder holder) {
-        //holder.transcription_progress_api.setVisibility(View.GONE);
-        holder.transcription_status.setText("Sent all chunk to api waiting for transscription..");
+    private void get_transcription(int recordingId, AudioViewHolder holder) {
+        holder.transcription_status.setText("Sent all chunks to API, waiting for transcription...");
 
         List<ChunkTranscription> chunks = chunks_database_helper.getChunksByRecordingId(recordingId);
-        Log.e("chunk_path",chunks.toString());
-        int i=0;
-        final String[] s = {""};
-        for (ChunkTranscription chunkTranscription:chunks) {
-            String status=chunkTranscription.getTranscriptionStatus();
+        int totalCalls = chunks.size();
+        final int[] callsDone = {0};
+        Log.e("chunk_path", chunks.toString());
 
+        Map<Integer, String> transcriptionMap = new TreeMap<>(); // TreeMap to maintain chunk order by chunk_id
+        Set<Integer> processedChunks = new HashSet<>();
 
-            Log.i("chunk_path_status",chunkTranscription.getTranscriptionStatus());
-            Log.i("chunk_path_status", String.valueOf(i++));
-            if(status.contains("in")||status.contains("progress")||status.contains("in_progress"))
-            {
+        for (ChunkTranscription chunkTranscription : chunks) {
+            String status = chunkTranscription.getTranscriptionStatus();
+            if (isStatusSuccessful(status)) { // Check if the status is "completed"
+                transcriptionMap.put(Integer.valueOf(TranscriptionUtils.extractNumberBeforeDot(chunkTranscription.getChunkPath())), chunkTranscription.getTranscription());
+                processedChunks.add(Integer.valueOf(TranscriptionUtils.extractNumberBeforeDot(chunkTranscription.getChunkPath())));
+                callsDone[0]++;
+
+                // If all calls are processed, finalize transcription
+                if (callsDone[0] == totalCalls) {
+                    finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
+                }
+            } else if (status.contains("in") || status.contains("progress") || status.contains("in_progress")) {
+                // Fetch the transcription status from the API
                 TranscriptionUtils.getTranscriptionStatus(chunkTranscription.getChunkId(), new TranscriptionUtils.TranscriptionStatusCallback() {
                     @Override
-                    public void onTranscriptionStatusSuccess(String name, String status, int queuePosition) {
-                        Log.e("chunk_path","status by transcription_api "+name.toString());
-                        holder.transcription_status.setText("getting response from api");
+                    public void onTranscriptionStatusSuccess(String response, String statuss, int queuePosition) throws JSONException {
+                        JSONObject jsonObject = new JSONObject(response);
+                        String api_transcription_status=jsonObject.optString("status","");
 
-                        s[0] = s[0] +name;
-                        //update transcription_status and increase it by 1;
+                        // Extract chunk_id and transcription only if status is "completed"
+                        if (isStatusSuccessful(api_transcription_status)) {
+                            int chunkId_no = jsonObject.getInt("chunk_id");
+                            String transcription = jsonObject.optString("transcription", "");
+                            transcriptionMap.put(chunkId_no, transcription);
+                            processedChunks.add(chunkId_no);
+                            chunks_database_helper.updateChunkTranscription(chunkTranscription.getChunkId(),transcription);
+                            chunks_database_helper.updateChunkStatus(chunkTranscription.getChunkId(),"completed");
+                        }
 
-                        //if received transcription then update chunks status to done
+                        callsDone[0]++;
+                        Log.e("chunk_path", callsDone[0]+":"+totalCalls);
 
+                        // Finalize transcription once all calls are completed
+                        if (callsDone[0] == totalCalls) {
+                            finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
+                        }
                     }
 
                     @Override
                     public void onTranscriptionStatusError(String errorMessage) {
-                        // Handle error response
+                        callsDone[0]++;
+                        Log.e("transcription_error", "Error in chunk transcription: " + errorMessage);
 
-                        holder.transcription_status.setText("error in response of some api");
-
+                        if (callsDone[0] == totalCalls) {
+                            finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
+                        }
                     }
-                },chunkTranscription.getChunkPath());
-                holder.Description_api.setText(s[0]);
+                }, chunkTranscription.getChunkPath());
+            } else {
+                callsDone[0]++;
+
+                if (callsDone[0] == totalCalls) {
+                    finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
+                }
+            }
+        }
+    }
+
+    private void finalizeTranscription(AudioViewHolder holder, Map<Integer, String> transcriptionMap, int totalCalls, Set<Integer> processedChunks,int recording_id) {
+        Log.e("chunk_path", "inside finalize transcription");
+        Log.e("chunk_path", processedChunks.size()+" : "+totalCalls);
+        if (processedChunks.size() == totalCalls) {
+            // Merge all transcriptions in sequence
+            StringBuilder mergedTranscription = new StringBuilder();
+            for (String chunkTranscription : transcriptionMap.values()) {
+                mergedTranscription.append(chunkTranscription).append(" ");
             }
 
-        }
+            // Update the UI on the main thread
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+            mainHandler.post(() -> {
+                String transcription=mergedTranscription.toString().trim();
+                if (transcription != null && !transcription.isEmpty()) {
+                    // Update the database
+                    boolean updateSuccess = databaseHelper.updaterecording_details_api(recording_id, transcription);
 
+                    // Switch back to main thread to update UI or notify adapter
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (updateSuccess) {
+                            Log.d("hellorecorder", "Recording updated successfully.");
+
+                            holder.transcription_progress_api.setVisibility(View.GONE);
+                            holder.Description_api.setText(mergedTranscription.toString().trim());
+                            holder.transcription_status.setText("Transcription completed successfully!");
+
+                        } else {
+                            Log.d("hellorecorder", "Failed to update the recording.");
+                        }
+                    });
+                }
+                else {
+                    boolean updateSuccess = databaseHelper.updaterecording_details_api(recording_id, "Unable to generate Transcription");
+
+                    // Switch back to main thread to update UI or notify adapter
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (updateSuccess) {
+
+                            holder.transcription_progress_api.setVisibility(View.GONE);
+                            holder.Description_api.setText("Unable to generate Transcription");
+                            holder.transcription_status.setText("Transcription completed successfully!");
+
+                        } else {
+                            Log.d("hellorecorder", "Failed to update the recording.");
+                        }
+                    });
+                }
+
+            });
+
+            Log.i("transcription_status", "Final Transcription: " + mergedTranscription.toString().trim());
+        } else {
+            // Handle missing transcriptions
+            Log.e("chunk_path", "inside finalize transcription error");
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+            mainHandler.post(() -> holder.transcription_status.setText("Error: Some chunks did not return transcription."));
+        }
     }
+
+    // Helper Function: Check if the status is successful
+    private static boolean isStatusSuccessful(String status) {
+        return "completed".equalsIgnoreCase(status);
+    }
+
     public boolean isMessageSuccessful(String jsonResponse) {
         try {
             // Parse the JSON response
@@ -765,7 +849,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             Log.d("hellorecorder", "Failed to update the recording.");
                         }
                     });
-                } else {
+                }
+                else {
                     boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), "Unable to generate Transcription");
 
                     // Switch back to main thread to update UI or notify adapter
@@ -795,17 +880,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
         executorService.shutdown();
     }
-    private void togglePlayPause(AudioViewHolder holder) {
-        if (mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            holder.playPauseButton.setImageResource(com.example.jean.jcplayer.R.drawable.ic_play);
-            stopSeekBarUpdates();
-        } else {
-            mediaPlayer.start();
-            holder.playPauseButton.setImageResource(com.example.jean.jcplayer.R.drawable.ic_pause);
-            startSeekBarUpdates(holder);
-        }
-    }
+
 
     private void playNewAudio(AudioViewHolder holder, Recording audioItem, int position) {
 
@@ -832,7 +907,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
             // Start playback
             mediaPlayer.start();
-            holder.playPauseButton.setImageResource(com.example.jean.jcplayer.R.drawable.ic_pause);
+            holder.playPauseButton.setImageResource(R.mipmap.pause);
             holder.playbackProgressBar.setMax(mediaPlayer.getDuration());
             mediaPlayer.setOnCompletionListener(mp -> resetPlayerUI(holder,position));
             currentPlayingPosition = position;
@@ -859,7 +934,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     {
                         holder.playbackProgressBar.setProgress(0);
                         holder.playbackTimer.setText("00:00");
-                        holder.playPauseButton.setImageResource(com.example.jean.jcplayer.R.drawable.ic_play);
+                        holder.playPauseButton.setImageResource(R.mipmap.play);
 
                     }
                 }
@@ -901,7 +976,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     private void resetPlayerUI(AudioViewHolder holder,int currentPlayingPosition) {
         holder.playbackProgressBar.setProgress(0);
         holder.playbackTimer.setText("00:00");
-        holder.playPauseButton.setImageResource(com.example.jean.jcplayer.R.drawable.ic_play);
+        holder.playPauseButton.setImageResource(R.mipmap.play);
 
 
     }
@@ -936,6 +1011,34 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             return String.format("%02d:%02d", minutes, seconds);
         }
     }
+    public static String getStatus(String jsonString) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            return jsonObject.optString("status", "unknown");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "error";
+        }
+    }
+
+    // Function to check if the status is "completed" (successful)
+
+
+    // Function to get the transcription if the status is "completed"
+    public static String getTranscriptionIfSuccessful(String jsonString) {
+        try {
+            if (isStatusSuccessful(jsonString)) {
+                JSONObject jsonObject = new JSONObject(jsonString);
+                return jsonObject.optString("transcription", "No transcription available.");
+            } else {
+                return "Status is not successful.";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error processing the JSON.";
+        }
+    }
+
     @Override
     public int getItemCount() {
         return recordingList.size();
@@ -946,7 +1049,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         SeekBar playbackProgressBar;
         TextView playbackTimer;
         Button Start_Transcription;
-        JcPlayerView JcPlayerView;
+
         TextView recordingLabel,ceation_d_and_t,total_time,Description,Description_api,transcription_status;
         ImageView expand_button,add_to_list,delete,expand_button_api;
 
@@ -968,7 +1071,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             playPauseButton = itemView.findViewById(R.id.playPauseButton);
             playbackProgressBar = itemView.findViewById(R.id.playbackProgressBar);
             playbackTimer = itemView.findViewById(R.id.playbackTimer);
-            JcPlayerView =  itemView.findViewById(R.id.jcplayer);
+
             Start_Transcription=itemView.findViewById(R.id.Start_Transcription);
             recordingCard=itemView.findViewById(R.id.recordingCard);
             expand_button=itemView.findViewById(R.id.expand_btn);

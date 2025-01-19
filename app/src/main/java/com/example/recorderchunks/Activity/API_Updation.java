@@ -41,13 +41,12 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import nl.bryanderidder.themedtogglebuttongroup.ThemedToggleButtonGroup;
 
 public class API_Updation extends AppCompatActivity {
 
     private EditText etChatGptApi, etGeminiApi;
     private Button btnSave, btnUpdate, manage_prompt;
-    private ThemedToggleButtonGroup toggleGroup;
+
 
     private static final String PREF_NAME = "ApiKeysPref";
     public static final String KEY_CHATGPT = "ChatGptApiKey";
@@ -65,7 +64,7 @@ public class API_Updation extends AppCompatActivity {
     private Spinner languageSpinner,applanguagespinner;
     Switch api_switch,model_switch;
 
-    TextView uuid_text,signature_text;
+    TextView uuid_text,signature_text,currently_downloading_model,no_models_downloaded;
     ImageView uuid_image, signature_image;
     Model_Database_Helper modelDatabaseHelper;
 
@@ -81,6 +80,9 @@ public class API_Updation extends AppCompatActivity {
 
 
         // Recycler view setup for downloaded models
+        no_models_downloaded=findViewById(R.id.no_models_downloaded);
+        currently_downloading_model=findViewById(R.id.currently_downloading_model);
+        no_models_downloaded.setVisibility(View.GONE);
         recyclerView = findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         recyclerView.setLayoutManager(layoutManager);
@@ -88,6 +90,21 @@ public class API_Updation extends AppCompatActivity {
         List<String> downloadedLanguages = dbHelper.getDownloadedLanguages();
         adapter = new LanguageAdapter(downloadedLanguages);
         recyclerView.setAdapter(adapter);
+        if(downloadedLanguages.size()<=0)
+        {
+            no_models_downloaded.setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            no_models_downloaded.setVisibility(View.GONE);
+        }
+        String downloadingModels = ModelDownloader.getCurrentlyDownloadingModelsAsString();
+        if (!downloadingModels.isEmpty()) {
+            currently_downloading_model.setText("Currently downloading models: " + downloadingModels);
+        } else {
+            currently_downloading_model.setText("No models are currently being downloaded.");
+
+        }
 
         ///////////////////////////////
         api_switch=findViewById(R.id.api_switch);
@@ -96,6 +113,7 @@ public class API_Updation extends AppCompatActivity {
         Local_t=findViewById(R.id.Loc);
         Server_t=findViewById(R.id.Ser);
         selected_api=findViewById(R.id.selected_api);
+
 
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         modelDatabaseHelper=new Model_Database_Helper(API_Updation.this);
@@ -137,13 +155,13 @@ public class API_Updation extends AppCompatActivity {
                 if(i!=0)
                 {
                     String selectedLanguage = languages[position];
-                    if(ModelDownloader.isModeldownloading())
+                    if(false)
                     {
                         new AlertDialog.Builder(API_Updation.this)
                                 .setTitle("Change Language")
                                 .setMessage("A Language is currently downloading. If you change the language, the download will stop. Do you want to continue?")
                                 .setPositiveButton("Yes", (dialog, which) -> {
-                                    ModelDownloader.cancelDownload();
+                                   // ModelDownloader.cancelDownload(selectedLanguage);
                                     if(modelDatabaseHelper.checkModelDownloadedByLanguage(selectedLanguage))
                                     {
                                        // Toast.makeText(API_Updation.this, "Model Downloaded", Toast.LENGTH_SHORT).show();
@@ -263,7 +281,6 @@ public class API_Updation extends AppCompatActivity {
         etGeminiApi = findViewById(R.id.et_gemini_api);
         btnSave = findViewById(R.id.btn_save);
         btnUpdate = findViewById(R.id.btn_update);
-        toggleGroup = findViewById(R.id.time);
         manage_prompt=findViewById(R.id.manage_prompt);
         uuid_image=findViewById(R.id.uuid_copy);
         signature_image=findViewById(R.id.signature_copy);

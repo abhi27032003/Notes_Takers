@@ -45,13 +45,16 @@ import com.example.recorderchunks.Activity.RecordingService;
 import com.example.recorderchunks.Activity.Show_all_ai_notes;
 import com.example.recorderchunks.Adapter.AudioRecyclerAdapter;
 import com.example.recorderchunks.Adapter.OnBackPressedListener;
+import com.example.recorderchunks.Adapter.TagAdapter;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Helpeerclasses.Notes_Database_Helper;
 import com.example.recorderchunks.Activity.Manage_Prompt;
+import com.example.recorderchunks.Helpeerclasses.TagStorage;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.Note;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.Model_Class.RecordingViewModel;
+import com.example.recorderchunks.Model_Class.Tag;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.Model_Class.is_recording;
 import com.example.recorderchunks.Model_Class.recording_event_no;
@@ -61,6 +64,7 @@ import com.example.recorderchunks.R;
 import com.example.recorderchunks.Activity.activity_text_display;
 import com.example.recorderchunks.utils.RecordingManager;
 import com.example.recorderchunks.utils.RecordingUtils;
+import com.example.recorderchunks.utils.TagUtils;
 import com.github.file_picker.FilePicker;
 import com.github.file_picker.FileType;
 
@@ -69,10 +73,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 
-public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter.OnSelectionChangedListener,RecordingUtils.RecordingCallback, OnBackPressedListener {
+public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter.OnSelectionChangedListener,RecordingUtils.RecordingCallback, OnBackPressedListener, TagAdapter.OnTagActionListener{
     LinearLayout event_description_view, all_transcription_view;
     Toolbar toolbar;
     private boolean isExpanded = false; // To track collapse/expand state
@@ -131,6 +136,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     private Spinner languageSpinner;
      private recording_language recordingLanguage;
     private current_event ce;
+    /////tags work
+
+    private RecyclerView tag_recycler;
+    private TagAdapter tag_adapter;
+    private List<Tag> tagList;
+    private TagStorage tagStorage;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -192,6 +203,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         constraintLayout = view.findViewById(R.id.constraint);
         showalltranscription=view.findViewById(R.id.showalltranscription);
         showdescription = view.findViewById(R.id.showdescription);
+
 
 
 
@@ -287,6 +299,14 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             recordingLanguage.setRecording_language(savedLanguage);
 
         }
+        ////tag work
+        tag_recycler = view.findViewById(R.id.tags_recycler);
+        tagStorage = new TagStorage(getContext());
+        tagList = loadTags(event_id);
+        tag_recycler.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+
+        tag_adapter = new TagAdapter(tagList, getContext(), this);
+        tag_recycler.setAdapter(tag_adapter);
 
         //Setup all Prompts Spinner
         languages = promptDatabaseHelper.getAllPromptTexts();
@@ -1253,6 +1273,61 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         recordButton.setText(getString(R.string.start_recording));
         recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
     }
+    private List<Tag> loadTags(Integer event_id) {
+        List<String> availableTags = tagStorage.getTags(String.valueOf(event_id)) != null
+                ? tagStorage.getTags(String.valueOf(event_id)).get("available_tags")
+                : TagUtils.DEFAULT_TAGS;
 
+        List<String> selectedTags = tagStorage.getTags(String.valueOf(event_id)) != null
+                ? tagStorage.getTags(String.valueOf(event_id)).get("selected_tags")
+                : new ArrayList<>();
+
+        List<Tag> tags = new ArrayList<>();
+        for (String tag : availableTags) {
+            tags.add(new Tag(tag, selectedTags.contains(tag)));
+        }
+        return tags;
+    }
+
+    @Override
+    public void onTagSelected(int position, boolean isSelected) {
+        tagList.get(position).setSelected(isSelected);
+        saveTags();
+    }
+
+    @Override
+    public void onAddNewTag() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Add New Tag");
+
+        final EditText input = new EditText(getContext());
+        builder.setView(input);
+
+        builder.setPositiveButton("Add", (dialog, which) -> {
+            String newTag = input.getText().toString();
+            if (!newTag.isEmpty()) {
+                tagList.add(new Tag(newTag, false));
+                saveTags();
+                adapter.notifyDataSetChanged();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.show();
+    }
+
+    private void saveTags() {
+        List<String> availableTags = new ArrayList<>();
+        List<String> selectedTags = new ArrayList<>();
+
+        for (Tag tag : tagList) {
+            availableTags.add(tag.getName());
+            if (tag.isSelected()) {
+                selectedTags.add(tag.getName());
+            }
+        }
+
+        tagStorage.saveTags(String.valueOf(event_id), availableTags, selectedTags);
+    }
 }
 

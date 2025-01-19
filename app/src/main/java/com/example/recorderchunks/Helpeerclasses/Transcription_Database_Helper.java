@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.recorderchunks.Model_Class.TranscriptionHistory;
 
@@ -130,7 +131,12 @@ public class Transcription_Database_Helper extends SQLiteOpenHelper {
             }
             cursor.close();
         }
+        else
+        {
+            Log.d("t_histroy","no transcription history fi=ound");
+        }
 
+        Log.d("t_histroy",transcriptionHistories.toString());
         return transcriptionHistories;
     }
 

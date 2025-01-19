@@ -60,7 +60,7 @@ public class TranscriptionUtils {
     }
 
     public interface TranscriptionStatusCallback {
-        void onTranscriptionStatusSuccess(String name, String status, int queuePosition);
+        void onTranscriptionStatusSuccess(String name, String status, int queuePosition) throws JSONException;
         void onTranscriptionStatusError(String errorMessage);
     }
     /**
@@ -260,7 +260,17 @@ public class TranscriptionUtils {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    callback.onTranscriptionStatusSuccess(response.body().string(), "status", 1);
+                    String responseString = response.body().string();
+
+                    // Log the response
+                    Log.e("chunk_path", responseString);
+
+                    // Use the response string in the callback
+                    try {
+                        callback.onTranscriptionStatusSuccess(responseString, "status", 1);
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
 
 
                 } else {
@@ -282,7 +292,7 @@ public class TranscriptionUtils {
         languageMap.put("Spanish", "es");
 
         // Return the code if it exists, otherwise return "Code not found"
-        return languageMap.getOrDefault(language, "Code not found");
+        return languageMap.getOrDefault(language, "en");
     }
     public static String extractNumberBeforeDot(String filePath) {
         StringBuilder number = new StringBuilder();

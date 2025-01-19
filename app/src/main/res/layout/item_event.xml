@@ -24,6 +24,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+
         <TextView
             android:id="@+id/eventTitle"
             android:layout_width="match_parent"
@@ -33,7 +34,11 @@
             android:textColor="@color/nav"
             android:textSize="18sp"
             android:textStyle="bold" />
-
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/horizontalRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="0dp"/>
         <TextView
             android:id="@+id/eventCreationDate"
             android:layout_width="match_parent"

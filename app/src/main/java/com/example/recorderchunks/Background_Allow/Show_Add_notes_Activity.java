@@ -35,7 +35,7 @@ import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
 import com.example.recorderchunks.Model_Class.Prompt;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.BuildUtils;
-import com.yariksoffice.lingver.Lingver;
+
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -134,7 +134,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         }
         else
         {
-            if(!ModelDownloader.isModeldownloading())
+            if(!ModelDownloader.isModelDownloading(savedModelLanguage))
             {
                 startModelDownload(savedModelLanguage,modelDatabaseHelper);
 

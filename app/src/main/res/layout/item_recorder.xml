@@ -433,12 +433,7 @@
 
 
 
-            <com.example.jean.jcplayer.view.JcPlayerView
-                android:visibility="gone"
 
-                android:id="@+id/jcplayer"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>
