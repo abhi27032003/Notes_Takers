@@ -381,6 +381,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // Return true if at least one row is affected, false otherwise
         return rowsAffected > 0;
     }
+    public boolean updateRecordingStatus(int recordingId, String status) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_IS_TRANSCRIBED, status); // Update the status column (e.g., "yes", "no", "in_progress")
+
+        // Define the where clause and arguments
+        String whereClause = "recording_id = ?";
+        String[] whereArgs = new String[]{String.valueOf(recordingId)};
+
+        // Perform the update
+        int rowsAffected = db.update(TABLE_RECORDINGS, values, whereClause, whereArgs);
+
+        // Return true if at least one row is affected, false otherwise
+        return rowsAffected > 0;
+    }
     public boolean updaterecording_details_api( int recordingId, String description) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();

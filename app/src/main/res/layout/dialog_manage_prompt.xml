@@ -3,7 +3,7 @@
 xmlns:android="http://schemas.android.com/apk/res/android"
 xmlns:app="http://schemas.android.com/apk/res-auto"
 android:layout_width="match_parent"
-android:layout_height="wrap_content"
+android:layout_height="match_parent"
 android:orientation="vertical"
 android:padding="16dp"
 android:background="@color/white">
@@ -38,13 +38,16 @@ android:background="@color/white">
     app:boxCornerRadiusTopEnd="20dp"
     app:boxCornerRadiusTopStart="20dp"
     app:boxBackgroundColor="@color/fourth"
+
     app:boxStrokeColor="@color/secondary"
     android:hint="Enter Details">
 
     <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/text_input"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:minHeight="190sp"
+
         android:padding="8dp"
         android:textColor="@color/black"
         android:textSize="16sp" />

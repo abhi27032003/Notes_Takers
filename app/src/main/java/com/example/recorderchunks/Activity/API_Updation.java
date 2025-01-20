@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
@@ -70,7 +71,8 @@ public class API_Updation extends AppCompatActivity {
 
     int i=0;
 
-
+    private Handler handler ;
+    private Runnable updateTask;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,6 +82,7 @@ public class API_Updation extends AppCompatActivity {
 
 
         // Recycler view setup for downloaded models
+        handler = new Handler();
         no_models_downloaded=findViewById(R.id.no_models_downloaded);
         currently_downloading_model=findViewById(R.id.currently_downloading_model);
         no_models_downloaded.setVisibility(View.GONE);
@@ -87,24 +90,31 @@ public class API_Updation extends AppCompatActivity {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         recyclerView.setLayoutManager(layoutManager);
         Model_Database_Helper dbHelper = new Model_Database_Helper(this);
-        List<String> downloadedLanguages = dbHelper.getDownloadedLanguages();
-        adapter = new LanguageAdapter(downloadedLanguages);
-        recyclerView.setAdapter(adapter);
-        if(downloadedLanguages.size()<=0)
-        {
-            no_models_downloaded.setVisibility(View.VISIBLE);
-        }
-        else
-        {
-            no_models_downloaded.setVisibility(View.GONE);
-        }
-        String downloadingModels = ModelDownloader.getCurrentlyDownloadingModelsAsString();
-        if (!downloadingModels.isEmpty()) {
-            currently_downloading_model.setText("Currently downloading models: " + downloadingModels);
-        } else {
-            currently_downloading_model.setText("No models are currently being downloaded.");
 
-        }
+        updateTask = new Runnable() {
+            @Override
+            public void run() {
+                List<String> downloadedLanguages = dbHelper.getDownloadedLanguages();
+                adapter = new LanguageAdapter(downloadedLanguages);
+                recyclerView.setAdapter(adapter);
+
+                if (downloadedLanguages.size() <= 0) {
+                    no_models_downloaded.setVisibility(View.VISIBLE);
+                } else {
+                    no_models_downloaded.setVisibility(View.GONE);
+                }
+
+                String downloadingModels = ModelDownloader.getCurrentlyDownloadingModelsAsString();
+                if (!downloadingModels.isEmpty()) {
+                    currently_downloading_model.setText("Currently downloading models: " + downloadingModels);
+                } else {
+                    currently_downloading_model.setText("No models are currently being downloaded.");
+                }
+
+                // Schedule the next execution after 5 seconds
+                handler.postDelayed(this, 1000);
+            }
+        };
 
         ///////////////////////////////
         api_switch=findViewById(R.id.api_switch);
@@ -608,5 +618,18 @@ public class API_Updation extends AppCompatActivity {
             default:
                 return "en"; // Default to English if no match
         }
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Start the periodic update when the activity/fragment is resumed
+        handler.post(updateTask);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop updates when the activity/fragment is paused to avoid memory leaks
+        handler.removeCallbacks(updateTask);
     }
 }

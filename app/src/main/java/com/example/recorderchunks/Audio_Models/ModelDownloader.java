@@ -211,6 +211,8 @@ public class ModelDownloader {
                         .setContentText("Downloaded " + language + " Model")
                         .setProgress(0, 0, false);
                 notificationManager.notify(language.hashCode(), notificationBuilder.build());
+                notificationManager.cancel(language.hashCode());
+                notificationManager.cancel(language.hashCode());
             } catch (Exception e) {
                 Log.e("ModelDownloader", "Error downloading model: " + e.getMessage(), e);
             } finally {

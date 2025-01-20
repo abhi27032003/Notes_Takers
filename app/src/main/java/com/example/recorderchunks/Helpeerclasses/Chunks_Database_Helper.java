@@ -56,28 +56,35 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
     }
 
     public void updateChunkStatus(String chunkId, String status) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COL_STATUS, status);
+        SQLiteDatabase db = null;
+        try {
+            db = this.getWritableDatabase(); // Ensure we are working with an open database
+            ContentValues values = new ContentValues();
+            values.put(COL_STATUS, status);
 
-        // Update the database
-        int rowsAffected = db.update(TABLE_CHUNKS, values, COL_CHUNK_ID + " = ?", new String[]{chunkId});
+            // Update the database
+            int rowsAffected = db.update(TABLE_CHUNKS, values, COL_CHUNK_ID + " = ?", new String[]{chunkId});
 
-        // Log the result
-        if (rowsAffected > 0) {
-            Log.d("DatabaseUpdate", "Status updated to '" + status + "' for chunk ID: " + chunkId);
-        } else {
-            Log.e("DatabaseUpdate", "Failed to update status for chunk ID: " + chunkId);
+            // Log the result
+            if (rowsAffected > 0) {
+                Log.d("DatabaseUpdate", "Status updated to '" + status + "' for chunk ID: " + chunkId);
+            } else {
+                Log.e("DatabaseUpdate", "Failed to update status for chunk ID: " + chunkId);
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseError", "Error updating chunk status", e);
+        } finally {
+            if (db != null && db.isOpen()) {
+                db.close();  // Close database only if it is open
+            }
         }
-        db.close();
     }
-
 
     public void updateChunkTranscription(String chunkId, String transcription) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COL_TRANSCRIPTION, transcription);
-        values.put(COL_STATUS, "done");
+        values.put(COL_STATUS, "completed");
         db.update(TABLE_CHUNKS, values, COL_CHUNK_ID + " = ?", new String[]{chunkId});
         db.close();
     }

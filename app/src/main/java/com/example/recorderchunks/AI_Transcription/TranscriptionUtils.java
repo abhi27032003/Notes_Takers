@@ -269,7 +269,9 @@ public class TranscriptionUtils {
                     try {
                         callback.onTranscriptionStatusSuccess(responseString, "status", 1);
                     } catch (JSONException e) {
-                        throw new RuntimeException(e);
+                        Log.e("chunk_path_i", responseString);
+
+                        Log.e("chunk_path_I",e.getMessage());
                     }
 
 
