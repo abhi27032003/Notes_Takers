@@ -89,13 +89,28 @@ public class TagAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         public void bind(Tag tag, int position) {
-            tagName.setText(tag.getName());
+            tagName.setText(getWord(tag.getName()));
             tagCheckBox.setChecked(tag.isSelected());
 
             tagCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 onTagActionListener.onTagSelected(position, isChecked);
             });
         }
+    }
+    public static String getWord(String input) {
+        if (input == null || !input.contains("|~|")) {
+            throw new IllegalArgumentException("Invalid input format");
+        }
+        return input.split("\\|~\\|")[0];
+    }
+
+    // Function to extract the number
+    public static int getNumber(String input) {
+        if (input == null || !input.contains("|~|")) {
+            throw new IllegalArgumentException("Invalid input format");
+        }
+        String numberPart = input.split("\\|~\\|")[1];
+        return Integer.parseInt(numberPart); // Convert number to int
     }
 
     class AddTagViewHolder extends RecyclerView.ViewHolder {

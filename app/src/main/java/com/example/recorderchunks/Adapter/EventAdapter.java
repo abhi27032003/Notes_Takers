@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -24,6 +25,7 @@ import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.current_event;
 import com.example.recorderchunks.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -66,7 +68,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         }
 
         if (event.getDescription() != null) {
-            holder.descriptionTextView.setText(event.getDescription());
+            int[] colors = {
+                    context.getResources().getColor(R.color.RC1),
+                    context.getResources().getColor(R.color.RC2),
+                    context.getResources().getColor(R.color.RC3),
+                    context.getResources().getColor(R.color.RC4),
+                    context.getResources().getColor(R.color.RC5)
+            };
+
+            holder.linearLayout.setBackgroundColor(colors[Integer.parseInt(event.getDescription())]);
+//            holder.Card_main.setStrokeColor(colors[Integer.parseInt(event.getDescription())]);
         } else {
             holder.descriptionTextView.setText("Not Available");
         }
@@ -167,11 +178,15 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         TextView titleTextView, descriptionTextView, dateTextView;
         MaterialButton eventDate,eventTime;
         ImageView deleteEvent;
-        ListView listView ;
+        LinearLayout linearLayout ;
         RecyclerView recyclerView ;
+        MaterialCardView Card_main;
 
         public ViewHolder(View itemView) {
             super(itemView);
+            Card_main=itemView.findViewById(R.id.Card_main);
+
+            linearLayout=itemView.findViewById(R.id.linearLayout);
             recyclerView= itemView.findViewById(R.id.horizontalRecyclerView);
             titleTextView = itemView.findViewById(R.id.eventTitle);
             descriptionTextView = itemView.findViewById(R.id.eventDescription);

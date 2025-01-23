@@ -29,6 +29,7 @@ import com.example.recorderchunks.Adapter.OnBackPressedListener;
 import com.example.recorderchunks.Adapter.PromptAdapter;
 import com.example.recorderchunks.Audio_Models.ModelDownloader;
 import com.example.recorderchunks.Audio_Models.Vosk_Model;
+import com.example.recorderchunks.Helpeerclasses.Chunks_Database_Helper;
 import com.example.recorderchunks.Helpeerclasses.LocaleHelper;
 import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
 import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
@@ -76,6 +77,9 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         String isprompt_saved=sharedPreferences.getString(IS_PROMPT_SAVED, "no");
         String localeCode = getLocaleCode(savedAppLanguage);
         LocaleHelper.setLocale(Show_Add_notes_Activity.this, localeCode);
+
+        Chunks_Database_Helper chunks_database_helper=new Chunks_Database_Helper(this);
+        chunks_database_helper.logAllChunks();
 
         // Initialize the permissions launcher
         permissionLauncher = registerForActivityResult(

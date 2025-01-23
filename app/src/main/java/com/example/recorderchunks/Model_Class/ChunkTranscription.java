@@ -1,6 +1,8 @@
 package com.example.recorderchunks.Model_Class;
 
 
+import java.security.PrivateKey;
+
 public class ChunkTranscription {
 
     private String chunkId;
@@ -9,13 +11,16 @@ public class ChunkTranscription {
     private String chunkPath;
     private String transcription;
 
+    private  String uniqueRecordingName;
+
     // Constructor
-    public ChunkTranscription(String chunkId, int recordingId, String transcriptionStatus, String chunkPath, String transcription) {
+    public ChunkTranscription(String chunkId, int recordingId, String transcriptionStatus, String chunkPath, String transcription, String uniqueRecordingName) {
         this.chunkId = chunkId;
         this.recordingId = recordingId;
         this.transcriptionStatus = transcriptionStatus;
         this.chunkPath = chunkPath;
         this.transcription = transcription;
+        this.uniqueRecordingName =uniqueRecordingName;
     }
 
     // Default Constructor
@@ -62,6 +67,13 @@ public class ChunkTranscription {
     public void setTranscription(String transcription) {
         this.transcription = transcription;
     }
+    public String getUniqueRecordingName() {
+        return uniqueRecordingName;
+    }
+
+    public void setUniqueRecordingName(String uniqueRecordingName) {
+        this.uniqueRecordingName = uniqueRecordingName;
+    }
 
     // toString method for debugging/logging
     @Override
@@ -72,6 +84,7 @@ public class ChunkTranscription {
                 ", transcriptionStatus='" + transcriptionStatus + '\'' +
                 ", chunkPath='" + chunkPath + '\'' +
                 ", transcription='" + transcription + '\'' +
+
                 '}';
     }
 }

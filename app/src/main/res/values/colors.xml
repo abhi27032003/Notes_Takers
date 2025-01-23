@@ -7,6 +7,13 @@
     <color name="third">#DDEEDD </color>
     <color name="button">#ffb347 </color>
     <color name="fourth">#FFFFFF</color>
+    <color name="background_top">#e6e6fe</color>
+    <color name="background_bottom">#f1e7ff</color>
+    <color name="RC1">#fde7f3</color>
+    <color name="RC2">#dbeaff</color>
+    <color name="RC3">#dcfce7</color>
+    <color name="RC4">#f4e8ff</color>
+    <color name="RC5">#fef9c2</color>
 
 
 </resources>

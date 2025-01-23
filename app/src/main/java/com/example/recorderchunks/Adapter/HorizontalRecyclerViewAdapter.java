@@ -30,7 +30,7 @@ public class HorizontalRecyclerViewAdapter extends RecyclerView.Adapter<Horizont
             Color.YELLOW, // Yellow
             Color.CYAN,   // Cyan
             Color.MAGENTA,// Magenta
-            Color.BLACK   // Black
+               // Black
     };
 
     public HorizontalRecyclerViewAdapter(Context context, List<String> items) {
@@ -48,11 +48,11 @@ public class HorizontalRecyclerViewAdapter extends RecyclerView.Adapter<Horizont
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         // Bind the data (String) to the TextView
-        holder.textView.setText(items.get(position));
+        holder.textView.setText(getWord(items.get(position)));
 
         // Set a random color for the ImageView's drawable background
         Random random = new Random();
-        int color = colors[random.nextInt(colors.length)]; // Get a random color from the array
+        int color = colors[getNumber(items.get(position))]; // Get a random color from the array
 
         // Get the drawable and apply the color filter
         Drawable drawable = context.getDrawable(R.drawable.tag);
@@ -60,6 +60,21 @@ public class HorizontalRecyclerViewAdapter extends RecyclerView.Adapter<Horizont
             drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN); // Apply color filter to the drawable
             holder.tag.setImageDrawable(drawable); // Set the modified drawable
         }
+    }
+    public static String getWord(String input) {
+        if (input == null || !input.contains("|~|")) {
+            throw new IllegalArgumentException("Invalid input format");
+        }
+        return input.split("\\|~\\|")[0];
+    }
+
+    // Function to extract the number
+    public static int getNumber(String input) {
+        if (input == null || !input.contains("|~|")) {
+            throw new IllegalArgumentException("Invalid input format");
+        }
+        String numberPart = input.split("\\|~\\|")[1];
+        return Integer.parseInt(numberPart); // Convert number to int
     }
 
     @Override

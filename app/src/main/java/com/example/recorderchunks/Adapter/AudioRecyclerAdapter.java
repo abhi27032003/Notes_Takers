@@ -45,9 +45,11 @@ import com.example.recorderchunks.AI_Transcription.TranscriptionUtils;
 import com.example.recorderchunks.Activity.activity_text_display;
 import com.example.recorderchunks.Audio_Models.Vosk_Model;
 import com.example.recorderchunks.Helpeerclasses.Chunks_Database_Helper;
+import com.example.recorderchunks.Helpeerclasses.Chunks_Json_helper;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
 import com.example.recorderchunks.Model_Class.ChunkTranscription;
+import com.example.recorderchunks.Model_Class.Chunk_Response;
 import com.example.recorderchunks.Model_Class.Recording;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.AudioUtils;
@@ -162,11 +164,13 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             if (isChecked) {
                 selectedmodel = "Server"; // API when the switch is ON
                 Serversideselected(holder);
+                updateSelectionState(audioItem.getEventId(),audioItem.getDescription(),audioItem.getDescription_api());
                 Transcribe_Server_with_chunks(audioItem,holder,position);
 
             } else {
                 selectedmodel = "Local"; // API when the switch is OFF
                 LocalSideSelected(holder);
+                updateSelectionState(audioItem.getEventId(),audioItem.getDescription_api(),audioItem.getDescription());
                 Transcribe_Local(audioItem,holder,position);
 
             }
@@ -450,12 +454,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             {
                 holder.transcription_status.setText("Sending for chunking..");
                 Log.e("chunk_path","sending for chunking");
-                splitAudioInBackground(audioItem.getUrl(), 30000, new AudioChunkHelper.splitCallback() {
+                splitAudioInBackground(audioItem.getUrl(), 60000, new AudioChunkHelper.splitCallback() {
                     @Override
                     public void onChunksGenerated(List<String> chunkPaths) {
                         holder.transcription_status_progress_bar_api.setProgress(10,true);
                         holder.progressPercentage.setText(10+" %");
-                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
+                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"random_uuid_",holder,audioItem);
 
                         // Do something with the chunkPaths, e.g., update UI
                     }
@@ -478,12 +482,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             {
                 holder.transcription_status.setText("Sending for chunking..");
                 Log.e("chunk_path","sending for chunking");
-                splitAudioInBackground(convertToWav(audioItem.getUrl(),context), 20000, new AudioChunkHelper.splitCallback() {
+                splitAudioInBackground(convertToWav(audioItem.getUrl(),context), 60000, new AudioChunkHelper.splitCallback() {
                     @Override
                     public void onChunksGenerated(List<String> chunkPaths) {
                         holder.transcription_status_progress_bar_api.setProgress(10,true);
                         holder.progressPercentage.setText(10+" %");
-                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"sdfgrtfhi7tyhb671987fgytdtf",holder,audioItem);
+                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"random_uuid_",holder,audioItem);
 
                     }
                 });
@@ -527,31 +531,31 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             for (ChunkTranscription chunkTranscription : chunks) {
                 String status = chunkTranscription.getTranscriptionStatus();
                 Log.i("chunk_path_status", chunkTranscription.getTranscriptionStatus());
+                Log.i("chunk_recording_code", chunkTranscription.getChunkId());
+
 
                 // If chunk is not transcribed yet, send it for transcription
                 if (status.contains("not") || status.contains("started") || status.contains("not_started")) {
                     allTranscriptionProgress = false;
-                    TranscriptionUtils.send_for_transcription(context,chunkTranscription.getChunkPath(), new TranscriptionUtils.TranscriptionCallback() {
+                    TranscriptionUtils.send_for_transcription(chunkTranscription.getChunkId(),chunkTranscription.getChunkPath(), new TranscriptionUtils.TranscriptionCallback() {
                         @Override
                         public void onSuccess(String status) {
                             Log.d("chunk_path","success "+status+" for "+chunkTranscription.getChunkPath()+"\n");
                             if(isMessageSuccessful(status))
                             {
                                 chunksSent[0]++;
-                                chunks_database_helper.updateChunkStatus(chunkTranscription.getChunkId(),"in_progress");
+                                chunks_database_helper.updateChunkStatus(chunkTranscription.getChunkId(),chunkTranscription.getUniqueRecordingName(),"in_progress");
                                 Integer total_chunks= chunks_database_helper.getTotalChunksByRecordingId(audioitem.getRecordingId());
                                 Integer sent_chunks=chunks_database_helper.getChunksCountByRecordingIdAndStatus(audioitem.getRecordingId(),"in_progress");
                                 holder.transcription_status.setText("chunks sent : "+sent_chunks+"/"+total_chunks);
                                 float progress = 20 + (float) sent_chunks / total_chunks * 50;
                                 holder.transcription_status_progress_bar_api.setProgress((int) progress, true);
                                 holder.progressPercentage.setText((int)progress+" %");
-
                                 if (total_chunks == sent_chunks) {
                                     holder.transcription_status_progress_bar_api.setProgress(70,true);
                                     holder.progressPercentage.setText(70+" %");
-
                                     holder.transcription_status.setText("Audio sent for transcription, waiting for responses from API");
-                                    get_transcription(audioitem.getRecordingId(), holder); // Trigger the final transcription step
+                                    get_transcription_single(chunkTranscription.getUniqueRecordingName(), holder); // Trigger the final transcription step
                                 }
                             }
                             else
@@ -572,14 +576,15 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             allTranscriptionProgress=false;
 
                         }
-                    },chunkTranscription.getChunkId(),audioitem.getLanguage());
+                    }, chunkTranscription.getUniqueRecordingName(),audioitem.getLanguage());
 
 
 
                     if (chunksSent[0] == totalChunks) {
                         // All chunks sent, now wait for responses
+                        Log.i("c_t",chunkTranscription.getChunkId());
                         holder.transcription_status.setText("Audio sent for transcription, waiting for responses from API");
-                        get_transcription(recordingId, holder); // Trigger the final transcription step
+                        get_transcription_single(chunkTranscription.getUniqueRecordingName(), holder); // Trigger the final transcription step
                     }
                 }
                 else {
@@ -602,83 +607,88 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             holder.transcription_status_progress_bar_api.setProgress(Integer.valueOf(70),true);
             holder.progressPercentage.setText(70+" %");
             holder.transcription_status.setText("Audio sent for transcription, waiting for responses from API");
-            get_transcription(recordingId, holder); // Trigger the transcription API fetch
+            get_transcription_single(chunks_database_helper.getUniqueRecordingNameByRecordingId(audioitem.getRecordingId()), holder); // Trigger the final transcription step
         }
     }
-    private void get_transcription(int recordingId, AudioViewHolder holder) {
+    private void get_transcription_single(String unique_recordingId, AudioViewHolder holder) {
         holder.transcription_status.setText("Sent all chunks to API, waiting for transcription...");
-
-        List<ChunkTranscription> chunks = chunks_database_helper.getChunksByRecordingId(recordingId);
-        int totalCalls = chunks.size();
-        final int[] callsDone = {0};
-        Log.e("chunk_path", chunks.toString());
-
-        Map<Integer, String> transcriptionMap = new TreeMap<>(); // TreeMap to maintain chunk order by chunk_id
-        Set<Integer> processedChunks = new HashSet<>();
-
-        for (ChunkTranscription chunkTranscription : chunks) {
-            String status = chunkTranscription.getTranscriptionStatus();
-            if (isStatusSuccessful(status)) { // Check if the status is "completed"
-                transcriptionMap.put(Integer.valueOf(TranscriptionUtils.extractNumberBeforeDot(chunkTranscription.getChunkPath())), chunkTranscription.getTranscription());
-                processedChunks.add(Integer.valueOf(TranscriptionUtils.extractNumberBeforeDot(chunkTranscription.getChunkPath())));
-                callsDone[0]++;
-                Integer total_chunks= chunks_database_helper.getTotalChunksByRecordingId(chunkTranscription.getRecordingId());
-                Integer sent_chunks=chunks_database_helper.getChunksCountByRecordingIdAndStatus(chunkTranscription.getRecordingId(),"completed");
-
-                float progress = 70 + (float) sent_chunks / total_chunks * 30;
-                holder.transcription_status_progress_bar_api.setProgress((int) progress, true);
-                holder.progressPercentage.setText((int)progress+" %");
-
-                // If all calls are processed, finalize transcription
-                if (callsDone[0] == totalCalls) {
-                    finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
-                }
-            } else if (status.contains("in") || status.contains("progress") || status.contains("in_progress")) {
-                // Fetch the transcription status from the API
-                TranscriptionUtils.getTranscriptionStatus(chunkTranscription.getChunkId(), new TranscriptionUtils.TranscriptionStatusCallback() {
-                    @Override
-                    public void onTranscriptionStatusSuccess(String response, String statuss, int queuePosition) throws JSONException {
-                        JSONObject jsonObject = new JSONObject(response);
-                        String api_transcription_status=jsonObject.optString("status","");
-
-                        // Extract chunk_id and transcription only if status is "completed"
-                        if (isStatusSuccessful(api_transcription_status)) {
-                            int chunkId_no = jsonObject.getInt("chunk_id");
-                            String transcription = jsonObject.optString("transcription", "");
-                            transcriptionMap.put(chunkId_no, transcription);
-                            processedChunks.add(chunkId_no);
-                            chunks_database_helper.updateChunkTranscription(chunkTranscription.getChunkId(),transcription);
-                            chunks_database_helper.updateChunkStatus(chunkTranscription.getChunkId(),"completed");
+        TranscriptionUtils.getTranscriptionStatus_All_At_once(unique_recordingId, new TranscriptionUtils.TranscriptionStatusCallback() {
+            @Override
+            public void onTranscriptionStatusSuccess(String response, String statuss, int queuePosition) throws JSONException {
+                Log.i("got_chunks",response);
+                if(Chunks_Json_helper.isValidFormat(response))
+                {
+                    List<Chunk_Response> all_chunks_status= Chunks_Json_helper.getChunkList(response);
+                    for (Chunk_Response chunk : all_chunks_status) {
+                        String chunkId = chunk.getChunkId();
+                        String status = chunk.getStatus();
+                        String transcription = chunk.getTranscription();
+                        if(status.contains("completed"))
+                        {
+                            Log.i("got_chunks","completed for "+chunkId);
+                            chunks_database_helper.updateChunkTranscription(chunkId,unique_recordingId,transcription);
+                            chunks_database_helper.updateChunkStatus(chunkId,unique_recordingId,"completed");
                         }
 
-                        callsDone[0]++;
-                        Log.e("chunk_path", callsDone[0]+":"+totalCalls);
+                        Log.i("got_chunks",chunkId.toString());
+                    }
+                    Integer total_chunks= Chunks_Json_helper.getTotalChunkCount(response);
+                    Integer transcribed_chunks=Chunks_Json_helper.getCompletedChunkCount(response);
+                    Log.i("got_chunks",transcribed_chunks+"/"+total_chunks);
+                    holder.transcription_status.setText("Chunks Transcribed : "+transcribed_chunks+" / "+total_chunks);
 
-                        // Finalize transcription once all calls are completed
-                        if (callsDone[0] == totalCalls) {
-                            finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
+                    float progress = 70 + (float) transcribed_chunks/total_chunks * 30;
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            holder.transcription_status_progress_bar_api.setProgress((int) progress, true);
+                            holder.progressPercentage.setText((int) progress + " %");
                         }
+                    });
+                    if (total_chunks > transcribed_chunks) {
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.i("got_chunks","rechecking....");
+                                holder.transcription_status.setText("Refreshing Status");
+
+                                get_transcription_single(unique_recordingId, holder);
+                            }
+                        }, 30000); // 60000 milliseconds = 1 minute
                     }
 
-                    @Override
-                    public void onTranscriptionStatusError(String errorMessage) {
-                        //callsDone[0]++;
-                        Log.e("transcription_error", "Error in chunk transcription: " + errorMessage);
 
-                        if (callsDone[0] == totalCalls) {
-                            finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
-                        }
-                    }
-                }, chunkTranscription.getChunkPath());
-            } else {
-                callsDone[0]++;
-
-                if (callsDone[0] == totalCalls) {
-                    finalizeTranscription(holder, transcriptionMap, totalCalls, processedChunks,recordingId);
                 }
+                else {
+                    Log.i("got_chunks","invalid json format");
+                }
+
             }
-        }
+
+            @Override
+            public void onTranscriptionStatusError(String errorMessage) {
+                //callsDone[0]++;
+                Log.e("transcription_error", "Error in chunk transcription: " + errorMessage);
+
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Call the method again after 1 minute
+                        Log.i("got_chunks","retriggering due to error");
+
+                        get_transcription_single(unique_recordingId, holder); // Trigger the final transcription step
+
+                    }
+                }, 30000);
+
+            }
+        }, "chunkTranscription.getChunkPath()");
+
+
+
     }
+
 
     private void finalizeTranscription(AudioViewHolder holder, Map<Integer, String> transcriptionMap, int totalCalls, Set<Integer> processedChunks,int recording_id) {
         Log.e("chunk_path", "inside finalize transcription");
@@ -980,6 +990,13 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         notifyItemChanged(position);
 
     }
+    public static void updateSelectionState(int id, String stringToRemove, String stringToAdd) {
+        selectedItems.remove(stringToRemove);
+        selectedItems.add(stringToAdd);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putStringSet("selected_items_" + id,new HashSet<>(selectedItems));
+        editor.apply();
+    }
 
     private void loadSelectionState(int id) {
         Set<String> savedItems = sharedPreferences.getStringSet("selected_items_"+id, new HashSet<>());
@@ -1125,6 +1142,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     }
     private void Serversideselected(AudioViewHolder holder)
     {
+
         holder.Local_t.setTypeface(null, Typeface.NORMAL);
         holder.Server_t.setTypeface(null, Typeface.BOLD);
         holder.server_C.setVisibility(View.VISIBLE);

@@ -75,6 +75,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 
 public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter.OnSelectionChangedListener,RecordingUtils.RecordingCallback, OnBackPressedListener, TagAdapter.OnTagActionListener{
@@ -303,6 +304,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         tag_recycler = view.findViewById(R.id.tags_recycler);
         tagStorage = new TagStorage(getContext());
         tagList = loadTags(event_id);
+        if (tagList.size() <= 0) {
+            // Create and add two default tags
+            tagList.add(new Tag("Meeting|~|" + getRandomNumber(), false));
+            tagList.add(new Tag("Lecture|~|" + getRandomNumber(), false));
+            saveTags();
+        }
         tag_recycler.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
         tag_adapter = new TagAdapter(tagList, getContext(), this);
@@ -989,6 +996,10 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             Toast.makeText(getContext(), "Failed to save audio", Toast.LENGTH_SHORT).show();
         }
     }
+    public int getRandomNumber5() {
+        Random random = new Random();
+        return random.nextInt(5); // Generates a random number between 1 and 6
+    }
     private void updateEventData(int eventId, String title, String eventDescription, String selectedDate, String selectedTime) {
         if (title == null || title.trim().isEmpty()) {
             Toast.makeText(getContext(), "Event title cannot be empty", Toast.LENGTH_SHORT).show();
@@ -996,7 +1007,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         }
 
         if (eventDescription == null || eventDescription.trim().isEmpty()) {
-            eventDescription="";
+            eventDescription= String.valueOf(getRandomNumber5());
         }
 
         if (selectedDate == null || selectedDate.trim().isEmpty() || selectedDate.contains("Pick")) {
@@ -1047,7 +1058,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         }
 
         if (eventDescription == null || eventDescription.trim().isEmpty()) {
-            eventDescription="";
+            eventDescription=String.valueOf(getRandomNumber5());
         }
 
         if (selectedDate == null || selectedDate.trim().isEmpty()||selectedDate.contains("Pick")) {
@@ -1306,7 +1317,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         builder.setPositiveButton("Add", (dialog, which) -> {
             String newTag = input.getText().toString();
             if (!newTag.isEmpty()) {
-                tagList.add(new Tag(newTag, false));
+                tagList.add(new Tag(newTag+"|~|"+getRandomNumber(), false));
                 saveTags();
                 adapter.notifyDataSetChanged();
             }
@@ -1315,7 +1326,10 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
         builder.show();
     }
-
+    public int getRandomNumber() {
+        Random random = new Random();
+        return random.nextInt(6) ; // Generates a random number between 1 and 6
+    }
     private void saveTags() {
         List<String> availableTags = new ArrayList<>();
         List<String> selectedTags = new ArrayList<>();

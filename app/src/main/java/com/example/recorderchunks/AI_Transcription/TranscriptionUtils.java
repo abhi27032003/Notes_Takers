@@ -146,9 +146,9 @@ public class TranscriptionUtils {
         });
 
     }
-    public static void send_for_transcription(Context context, String filePath, TranscriptionCallback callback,String unique_id,String language) {
+    public static void send_for_transcription(String chunk_id, String filePath, TranscriptionCallback callback,String unique_recording_name,String language) {
         File audioFile = new File(filePath);
-
+        Log.e("recording_name",unique_recording_name);
         if (!audioFile.exists() || !audioFile.isFile()) {
             if (callback != null) {
                 callback.onError("Invalid file path or file does not exist.");
@@ -172,11 +172,11 @@ public class TranscriptionUtils {
                 )
                 .addFormDataPart(
                         "recording_name", // Key for the additional parameter
-                       unique_id // Value of the additional parameter
+                       unique_recording_name // Value of the additional parameter
                 )
                 .addFormDataPart(
                         "chunk_id", // Key for the additional parameter
-                        extractNumberBeforeDot(filePath)// Value of the additional parameter
+                        chunk_id// Value of the additional parameter
                 )
                 .addFormDataPart(
                         "language", // Key for the additional parameter
@@ -284,6 +284,55 @@ public class TranscriptionUtils {
             }
         });
     }
+
+    public static void getTranscriptionStatus_All_At_once(String unique_recording_name, TranscriptionStatusCallback callback,String user_id) {
+        OkHttpClient client = new OkHttpClient();
+
+        // Build the request URL with query parameter
+        String url = "https://notetakers.vipresearch.ca/App_Script/status2.php?recording_name=" + unique_recording_name + "&user_id=" + "random_uuid_";
+
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                // Call the callback with an error
+                if (callback != null) {
+                    callback.onTranscriptionStatusError("Network request failed: " + e.getMessage());
+                }
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseString = response.body().string();
+
+                    // Log the response
+                    Log.e("chunk_path", responseString);
+
+                    // Use the response string in the callback
+                    try {
+                        callback.onTranscriptionStatusSuccess(responseString, "status", 1);
+                    } catch (JSONException e) {
+                        Log.e("chunk_path_i", responseString);
+
+                        Log.e("chunk_path_I",e.getMessage());
+                    }
+
+
+                } else {
+                    // Call the callback with an error
+                    if (callback != null) {
+                        callback.onTranscriptionStatusError("Server error: " + response.message());
+                    }
+                }
+            }
+        });
+    }
+
     public static String getLanguageCode(String language) {
         // Create a map for the 5 languages and their codes
         HashMap<String, String> languageMap = new HashMap<>();

@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardCornerRadius="40sp"
+        app:strokeColor="@color/button"
         android:backgroundTint="@color/third"
         >
         <LinearLayout
