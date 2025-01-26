@@ -285,7 +285,7 @@
                     android:layout_height="30sp"
                     android:layout_gravity="center"
                     android:text="Expand"
-                    android:src="@mipmap/expand"
+                    android:src="@mipmap/next"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -383,7 +383,7 @@
                     android:layout_height="30sp"
                     android:layout_gravity="center"
                     android:text="Expand"
-                    android:src="@mipmap/expand"
+                    android:src="@mipmap/next"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />

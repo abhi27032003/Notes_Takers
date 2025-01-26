@@ -1,17 +1,21 @@
 package com.example.recorderchunks.AI_Transcription;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
 import android.widget.Toast;
 
+import com.example.recorderchunks.Encryption.AudioEncryptor;
+import com.example.recorderchunks.Encryption.RSAEncryptor;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +36,8 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+
+import javax.crypto.SecretKey;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -66,13 +72,21 @@ public class TranscriptionUtils {
     /**
      * Transcribes the given audio file from its file path.
      *
-     * @param context  The context for resource access.
      * @param filePath The path to the audio file.
      * @param callback The callback to handle success or error.
      */
+    public static void send_for_transcription_encrypted(
+            String chunk_id,
+            String filePath,
+            TranscriptionCallback callback,
+            String unique_recording_name,
+            String language,
+            Context context
+            )
+    {
 
-    public static void send_for_transcription_no_uuid(Context context, String filePath, Transcription_no_code_Callback callback,String unique_id,String language) {
         File audioFile = new File(filePath);
+        Log.e("recording_name", unique_recording_name);
 
         if (!audioFile.exists() || !audioFile.isFile()) {
             if (callback != null) {
@@ -81,71 +95,104 @@ public class TranscriptionUtils {
             return;
         }
 
-        OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS) // Set connection timeout
-                .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)   // Set write timeout (for file upload)
-                .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)    // Set read timeout (for server response)
-                .build();
+        try {
+            // 1. Generate AES key
+            SecretKey aesKey = AudioEncryptor.generateAESKey();
 
-        // Create a request body with the audio file
-        RequestBody requestBody = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM) // Set the request type as form-data
-                .addFormDataPart(
-                        "audio_file",  // Key for the form field expected by the server
-                        audioFile.getName(), // The file's name
-                        RequestBody.create(audioFile, MediaType.parse("audio/*")) // File content with the correct MIME type
-                )
-                .addFormDataPart(
-                        "language", // Key for the additional parameter
-                        getLanguageCode(language) // Value of the additional parameter
-                )
-                .build();
+            // 2. Encrypt the audio file using the AES key
+            byte[] encryptedAudio = AudioEncryptor.encryptFileWithAES(audioFile, aesKey);
 
+            SharedPreferences sharedPreferences = context.getSharedPreferences("preferences", Context.MODE_PRIVATE);
+            String serverPublicKeyBase64 = sharedPreferences.getString("signature", null);
 
-        // Build the request
-        Request request = new Request.Builder()
-                .url("https://notetakers.vipresearch.ca/App_Script/uploads.php")
-                .post(requestBody)
-                .build();
-
-        // Make the network request
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                Log.e("NetworkError", "Request failed: " + e.getMessage(), e);
+            if (serverPublicKeyBase64 == null) {
                 if (callback != null) {
-                    new Handler(Looper.getMainLooper()).post(() ->
-                            callback.onError("Network request failed: " + e.getMessage())
-                    );
+                    callback.onError("Server public key not found in shared preferences.");
                 }
+                return;
             }
 
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                try {
-                    if (response.isSuccessful()) {
-                        String responseBody = response.body() != null ? response.body().string() : "";
-                        Log.d("ResponseSuccess", "Body: " + responseBody);
+
+            // Load the server's public key
+            PublicKey serverPubKey = RSAEncryptor.loadPublicKey(serverPublicKeyBase64);
+            byte[] encryptedAESKey = RSAEncryptor.encryptAESKeyWithRSAPublicKey(serverPubKey, aesKey.getEncoded());
+
+            // 4. Create the multipart request body with encrypted content
+            RequestBody requestBody = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart(
+                            "encrypted_audio",
+                            audioFile.getName() + ".enc",
+                            RequestBody.create(encryptedAudio, MediaType.parse("application/octet-stream"))
+                    )
+                    .addFormDataPart(
+                            "encrypted_key",
+                            "key.enc",
+                            RequestBody.create(encryptedAESKey, MediaType.parse("application/octet-stream"))
+                    )
+                    .addFormDataPart("recording_name", unique_recording_name)
+                    .addFormDataPart("chunk_id", chunk_id)
+                    .addFormDataPart("language", getLanguageCode(language))
+                    .addFormDataPart("user_id", "user_id_123")
+                    .build();
+
+            // 5. Build the request
+            Request request = new Request.Builder()
+                    .url(SEND_TRANSCRIPTION_URL)
+                    .post(requestBody)
+                    .build();
+
+            // 6. Make the network request
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                    .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.e("NetworkError", "Request failed: " + e.getMessage(), e);
+                    if (callback != null) {
                         new Handler(Looper.getMainLooper()).post(() ->
-                                callback.onSuccess(getTranscription(responseBody))
-                        );
-                    } else {
-                        String errorBody = response.body() != null ? response.body().string() : "No response body";
-                        Log.e("ServerError", "Code: " + response.code() + ", Message: " + response.message());
-                        new Handler(Looper.getMainLooper()).post(() ->
-                                callback.onError("Server error: " + response.message() + " - " + errorBody)
+                                callback.onError("Network request failed: " + e.getMessage())
                         );
                     }
-                } catch (Exception e) {
-                    Log.e("ResponseError", "Error processing response: " + e.getMessage(), e);
-                    new Handler(Looper.getMainLooper()).post(() ->
-                            callback.onError("Error processing response: " + e.getMessage())
-                    );
                 }
-            }
-        });
 
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    try {
+                        if (response.isSuccessful()) {
+                            String responseBody = response.body() != null ? response.body().string() : "";
+                            Log.d("ResponseSuccess", "Body: " + responseBody);
+                            new Handler(Looper.getMainLooper()).post(() ->
+                                    callback.onSuccess(responseBody)
+                            );
+                        } else {
+                            String errorBody = response.body() != null ? response.body().string() : "No response body";
+                            Log.e("ServerError", "Code: " + response.code() + ", Message: " + response.message());
+                            new Handler(Looper.getMainLooper()).post(() ->
+                                    callback.onError("Server error: " + response.message() + " - " + errorBody)
+                            );
+                        }
+                    } catch (Exception e) {
+                        Log.e("ResponseError", "Error processing response: " + e.getMessage(), e);
+                        new Handler(Looper.getMainLooper()).post(() ->
+                                callback.onError("Error processing response: " + e.getMessage())
+                        );
+                    }
+                }
+            });
+
+        } catch (Exception e) {
+            Log.e("EncryptionError", "Error during encryption: " + e.getMessage(), e);
+            if (callback != null) {
+                callback.onError("Encryption error: " + e.getMessage());
+            }
+        }
     }
+
     public static void send_for_transcription(String chunk_id, String filePath, TranscriptionCallback callback,String unique_recording_name,String language) {
         File audioFile = new File(filePath);
         Log.e("recording_name",unique_recording_name);
@@ -235,54 +282,6 @@ public class TranscriptionUtils {
             }
         });
 
-    }
-    public static void getTranscriptionStatus(String name, TranscriptionStatusCallback callback, String filePath) {
-        File audioFile = new File(filePath);
-        OkHttpClient client = new OkHttpClient();
-
-        // Build the request URL with query parameter
-        String url = "https://notetakers.vipresearch.ca/App_Script/status.php?recording_name=" + name + "&user_id=" + "user_id_123" + "&chunk_id=" +extractNumberBeforeDot(filePath);
-
-        Request request = new Request.Builder()
-                .url(url)
-                .get()
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                // Call the callback with an error
-                if (callback != null) {
-                    callback.onTranscriptionStatusError("Network request failed: " + e.getMessage());
-                }
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseString = response.body().string();
-
-                    // Log the response
-                    Log.e("chunk_path", responseString);
-
-                    // Use the response string in the callback
-                    try {
-                        callback.onTranscriptionStatusSuccess(responseString, "status", 1);
-                    } catch (JSONException e) {
-                        Log.e("chunk_path_i", responseString);
-
-                        Log.e("chunk_path_I",e.getMessage());
-                    }
-
-
-                } else {
-                    // Call the callback with an error
-                    if (callback != null) {
-                        callback.onTranscriptionStatusError("Server error: " + response.message());
-                    }
-                }
-            }
-        });
     }
 
     public static void getTranscriptionStatus_All_At_once(String unique_recording_name, TranscriptionStatusCallback callback,String user_id) {

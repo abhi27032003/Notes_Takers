@@ -16,7 +16,7 @@ public class AudioChunkHelper {
 
     // Splits the audio file into chunks and returns the list of chunk file paths
     public static List<String> splitAudioIntoChunks(String filePath, int chunkSizeMs) {
-        Log.d("file_path",filePath);
+//        Log.d("file_path",filePath);
         List<String> chunkPaths = new ArrayList<>();
         try {
             File audioFile = new File(filePath);

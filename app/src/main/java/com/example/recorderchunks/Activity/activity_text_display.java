@@ -1,5 +1,6 @@
 package com.example.recorderchunks.Activity;
 
+import android.app.Dialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -9,7 +10,9 @@ import android.icu.text.SimpleDateFormat;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +41,7 @@ public class activity_text_display extends AppCompatActivity {
     private static final String PREFS_NAME = "PromptSelectionPrefs";
     private RecyclerView rvTranscriptionHistory;
     private TranscriptionAdapter adapter;
+    private ImageView show_full_transcription;
     EditText fullText;
     String Recording_Recycler_id,Transcrition_mode,Event_id,Recording_id,tit,text;
     private Transcription_Database_Helper dbHelper;
@@ -48,6 +52,7 @@ public class activity_text_display extends AppCompatActivity {
         this.sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         update=findViewById(R.id.update_btn);
         rvTranscriptionHistory = findViewById(R.id.rvTranscriptionHistory);
+        show_full_transcription=findViewById(R.id.show_full_transcription);
         DatabaseHelper databaseHelper=new DatabaseHelper(this);
          dbHelper=new Transcription_Database_Helper(this);
 
@@ -104,6 +109,26 @@ public class activity_text_display extends AppCompatActivity {
             }
 
         }
+        show_full_transcription=findViewById(R.id.show_full_transcription);
+        show_full_transcription.setOnClickListener(v -> {
+            // Create and configure the dialog
+            Dialog dialog = new Dialog(v.getContext());
+            dialog.setContentView(R.layout.dialog_full_transcription);
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+            // Get references to the dialog views
+            TextView tvFullTranscription = dialog.findViewById(R.id.tvFullTranscription);
+            ImageView btnCancel = dialog.findViewById(R.id.btnCancel);
+
+            // Set the transcription text
+            tvFullTranscription.setText(text);
+
+            // Handle the cancel button click
+            btnCancel.setOnClickListener(cancel -> dialog.dismiss());
+
+            // Show the dialog
+            dialog.show();
+        });
         update=findViewById(R.id.update_btn);
         update.setOnClickListener(new View.OnClickListener() {
             @Override

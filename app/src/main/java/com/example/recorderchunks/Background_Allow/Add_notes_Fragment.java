@@ -97,7 +97,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     private Spinner prompt_spinner;
     private RecordingUtils recordingUtils;
     public static RecordingViewModel recordingViewModel;
-    private recording_event_no recording_event_no;
+    public static recording_event_no recording_event_no;
 
 
 
@@ -153,7 +153,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         //check if have mic access
 
         //database helpers and other initializations
-        recording_event_no=new recording_event_no();
+        recording_event_no=recording_event_no.getInstance();
         ce = new current_event();
         recordingLanguage=new recording_language();
         databaseHelper = new DatabaseHelper(getContext());
@@ -723,58 +723,70 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     }
     @Override
     public void onResume() {
+        if(recording_event_no.getRecording_event_no()!=event_id && recording_event_no.getRecording_event_no()!=-1)
+        {
 
-        recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
-            if(isrecording)
-            {
-                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
-                    if(ispaused)
-                    {
+            recordButton.setText(getString(R.string.recording_disabled));
+            recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.black));
+            recordButton.setEnabled(false);
+        }
+        else {
+            recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
+                if(isrecording)
+                {
+                    recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                        if(ispaused)
+                        {
 
-                        recording_small_card.setVisibility(View.VISIBLE);
-                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
-                        recordButton.setText(getString(R.string.stop_recording));
-                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
-                    }
-                    else
-                    {
-                        recording_small_card.setVisibility(View.VISIBLE);
-                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
-                        recordButton.setText(getString(R.string.stop_recording));
-                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
+                            recording_small_card.setVisibility(View.VISIBLE);
+                            play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                            recordButton.setText(getString(R.string.stop_recording));
+                            recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
+                        }
+                        else
+                        {
+                            recording_small_card.setVisibility(View.VISIBLE);
+                            play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+                            recordButton.setText(getString(R.string.stop_recording));
+                            recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
 
-                    }
-                });
-            }
-            else
-            {
-                recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
-                    if(ispaused)
-                    {
-                        recording_small_card.setVisibility(View.VISIBLE);
-                        play_pause_recording_small_animation.setImageResource(R.mipmap.play);
-                        recordButton.setText(getString(R.string.stop_recording));
-                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
-                    }
-                    else
-                    {
+                        }
+                    });
+                }
+                else
+                {
+                    recordingViewModel.getIsPaused().observe(getViewLifecycleOwner(), ispaused -> {
+                        if(ispaused)
+                        {
+                            recording_small_card.setVisibility(View.VISIBLE);
+                            play_pause_recording_small_animation.setImageResource(R.mipmap.play);
+                            recordButton.setText(getString(R.string.stop_recording));
+                            recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
+                        }
+                        else
+                        {
 
-                        recording_small_card.setVisibility(View.GONE);
-                        play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
-                        recordingList.clear();
-                        recordingList = databaseHelper.getRecordingsByEventId(event_id);
-                        recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
-                        updateSelectedItemsDisplay(new ArrayList<>());
-                        recyclerView.setAdapter(recordingAdapter);
-                        recordButton.setText(getString(R.string.start_recording));
-                        recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
-                        recordingAdapter.notifyDataSetChanged();
+                            recording_small_card.setVisibility(View.GONE);
+                            play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
+                            recordingList.clear();
+                            recordingList = databaseHelper.getRecordingsByEventId(event_id);
+                            recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
+                            updateSelectedItemsDisplay(new ArrayList<>());
+                            recyclerView.setAdapter(recordingAdapter);
+                            recordButton.setText(getString(R.string.start_recording));
+                            recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
+                            recordingAdapter.notifyDataSetChanged();
 
-                    }
-                });
+                        }
+                    });
 
-            }
-        });
+                }
+            });
+
+
+        }
+
+
         recordingList.clear();
         recordingList.addAll(databaseHelper.getRecordingsByEventId(event_id));
 

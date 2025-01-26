@@ -1,13 +1,9 @@
 package com.example.recorderchunks.Adapter;
 
-import static android.provider.Settings.System.getString;
-import static androidx.core.content.ContextCompat.startActivity;
+
 import static com.example.recorderchunks.AI_Transcription.AudioChunkHelper.splitAudioInBackground;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
-import static com.example.recorderchunks.Activity.API_Updation.getLanguagesFromMetadata;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
-import static com.example.recorderchunks.utils.AudioUtils.convertToWavFilePath;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -72,6 +68,7 @@ import java.util.concurrent.Executors;
 
 public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.AudioViewHolder> {
     boolean allTranscriptionProgress = true;
+    SharedPreferences prefs_uuid ;
 
     public static ArrayList<Recording> recordingList;
     private final Context context;
@@ -91,6 +88,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
     Vosk_Model vm;
     public static final String SELECTED_TRANSCRIPTION_METHOD = "SelectedTranscriptionMethod";
+    String uuid;
+    String signature;
 
 
 
@@ -111,6 +110,9 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         this.databaseHelper=new DatabaseHelper(context);
         this.chunks_database_helper=new Chunks_Database_Helper(context);
         this.sharedPreferences2 = context.getSharedPreferences("ApiKeysPref", Context.MODE_PRIVATE);
+        this.prefs_uuid = context.getSharedPreferences("preferences", Context.MODE_PRIVATE);
+        this.uuid = prefs_uuid.getString("uuid", null);
+        this.signature = prefs_uuid.getString("signature", null);
     }
 
     @NonNull
@@ -131,6 +133,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
         //////////////////////////////////// transcrtoption method work
+        server_open_transcription_disabled(holder);
+        local_open_transcription_disabled(holder);
         String defaultt_method= sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD, "Local");
         String selectedModel = sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()),defaultt_method); // Default to "Use ChatGPT"
         if ("Server".equalsIgnoreCase(selectedModel)) {
@@ -140,6 +144,13 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             editor.putString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Server");
             editor.apply();
             Transcribe_Server_with_chunks(audioItem,holder,position);
+            if (selectedItems.contains(audioItem.getDescription_api())) {
+                holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
+                holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24); // Replace with your "remove" icon resource
+            } else {
+                holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.fourth));
+                holder.add_to_list.setImageResource(R.drawable.baseline_add_24); // Replace with your "add" icon resource
+            }
 
         } else if ("Local".equalsIgnoreCase(selectedModel)) {
 
@@ -149,6 +160,14 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             editor.putString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Local");
             editor.apply();
             Transcribe_Local(audioItem,holder,position);
+            if (selectedItems.contains(audioItem.getDescription())) {
+                holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
+                holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24); // Replace with your "remove" icon resource
+            } else {
+                holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.fourth));
+                holder.add_to_list.setImageResource(R.drawable.baseline_add_24); // Replace with your "add" icon resource
+            }
+            //local_open_transcription_disabled(holder);
 
         }
         else
@@ -164,14 +183,28 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             if (isChecked) {
                 selectedmodel = "Server"; // API when the switch is ON
                 Serversideselected(holder);
-                updateSelectionState(audioItem.getEventId(),audioItem.getDescription(),audioItem.getDescription_api());
                 Transcribe_Server_with_chunks(audioItem,holder,position);
+                if(selectedItems.contains(audioItem.getDescription())||selectedItems.contains(audioItem.getDescription_api()))
+                {
+                    selectedItems.remove(audioItem.getDescription());
+                    selectedItems.add(audioItem.getDescription_api());
+                    saveSelectionState(audioItem.getEventId());
+                    notifySelectionChanged();
+                }
 
             } else {
                 selectedmodel = "Local"; // API when the switch is OFF
                 LocalSideSelected(holder);
-                updateSelectionState(audioItem.getEventId(),audioItem.getDescription_api(),audioItem.getDescription());
+                loadSelectionState(audioItem.getEventId());
                 Transcribe_Local(audioItem,holder,position);
+                if(selectedItems.contains(audioItem.getDescription())||selectedItems.contains(audioItem.getDescription_api()))
+                {
+                    selectedItems.remove(audioItem.getDescription_api());
+                    selectedItems.add(audioItem.getDescription());
+                    saveSelectionState(audioItem.getEventId());
+                    notifySelectionChanged();
+                }
+
 
             }
 
@@ -226,16 +259,30 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         audioItem.setLanguage(selectedLanguage);
                         audioItem.setIs_transcribed("no");
                         databaseHelper.updateRecordingStatus(audioItem.getRecordingId(),"no");
+                        String selectedModel = sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()),defaultt_method);
+                        if ("Server".equalsIgnoreCase(selectedModel)) {
+                            server_open_transcription_disabled(holder);
+                            holder.Description_api.setText("");
+                            holder.transcription_progress_api.setVisibility(View.VISIBLE);
+                            Transcribe_Server_with_chunks(audioItem,holder,position);
+                            // server_open_transcription_disabled(holder);
 
-                        ///////////////////////////// recording local change language
-                       Transcribe_Local(audioItem,holder,position);
+                        } else if ("Local".equalsIgnoreCase(selectedModel)) {
 
-                        ///////////////////////////// recording server change language
+                            local_open_transcription_disabled(holder);
+                            Transcribe_Local(audioItem,holder,position);
 
-                        holder.Description_api.setText("");
-                        holder.transcription_progress_api.setVisibility(View.VISIBLE);
+                            //local_open_transcription_disabled(holder);
 
-                        Transcribe_Server_with_chunks(audioItem,holder,position);
+                        }
+                        else
+                        {
+                            holder.model_switch.setChecked(false); // Assuming btn1 is for ChatGPT
+                            LocalSideSelected(holder);
+
+                        }
+
+
 
 
                         i[0] = i[0] +1;
@@ -259,36 +306,35 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
 
-        if (selectedItems.contains(audioItem.getDescription())) {
-            holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
-            holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24); // Replace with your "remove" icon resource
-        } else {
-            holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.fourth));
-            holder.add_to_list.setImageResource(R.drawable.baseline_add_24); // Replace with your "add" icon resource
-        }
 
         holder.add_to_list.setOnClickListener(v -> {
-            if (selectedItems.contains(audioItem.getDescription())) {
-                // Remove the item from the selected list
+            if (selectedItems.contains(audioItem.getDescription())||selectedItems.contains(audioItem.getDescription_api())) {
                 selectedItems.remove(audioItem.getDescription());
-                holder.add_to_list.setImageResource(R.drawable.baseline_add_24); // Change to "add" icon
-                holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.fourth));
-//           holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.fourth));
+                selectedItems.remove(audioItem.getDescription_api());
+                updated_selcted_card_add(holder);
+                saveSelectionState(audioItem.getEventId());
+                notifySelectionChanged();
 
-                saveSelectionState(audioItem.getEventId());
-                notifySelectionChanged();
-               // Toast.makeText(context, "Removed from selection", Toast.LENGTH_SHORT).show();
-            } else {
+            }
+            else {
+                String transcription_model = sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()),defaultt_method); // Default to "Use ChatGPT"
+                if ("Server".equalsIgnoreCase(transcription_model)) {
+                    selectedItems.add(audioItem.getDescription_api());
+                } else if ("Local".equalsIgnoreCase(transcription_model)) {
+                    selectedItems.add(audioItem.getDescription());
+                }
+                else
+                {
+                    selectedItems.add(audioItem.getDescription());
+                }
                 // Add the item to the selected list
-                selectedItems.add(audioItem.getDescription());
-                holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24);
-                holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
-// Change to "remove" icon
+                updated_selcted_card_remove(holder);
                 saveSelectionState(audioItem.getEventId());
                 notifySelectionChanged();
-               // Toast.makeText(context, "Added to selection", Toast.LENGTH_SHORT).show();
             }
         });
+
+
        holder.bindAudioData(audioItem, position);
        if(position!=currentPlayingPosition)
        {
@@ -337,6 +383,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             boolean isDeleted = databaseHelper.deleteRecordingById(audioItem.getRecordingId());
                             if (isDeleted) {
                                 selectedItems.remove(audioItem.getDescription());
+                                selectedItems.remove(audioItem.getDescription_api());
                                 saveSelectionState(audioItem.getEventId());
                                 notifySelectionChanged();
 
@@ -365,60 +412,27 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 //        holder.Description_api.setText(audioItem.getDescription_api());
 //////////////////////////////////////////////////////////////////////////////
         holder.expand_button.setOnClickListener(v -> {
-            if (isExpanded) {
-                // Collapse the TextView
-                holder.Description.setMaxLines(1);
-                holder.Description.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                holder.expand_button.setImageResource(R.mipmap.expand); // Change to expand icon
-                isExpanded = false;
-            } else {
-                // Expand: Show all lines or trigger activity if text exceeds threshold
-                if (holder.Description.getText().toString().length() > 60) { // Define your threshold
-                    Intent intent = new Intent(context, activity_text_display.class);
-                    intent.putExtra("text", holder.Description.getText().toString());
-                    intent.putExtra("Title", context.getString(R.string.transcription));
-                    intent.putExtra("R_id",String.valueOf( audioItem.getRecordingId()));
-                    intent.putExtra("E_id",String.valueOf( audioItem.getEventId()));
-                    intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Local")));
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
-                } else {
-                    holder.Description.setMaxLines(Integer.MAX_VALUE);
-                    holder.Description.setEllipsize(null); // Remove ellipsis
-                    holder.expand_button.setImageResource(R.mipmap.collapse); // Change to collapse icon
-                    isExpanded = true;
-                }
-            }
+            Intent intent = new Intent(context, activity_text_display.class);
+            intent.putExtra("text", holder.Description.getText().toString());
+            intent.putExtra("Title", context.getString(R.string.transcription));
+            intent.putExtra("R_id",String.valueOf( audioItem.getRecordingId()));
+            intent.putExtra("E_id",String.valueOf( audioItem.getEventId()));
+            intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Local")));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
         });
 
 
         ////////////api///////////////////////////////////////
         holder.expand_button_api.setOnClickListener(v -> {
-            if (isExpanded2) {
-                // Collapse the TextView
-                holder.Description_api.setMaxLines(1);
-                holder.Description_api.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                holder.expand_button_api.setImageResource(R.mipmap.expand); // Change to expand icon
-                isExpanded2 = false;
-            } else {
-                // Expand: Show all lines or trigger activity if text exceeds threshold
-                if (holder.Description_api.getText().toString().length() > 60) { // Define your threshold
-                    Intent intent = new Intent(context, activity_text_display.class);
-                    intent.putExtra("text", holder.Description_api.getText().toString());
-                    intent.putExtra("Title", context.getString(R.string.transcription)); // Use context to get string resource
-                    intent.putExtra("R_id",String.valueOf( audioItem.getRecordingId()));
-                    intent.putExtra("E_id",String.valueOf( audioItem.getEventId()));
-                    intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Server")));
-
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
-                } else {
-                    holder.Description_api.setMaxLines(Integer.MAX_VALUE);
-                    holder.Description_api.setEllipsize(null); // Remove ellipsis
-                    holder.expand_button_api.setImageResource(R.mipmap.collapse); // Change to collapse icon
-                    isExpanded2 = true;
-                }
-            }
+            Intent intent = new Intent(context, activity_text_display.class);
+            intent.putExtra("text", holder.Description_api.getText().toString());
+            intent.putExtra("Title", context.getString(R.string.transcription)); // Use context to get string resource
+            intent.putExtra("R_id",String.valueOf( audioItem.getRecordingId()));
+            intent.putExtra("E_id",String.valueOf( audioItem.getEventId()));
+            intent.putExtra("T_mode",String.valueOf( sharedPreferences2.getString(SELECTED_TRANSCRIPTION_METHOD+String.valueOf(audioItem.getRecordingId()), "Server")));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
         });
 
 
@@ -442,24 +456,26 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
         String[] supportedFormats = {"wav", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
         String changetowavformat="3gp";
-
+        server_open_transcription_disabled(holder);
         holder.Description_api.setText("");
         holder.transcription_progress_api.setVisibility(View.VISIBLE);
         holder.transcription_status_progress_bar_api.setProgress(0,true);
         holder.progressPercentage.setText(0+" %");
-
+        server_open_transcription_disabled(holder);
 
         if (Arrays.asList(supportedFormats).contains(fileExtension)) {
             if(audioItem.getIs_transcribed_api().equals("no"))
             {
                 holder.transcription_status.setText("Sending for chunking..");
                 Log.e("chunk_path","sending for chunking");
+                server_open_transcription_disabled(holder);
+
                 splitAudioInBackground(audioItem.getUrl(), 60000, new AudioChunkHelper.splitCallback() {
                     @Override
                     public void onChunksGenerated(List<String> chunkPaths) {
                         holder.transcription_status_progress_bar_api.setProgress(10,true);
                         holder.progressPercentage.setText(10+" %");
-                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"random_uuid_",holder,audioItem);
+                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),uuid,holder,audioItem,position);
 
                         // Do something with the chunkPaths, e.g., update UI
                     }
@@ -473,6 +489,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 holder.progressPercentage.setText(100+" %");
                 holder.transcription_progress_api.setVisibility(View.GONE);
                 holder.Description_api.setText(audioItem.getDescription_api());
+                server_open_transcription_enabled(holder);
+
 
 
             }
@@ -480,6 +498,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         else if(fileExtension.contains(changetowavformat)) {
             if(audioItem.getIs_transcribed_api().equals("no"))
             {
+                server_open_transcription_disabled(holder);
                 holder.transcription_status.setText("Sending for chunking..");
                 Log.e("chunk_path","sending for chunking");
                 splitAudioInBackground(convertToWav(audioItem.getUrl(),context), 60000, new AudioChunkHelper.splitCallback() {
@@ -487,7 +506,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     public void onChunksGenerated(List<String> chunkPaths) {
                         holder.transcription_status_progress_bar_api.setProgress(10,true);
                         holder.progressPercentage.setText(10+" %");
-                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),"random_uuid_",holder,audioItem);
+                        transcribe_and_chunkify_audio(chunkPaths,audioItem.getRecordingId(),uuid,holder,audioItem,position);
 
                     }
                 });
@@ -500,6 +519,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 holder.progressPercentage.setText(100+" %");
                 holder.transcription_progress_api.setVisibility(View.GONE);
                 holder.Description_api.setText(audioItem.getDescription_api());
+                server_open_transcription_enabled(holder);
 
             }
 
@@ -513,10 +533,11 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             audioItem.setDescription_api("Unsupported format :"+fileExtension);
             holder.Description_api.setText("Unsupported format :"+fileExtension);
             holder.transcription_progress_api.setVisibility(View.GONE);
+            server_open_transcription_disabled(holder);
         }
 
     }
-    private void transcribe_and_chunkify_audio(List<String> chunkPaths, int recordingId, String uuid, AudioViewHolder holder, Recording audioitem) {
+    private void transcribe_and_chunkify_audio(List<String> chunkPaths, int recordingId, String uuid, AudioViewHolder holder, Recording audioitem,int position) {
         holder.transcription_status.setText("Audio chunked successfully, sending for transcription to server");
         boolean added_to_db = chunks_database_helper.addChunksBatch(chunkPaths, recordingId, uuid);
         Log.e("chunk_path", "trying to add to database :" + added_to_db);
@@ -537,7 +558,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 // If chunk is not transcribed yet, send it for transcription
                 if (status.contains("not") || status.contains("started") || status.contains("not_started")) {
                     allTranscriptionProgress = false;
-                    TranscriptionUtils.send_for_transcription(chunkTranscription.getChunkId(),chunkTranscription.getChunkPath(), new TranscriptionUtils.TranscriptionCallback() {
+                    TranscriptionUtils.send_for_transcription_encrypted(chunkTranscription.getChunkId(),chunkTranscription.getChunkPath(), new TranscriptionUtils.TranscriptionCallback() {
                         @Override
                         public void onSuccess(String status) {
                             Log.d("chunk_path","success "+status+" for "+chunkTranscription.getChunkPath()+"\n");
@@ -555,7 +576,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                                     holder.transcription_status_progress_bar_api.setProgress(70,true);
                                     holder.progressPercentage.setText(70+" %");
                                     holder.transcription_status.setText("Audio sent for transcription, waiting for responses from API");
-                                    get_transcription_single(chunkTranscription.getUniqueRecordingName(), holder); // Trigger the final transcription step
+                                    get_transcription_single(chunkTranscription.getUniqueRecordingName(), holder,audioitem,position); // Trigger the final transcription step
                                 }
                             }
                             else
@@ -576,7 +597,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             allTranscriptionProgress=false;
 
                         }
-                    }, chunkTranscription.getUniqueRecordingName(),audioitem.getLanguage());
+                    }, chunkTranscription.getUniqueRecordingName(),audioitem.getLanguage(),context);
 
 
 
@@ -584,7 +605,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         // All chunks sent, now wait for responses
                         Log.i("c_t",chunkTranscription.getChunkId());
                         holder.transcription_status.setText("Audio sent for transcription, waiting for responses from API");
-                        get_transcription_single(chunkTranscription.getUniqueRecordingName(), holder); // Trigger the final transcription step
+                        get_transcription_single(chunkTranscription.getUniqueRecordingName(), holder,audioitem,position); // Trigger the final transcription step
                     }
                 }
                 else {
@@ -599,7 +620,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             }
         } else {
             allTranscriptionProgress = false;
-            transcribe_and_chunkify_audio(chunkPaths, recordingId, uuid, holder, audioitem); // Retry if failed
+            transcribe_and_chunkify_audio(chunkPaths, recordingId, uuid, holder, audioitem,position); // Retry if failed
         }
 
         // If all chunks are processed and no further chunks need to be sent, then trigger transcription response fetch
@@ -607,15 +628,18 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             holder.transcription_status_progress_bar_api.setProgress(Integer.valueOf(70),true);
             holder.progressPercentage.setText(70+" %");
             holder.transcription_status.setText("Audio sent for transcription, waiting for responses from API");
-            get_transcription_single(chunks_database_helper.getUniqueRecordingNameByRecordingId(audioitem.getRecordingId()), holder); // Trigger the final transcription step
+            get_transcription_single(chunks_database_helper.getUniqueRecordingNameByRecordingId(audioitem.getRecordingId()), holder,audioitem,position); // Trigger the final transcription step
         }
     }
-    private void get_transcription_single(String unique_recordingId, AudioViewHolder holder) {
+    private void get_transcription_single(String unique_recordingId, AudioViewHolder holder,Recording audioitem,int position) {
+        Handler mainHandler = new Handler(Looper.getMainLooper());
         holder.transcription_status.setText("Sent all chunks to API, waiting for transcription...");
         TranscriptionUtils.getTranscriptionStatus_All_At_once(unique_recordingId, new TranscriptionUtils.TranscriptionStatusCallback() {
             @Override
             public void onTranscriptionStatusSuccess(String response, String statuss, int queuePosition) throws JSONException {
                 Log.i("got_chunks",response);
+                Map<String, String> chunkTranscriptionMap = new TreeMap<>(); // To maintain order by chunk ID
+
                 if(Chunks_Json_helper.isValidFormat(response))
                 {
                     List<Chunk_Response> all_chunks_status= Chunks_Json_helper.getChunkList(response);
@@ -623,11 +647,17 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         String chunkId = chunk.getChunkId();
                         String status = chunk.getStatus();
                         String transcription = chunk.getTranscription();
-                        if(status.contains("completed"))
-                        {
-                            Log.i("got_chunks","completed for "+chunkId);
-                            chunks_database_helper.updateChunkTranscription(chunkId,unique_recordingId,transcription);
-                            chunks_database_helper.updateChunkStatus(chunkId,unique_recordingId,"completed");
+
+                        if (status.contains("completed")) {
+                            Log.i("got_chunks", "completed for " + chunkId);
+                            chunks_database_helper.updateChunkTranscription(chunkId, unique_recordingId, transcription);
+                            chunks_database_helper.updateChunkStatus(chunkId, unique_recordingId, "completed");
+                            Log.i("got_chunks_2",chunkId+transcription);
+
+                            chunkTranscriptionMap.put(chunkId, transcription); // Add transcription to the map
+                        } else {
+                            chunkTranscriptionMap.put(chunkId, " ... ");
+                            Log.i("got_chunks_2",chunkId+" >>>");
                         }
 
                         Log.i("got_chunks",chunkId.toString());
@@ -636,9 +666,45 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     Integer transcribed_chunks=Chunks_Json_helper.getCompletedChunkCount(response);
                     Log.i("got_chunks",transcribed_chunks+"/"+total_chunks);
                     holder.transcription_status.setText("Chunks Transcribed : "+transcribed_chunks+" / "+total_chunks);
+                    if(transcribed_chunks>=1)
+                    {
+                        String combined=combineChunkTranscriptions(chunkTranscriptionMap);
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                holder.Description_api.setVisibility(View.INVISIBLE);
+                                holder.Description_api.setText(combined);
+                                server_open_transcription_enabled(holder);
+                            }
+                        });
+
+
+                        Log.e("got_chunks",combined);
+                    }
+                    if(transcribed_chunks==total_chunks)
+                    {
+                        String combined=combineChunkTranscriptions(chunkTranscriptionMap);
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                holder.Description_api.setVisibility(View.VISIBLE);
+                                holder.Description_api.setText(combined);
+                                server_open_transcription_enabled(holder);
+                                databaseHelper.updaterecording_details_api(audioitem.getRecordingId(),combined);
+                                audioitem.setIs_transcribed_api("yes");
+                                AudioRecyclerAdapter.selectedItems.add(combined);
+                                AudioRecyclerAdapter.selectedItems.remove(audioitem.getDescription());
+                                saveSelectionStatet(audioitem.getEventId(),position);
+                                notifySelectionChanged();
+                                Transcribe_Server_with_chunks(audioitem,holder,position);
+                            }
+                        });
+
+
+                    }
 
                     float progress = 70 + (float) transcribed_chunks/total_chunks * 30;
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
+
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -653,7 +719,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                                 Log.i("got_chunks","rechecking....");
                                 holder.transcription_status.setText("Refreshing Status");
 
-                                get_transcription_single(unique_recordingId, holder);
+                                get_transcription_single(unique_recordingId, holder,audioitem,position);
                             }
                         }, 30000); // 60000 milliseconds = 1 minute
                     }
@@ -677,98 +743,33 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         // Call the method again after 1 minute
                         Log.i("got_chunks","retriggering due to error");
 
-                        get_transcription_single(unique_recordingId, holder); // Trigger the final transcription step
+                        get_transcription_single(unique_recordingId, holder,audioitem,position); // Trigger the final transcription step
 
                     }
                 }, 30000);
 
             }
-        }, "chunkTranscription.getChunkPath()");
+        }, uuid);
 
 
 
     }
 
+    private String combineChunkTranscriptions(Map<String, String> chunkTranscriptionMap) {
+        StringBuilder combinedTranscription = new StringBuilder();
 
-    private void finalizeTranscription(AudioViewHolder holder, Map<Integer, String> transcriptionMap, int totalCalls, Set<Integer> processedChunks,int recording_id) {
-        Log.e("chunk_path", "inside finalize transcription");
-        Log.e("chunk_path", processedChunks.size()+" : "+totalCalls);
-      //  Toast.makeText(context, "progress " +(70+(processedChunks.size()/totalCalls)*30)+" "+processedChunks.size()+" "+totalCalls, Toast.LENGTH_SHORT).show();
-
-        float progress = 70 + (float) processedChunks.size() / totalCalls * 30;
-        holder.transcription_status_progress_bar_api.setProgress((int) progress, true);
-        Handler mainHandler3 = new Handler(Looper.getMainLooper());
-
-        mainHandler3.post(new Runnable() {
-            @Override
-            public void run() {
-                holder.progressPercentage.setText((int)progress+" %");
-            }
-        });
-
-        if (processedChunks.size() == totalCalls) {
-            holder.transcription_status_progress_bar_api.setProgress(Integer.valueOf(100),true);
-            holder.progressPercentage.setText(100+" %");
-            // Merge all transcriptions in sequence
-            StringBuilder mergedTranscription = new StringBuilder();
-            for (String chunkTranscription : transcriptionMap.values()) {
-                mergedTranscription.append(chunkTranscription).append(" ");
-            }
-
-            // Update the UI on the main thread
-            Handler mainHandler1 = new Handler(Looper.getMainLooper());
-            mainHandler1.post(() -> {
-                String transcription=mergedTranscription.toString().trim();
-                if (transcription != null && !transcription.isEmpty()) {
-                    // Update the database
-                    boolean updateSuccess = databaseHelper.updaterecording_details_api(recording_id, transcription);
-
-                    // Switch back to main thread to update UI or notify adapter
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        if (updateSuccess) {
-                            Log.d("hellorecorder", "Recording updated successfully.");
-
-                            holder.transcription_progress_api.setVisibility(View.GONE);
-                            holder.Description_api.setText(mergedTranscription.toString().trim());
-                            holder.transcription_status.setText("Transcription completed successfully!");
-
-                        } else {
-                            Log.d("hellorecorder", "Failed to update the recording.");
-                        }
-                    });
-                }
-                else {
-                    boolean updateSuccess = databaseHelper.updaterecording_details_api(recording_id, "Unable to generate Transcription");
-
-                    // Switch back to main thread to update UI or notify adapter
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        if (updateSuccess) {
-
-                            holder.transcription_progress_api.setVisibility(View.GONE);
-                            holder.Description_api.setText("Unable to generate Transcription");
-                            holder.transcription_status.setText("Transcription completed successfully!");
-
-                        } else {
-                            Log.d("hellorecorder", "Failed to update the recording.");
-                        }
-                    });
-                }
-
-            });
-
-            Log.i("transcription_status", "Final Transcription: " + mergedTranscription.toString().trim());
-        } else {
-            // Handle missing transcriptions
-            Log.e("chunk_path", "inside finalize transcription error");
-            Handler mainHandler = new Handler(Looper.getMainLooper());
-            mainHandler.post(() -> holder.transcription_status.setText("Some chunks did not return transcription. waiting for their transcription"+" ( "+processedChunks.size()+" / "+totalCalls+" ) Transcribed"));
+        for (Map.Entry<String, String> entry : chunkTranscriptionMap.entrySet()) {
+            combinedTranscription.append(entry.getValue()).append(" ");
         }
+
+        return combinedTranscription.toString().trim(); // Remove trailing space
     }
 
     ///////////////////////////////////-----Transcribe Local-----------//////////////////////////////////////
 
 
     private void Transcribe_Local(Recording audioItem,AudioViewHolder holder,int position) {
+        local_open_transcription_disabled(holder);
         if(audioItem.getIs_transcribed().equals("no"))
         {
             Model_Database_Helper modelDatabaseHelper=new Model_Database_Helper(context);
@@ -790,7 +791,15 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             }
             else
             {
+                local_open_transcription_disabled(holder);
                 holder.Description.setText("Local Model for "+audioItem.getLanguage()+" is not available");
+                if(!audioItem.getDescription().isEmpty())
+                {
+                    AudioRecyclerAdapter.selectedItems.remove(audioItem.getDescription());
+                    saveSelectionStatet(audioItem.getEventId(),position);
+                    notifySelectionChanged();
+                }
+
                 holder.transcription_progress.setVisibility(View.GONE);
 
                 //boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), "Local Model for "+selectedLanguage+" is not available");
@@ -804,6 +813,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         else
         {
+            local_open_transcription_enabled(holder);
             holder.Description.setText(audioItem.getDescription());
             holder.transcription_progress.setVisibility(View.GONE);
 
@@ -823,6 +833,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     audioItem.setDescription("Unsupported Format"); // Assuming the setDescription method updates COL_DES
                     audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
                     holder.Description.setText("Unsupported Format");
+                    local_open_transcription_enabled(holder);
                     holder.transcription_progress.setVisibility(View.GONE);
                 } else {
                     Log.d("hellorecorder", "Failed to update the recording.+Unsupported Format");
@@ -842,33 +853,34 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     // Switch back to main thread to update UI or notify adapter
                     new Handler(Looper.getMainLooper()).post(() -> {
                         if (updateSuccess) {
+                            AudioRecyclerAdapter.selectedItems.remove(audioItem.getDescription());
                             Log.d("hellorecorder", "Recording updated successfully.");
                             audioItem.setDescription(transcription); // Assuming the setDescription method updates COL_DES
                             audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
+                            local_open_transcription_enabled(holder);
                             holder.Description.setText(transcription);
                             holder.transcription_progress.setVisibility(View.GONE);
-                            //recordingList.set(position, audioItem);
-
-                            // Notify adapter about the item change
-                            //notifyItemChanged(position);
                             AudioRecyclerAdapter.selectedItems.add(transcription);
+                            AudioRecyclerAdapter.selectedItems.remove(audioItem.getDescription_api());
                             saveSelectionStatet(audioItem.getEventId(),position);
                             notifySelectionChanged();
+                            //Transcribe_Local(audioItem,holder,position);
                         } else {
                             Log.d("hellorecorder", "Failed to update the recording.");
                         }
                     });
                 }
                 else {
-                    boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), "Unable to generate Transcription");
+                    boolean updateSuccess = databaseHelper.updateRecordingDetails(audioItem.getRecordingId(), "Recording Transcribed successfully No text found");
 
                     // Switch back to main thread to update UI or notify adapter
                     new Handler(Looper.getMainLooper()).post(() -> {
                         if (updateSuccess) {
                             Log.d("hellorecorder", "Recording updated successfully.");
-                            holder.Description.setText("Recording updated successfully.");
+                            holder.Description.setText("Recording Transcribed successfully No text found");
                             holder.transcription_progress.setVisibility(View.GONE);
-                            audioItem.setDescription("Unable to generate Transcription"); // Assuming the setDescription method updates COL_DES
+                            local_open_transcription_enabled(holder);
+                            audioItem.setDescription("Recording Transcribed successfully No text found"); // Assuming the setDescription method updates COL_DES
                             audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
                         } else {
                             Log.d("hellorecorder", "Failed to update the recording.");
@@ -880,9 +892,14 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
                         Log.d("hellorecorder", "Error during speech recognition: " + e.getMessage())
                 );
-                holder.transcription_progress.setVisibility(View.GONE);
+                local_open_transcription_enabled(holder);
+
+                new Handler(Looper.getMainLooper()).post(() ->
+                        holder.transcription_progress.setVisibility(View.GONE)
+                );
                 audioItem.setDescription("Error during speech recognition: " + e.getMessage());
                 audioItem.setIs_transcribed("yes"); // Assuming this is the flag for COL_IS_TRANSCRIBED
+                Transcribe_Local(audioItem,holder,position);
                // recordingList.set(position, audioItem);
 //                notifyItemChanged(position);
             }
@@ -899,10 +916,10 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         return "completed".equalsIgnoreCase(status);
     }
 
-    public boolean isMessageSuccessful(String jsonResponse) {
+    public boolean isMessageSuccessful(String jsonResponse) {//Encrypted file uploaded and queued successfully
         try {
 
-            if (jsonResponse.contains("message") && (jsonResponse.contains("uploaded successfully")||jsonResponse.contains("already exists"))) {
+            if (jsonResponse.contains("message") && (jsonResponse.contains("successfully")||jsonResponse.contains("already exists"))) {
                 return true;
             }
         } catch (Exception e) {
@@ -911,6 +928,30 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         return false;
     }
+    public void server_open_transcription_disabled(AudioViewHolder holder) {
+        new Handler(Looper.getMainLooper()).post(() ->
+                holder.expand_button_api.setVisibility(View.GONE)
+        );
+    }
+
+    public void server_open_transcription_enabled(AudioViewHolder holder) {
+        new Handler(Looper.getMainLooper()).post(() ->
+                holder.expand_button_api.setVisibility(View.VISIBLE)
+        );
+    }
+
+    public void local_open_transcription_disabled(AudioViewHolder holder) {
+        new Handler(Looper.getMainLooper()).post(() ->
+                holder.expand_button.setVisibility(View.GONE)
+        );
+    }
+
+    public void local_open_transcription_enabled(AudioViewHolder holder) {
+        new Handler(Looper.getMainLooper()).post(() ->
+                holder.expand_button.setVisibility(View.VISIBLE)
+        );
+    }
+
 
 
 
@@ -983,22 +1024,39 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
     }
     public  void saveSelectionStatet(int id,int position) {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putStringSet("selected_items_"+id, new HashSet<>(selectedItems));
-        editor.apply();
-        loadSelectionState(id);
-        notifyItemChanged(position);
+        try
+        {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putStringSet("selected_items_"+id, new HashSet<>(selectedItems));
+            editor.apply();
+            loadSelectionState(id);
+            notifyItemChanged(position);
+        }
+        catch (Exception e)
+        {
+
+        }
+
 
     }
-    public static void updateSelectionState(int id, String stringToRemove, String stringToAdd) {
+    public static void updateSelectionState(int id, String stringToRemove, String stringToAdd,Recording audioitem,Context context,AudioViewHolder holder) {
+
         selectedItems.remove(stringToRemove);
         selectedItems.add(stringToAdd);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putStringSet("selected_items_" + id,new HashSet<>(selectedItems));
         editor.apply();
+        if (selectedItems.contains(stringToAdd)) {
+            holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
+            holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24); // Replace with your "remove" icon resource
+        } else {
+            holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.fourth));
+            holder.add_to_list.setImageResource(R.drawable.baseline_add_24); // Replace with your "add" icon resource
+        }
+
     }
 
-    private void loadSelectionState(int id) {
+    private  void loadSelectionState(int id) {
         Set<String> savedItems = sharedPreferences.getStringSet("selected_items_"+id, new HashSet<>());
         selectedItems.clear();
         if (savedItems != null) {
@@ -1006,6 +1064,14 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         notifySelectionChanged();
     }
+    private static void loadSelectionState_fort(int id) {
+        Set<String> savedItems = sharedPreferences.getStringSet("selected_items_"+id, new HashSet<>());
+        selectedItems.clear();
+        if (savedItems != null) {
+            selectedItems.addAll(savedItems);
+        }
+    }
+
 
     private void stopSeekBarUpdates() {
         if (updateSeekBarRunnable != null) {
@@ -1077,6 +1143,22 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             e.printStackTrace();
             return "Error processing the JSON.";
         }
+    }
+    public void updated_selcted_card_add(AudioViewHolder holder)
+    {
+
+            holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.fourth));
+            holder.add_to_list.setImageResource(R.drawable.baseline_add_24); // Replace with your "add" icon resource
+
+
+    }
+    public void updated_selcted_card_remove(AudioViewHolder holder)
+    {
+
+            holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
+            holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24); // Replace with your "remove" icon resource
+
+
     }
 
     @Override

@@ -46,7 +46,16 @@ public class Chunks_Json_helper {
                 JSONObject chunk = chunks.getJSONObject(i);
                 String chunkId = chunk.getString("chunk_id");
                 String status = chunk.getString("status");
-                String transcription = chunk.getString("transcription");
+                String transcription="";
+                try
+                {
+                    transcription= chunk.getString("transcription");
+
+                }catch (Exception e)
+                {
+                    transcription= "not available";
+                }
+
                 chunkList.add(new Chunk_Response(chunkId, status, transcription));
             }
         } catch (JSONException e) {

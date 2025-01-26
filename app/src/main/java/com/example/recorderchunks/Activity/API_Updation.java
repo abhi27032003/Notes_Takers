@@ -466,14 +466,14 @@ public class API_Updation extends AppCompatActivity {
         // Check if uuid and signature are present and set the text accordingly
         if (storedUuid != null && storedSignature != null) {
             // If both uuid and signature are found, display them
-            uuid_text.setText(storedUuid);
-            signature_text.setText(storedSignature);
+            uuid_text.setText(" UUID : "+storedUuid);
+            signature_text.setText(" Server Public Key : \n"+storedSignature);
             uuid_image.setVisibility(View.VISIBLE);
             signature_image.setVisibility(View.VISIBLE);
         } else {
             // If not found, display "Not available"
-            uuid_text.setText("Not available");
-            signature_text.setText("Not available");
+            uuid_text.setText("UUID Not available");
+            signature_text.setText("Server Public key Not available");
             uuid_image.setVisibility(View.GONE);
             signature_image.setVisibility(View.GONE);
         }
@@ -554,7 +554,7 @@ public class API_Updation extends AppCompatActivity {
         editor.putString(KEY_GEMINI, geminiApi);
         editor.apply();
 
-        Toast.makeText(this, "Data saved successfully", Toast.LENGTH_SHORT).show();
+      //  Toast.makeText(this, "Data saved successfully", Toast.LENGTH_SHORT).show();
     }
     public static String[] getLanguagesFromMetadata(Context context) {
         try {

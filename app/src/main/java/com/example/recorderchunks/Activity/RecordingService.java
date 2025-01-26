@@ -26,7 +26,7 @@ public class RecordingService extends Service {
     private RecordingUtils recordingUtils;
     private RecordingViewModel recordingViewModel;
     private recording_event_no recordingEventNo;
-    private boolean isPaused = false;
+    public static boolean isPaused = false;
     public static  boolean isStopping = false;
     private Handler notificationUpdateHandler = new Handler();
     private Runnable notificationUpdateRunnable;
@@ -60,7 +60,7 @@ public class RecordingService extends Service {
                 startNotificationUpdates();
             }
         });
-        recordingEventNo = new recording_event_no();
+        recordingEventNo=recording_event_no.getInstance();
     }
 
     @Override
@@ -118,7 +118,7 @@ public class RecordingService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Recording in Progress")
                 .setContentText(timerText) // Display the timer
-                .setSmallIcon(R.mipmap.collapse) // Replace with your drawable resource
+                .setSmallIcon(R.mipmap.mic) // Replace with your drawable resource
                 .addAction(R.drawable.baseline_add_24, toggleActionText,togglePendingIntent) // Play/Pause button
                 .addAction(R.drawable.baseline_add_24, "Stop", stopPendingIntent) // Stop button
                 .setOngoing(true)
@@ -136,8 +136,8 @@ public class RecordingService extends Service {
         }
     }
 
-    private void pauseRecording() {
-        isPaused = true;
+    public void pauseRecording() {
+       // setPaused(true);
         recordingUtils.pauseRecording();
         recordingViewModel.setPaused(true);
         recordingViewModel.setRecording(false);
@@ -146,8 +146,8 @@ public class RecordingService extends Service {
         updateNotification();
     }
 
-    private void resumeRecording() {
-        isPaused = false;
+    public void resumeRecording() {
+        //setPaused(false);
         recordingUtils.resumeRecording();
         recordingViewModel.setPaused(false);
         recordingViewModel.setRecording(true);
@@ -158,25 +158,38 @@ public class RecordingService extends Service {
 
     private void stopRecording() {
 
-        recordingUtils.stopRecording(recordingEventNo.getRecording_event_no());
-        recordingViewModel.setRecording(false);
-        recordingViewModel.setPaused(false);
-        recordingViewModel.resetTimer();
-        isStopping = true; // Set the flag to indicate stopping
-        stopNotificationUpdates();
-        stopSelf();
-        stopForeground(true); // Stop the foreground service
-        cancelNotification(); // Cancel the notification explicitly
+        synchronized (this) {
+            recordingUtils.stopRecording(recordingEventNo.getRecording_event_no());
+            recordingViewModel.setRecording(false);
+            recordingViewModel.setPaused(false);
+            recordingViewModel.resetTimer();
+            setStopping(true); // Use synchronized setter
+            stopNotificationUpdates();
+            stopSelf();
+            stopForeground(true); // Stop the foreground service
+            cancelNotification(); // Cancel the notification explicitly
+        }
 
 
     }
 
     private void updateNotification() {
-        if (!isStopping) { // Only update if the service is not stopping
+        int i=2;
+        if (!isStopping() && !isPaused()) { // Only update if the service is not stopping
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.notify(1, createNotification());
             }
+        }
+        for(int j=0;j<i;j++)
+        {
+            if (!isStopping()) { // Only update if the service is not stopping
+                NotificationManager manager = getSystemService(NotificationManager.class);
+                if (manager != null) {
+                    manager.notify(1, createNotification());
+                }
+            }
+
         }
     }
 
@@ -212,7 +225,21 @@ public class RecordingService extends Service {
             manager.cancel(1); // Cancel the notification with ID 1
         }
     }
+    private synchronized boolean isPaused() {
+        return isPaused;
+    }
 
+    public synchronized void setPaused(boolean paused) {
+        isPaused = paused;
+    }
+
+    private synchronized boolean isStopping() {
+        return isStopping;
+    }
+
+    public synchronized void setStopping(boolean stopping) {
+        isStopping = stopping;
+    }
     @Override
     public IBinder onBind(Intent intent) {
         return null;

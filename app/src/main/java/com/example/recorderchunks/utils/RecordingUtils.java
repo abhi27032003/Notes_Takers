@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.example.recorderchunks.Activity.RecordingService;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.is_recording;
+import com.example.recorderchunks.Model_Class.recording_event_no;
 import com.example.recorderchunks.Model_Class.recording_language;
 
 import java.io.File;
@@ -24,6 +25,7 @@ import java.util.Locale;
 
 public class RecordingUtils {
     private boolean isPaused = false;
+    public RecordingService r=new RecordingService();
 
     private MediaRecorder mediaRecorder;
     private String audioFilePath;
@@ -60,6 +62,7 @@ public class RecordingUtils {
 
 
     public void startRecording() {
+
         is_recording.setIs_recording(true);
         RecordingService.isStopping=false;
 
@@ -98,10 +101,13 @@ public class RecordingUtils {
     }
 
     public void pauseRecording() {
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && mediaRecorder != null && !isPaused) {
             try {
+              //  r.setPaused(true);
                 mediaRecorder.pause();
                 isPaused = true;
+                r.setPaused(true);
 
                 Log.d("AudioRecorder", "Recording paused");
                 if (recordingCallback != null) {
@@ -116,10 +122,16 @@ public class RecordingUtils {
         }
     }
     public void resumeRecording() {
+
+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && mediaRecorder != null && isPaused) {
             try {
                 mediaRecorder.resume();
+                r.setPaused(false);
                 isPaused = false;
+
+               // r.setPaused(false);
 
                 Log.d("AudioRecorder", "Recording resumed");
                 if (recordingCallback != null) {
@@ -136,6 +148,8 @@ public class RecordingUtils {
 
 
     public void stopRecording(int eventId) {
+        recording_event_no recording_event_no= com.example.recorderchunks.Model_Class.recording_event_no.getInstance();
+
         RecordingService.isStopping=true;
         is_recording.setIs_recording(false);
 
@@ -145,6 +159,7 @@ public class RecordingUtils {
                 mediaRecorder.release();
                 mediaRecorder = null;
                 stopTime = System.currentTimeMillis();
+                recording_event_no.setRecording_event_no(-1);
             } catch (Exception e) {
                 e.printStackTrace();
                 Toast.makeText(context, "Error stopping recording: " + e.getMessage(), Toast.LENGTH_LONG).show();

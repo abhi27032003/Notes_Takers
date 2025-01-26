@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.recorderchunks.Activity.API_Updation;
+import com.example.recorderchunks.Activity.RecordingService;
 import com.example.recorderchunks.Adapter.EventAdapter;
 import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Model_Class.Event;
@@ -71,7 +72,7 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
                              Bundle savedInstanceState) {
         View view=inflater.inflate(R.layout.fragment_show_notes, container, false);
         ///////////////////////////////////////////////////////////////////////
-        recording_event_no=new recording_event_no();
+        recording_event_no= com.example.recorderchunks.Model_Class.recording_event_no.getInstance();
         current_event ce=new current_event();
         recordingViewModel = new ViewModelProvider(
                 (ViewModelStoreOwner) requireActivity().getApplication(),
@@ -178,12 +179,15 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
         play_pause_recording_small_animation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                RecordingService r=new RecordingService();
                 if (Boolean.TRUE.equals(recordingViewModel.getIsRecording().getValue())) {
                     // Pause recording
                     recordingUtils.pauseRecording();
                     recordingViewModel.setRecording(false);  // Set recording state to false
                     recordingViewModel.setPaused(true);     // Set the paused state to true
-                    recordingViewModel.pauseTimer();        // Pause the timer
+                    recordingViewModel.pauseTimer();
+
+                    // Pause the timer
 
                     // Update the play/pause button icon to 'play'
                     play_pause_recording_small_animation.setImageResource(R.mipmap.play);

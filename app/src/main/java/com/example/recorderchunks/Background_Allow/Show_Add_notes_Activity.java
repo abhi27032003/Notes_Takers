@@ -179,9 +179,10 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
 
         if (storedUuid != null && storedSignature != null) {
             // If both uuid and signature are found, skip the network call
-            Toast.makeText(Show_Add_notes_Activity.this, "UUID and Signature already saved", Toast.LENGTH_SHORT).show();
+         //   Toast.makeText(Show_Add_notes_Activity.this, "UUID and Signature already saved", Toast.LENGTH_SHORT).show();
             return; // Exit the method if values already exist
         }
+
 
         // Get unique device details and hash them using SHA-1
         String product = BuildUtils.getSha1Hex(Build.PRODUCT);
@@ -191,7 +192,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         String epoch_time = BuildUtils.getSha1Hex(String.valueOf(System.currentTimeMillis()));
 
         // Server URL for registration
-        String URL = "https://nextstop.vipresearch.ca/App_Scripts//register.php";
+        String URL = "https://notetakers.vipresearch.ca/App_Script/register.php";
         RequestQueue requestQueue = Volley.newRequestQueue(this);
 
         // Prepare the API parameters to send in the request
@@ -212,39 +213,26 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            // Extract UUID and CRC from the server response
+                            // Extract UUID and CRC server_public_key the server response
+                            Log.v("encryotion",response.toString());
                             String uuid = response.getString("uuid");
-                            String crc = response.getString("crc");
-
-                            // Calculate CRC on the client side using the received UUID and the data sent
-                            String crc2 = BuildUtils.getSha1Hex(uuid + product + build_id + build_display + ip_address + epoch_time);
-                            String signature = BuildUtils.getSha1Hex(product + build_id + build_display + ip_address + epoch_time);
-
-                            // Compare the calculated CRC with the server's CRC
-                            if (crc2.equals(crc)) {
-                                // If CRCs match, show the UUID and signature in a Toast message
-                                Toast.makeText(Show_Add_notes_Activity.this, "UUID: " + uuid + "\nSignature: " + signature, Toast.LENGTH_SHORT).show();
-
-                                // Store the UUID and signature for later use if needed
-                                SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("preferences", Context.MODE_PRIVATE).edit();
-                                editor.putString("uuid", uuid);
-                                editor.putString("signature", signature);
-                                editor.apply();
-
-                            } else {
-                                // If CRCs don't match, you can handle the error here
-                                Toast.makeText(Show_Add_notes_Activity.this, "CRC mismatch, retrying...", Toast.LENGTH_SHORT).show();
-                                getUid();  // Optionally, retry if CRCs don't match
-                            }
+                            String server_public_key = response.getString("server_public_key");
+                            Log.v("encryotion",uuid+" : "+server_public_key);
+                            SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("preferences", Context.MODE_PRIVATE).edit();
+                            editor.putString("uuid", uuid);
+                            editor.putString("signature", server_public_key);
+                            editor.apply();
+                            Toast.makeText(Show_Add_notes_Activity.this,"uuid and encryption information setup Complete ",Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             // Handle any errors that occur during response processing
-                            e.printStackTrace();
+
                             Toast.makeText(Show_Add_notes_Activity.this, "Error processing response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
+                Toast.makeText(Show_Add_notes_Activity.this, "ERROR:"+error.getMessage(), Toast.LENGTH_SHORT).show();
                 // Handle errors that occur during the network request
                 Log.w("_DEBUG_ error", error.getCause());
                 //Toast.makeText(Show_Add_notes_Activity.this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();

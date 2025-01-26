@@ -119,6 +119,24 @@
 
                     </com.google.android.material.divider.MaterialDivider>
                 </androidx.constraintlayout.widget.ConstraintLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/manage_prompt"
+                    android:layout_width="match_parent"
+                    android:layout_height="50sp"
+                    android:layout_marginTop="5sp"
+                    android:backgroundTint="@color/secondary"
+                    android:textAlignment="viewStart"
+                    android:paddingLeft="10sp"
+                    android:text="@string/manage_prompt"
+                    android:drawableRight="@drawable/baseline_arrow_forward_24"
+
+                    android:textColor="@color/nav"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toTopOf="@+id/btn_update"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     app:cardCornerRadius="20sp"
@@ -181,17 +199,20 @@
                                 android:layout_margin="4sp"
                                 app:cardCornerRadius="20sp"
                                 android:backgroundTint="@color/third"
-                                android:layout_height="40sp"
+                                android:layout_height="wrap_content"
                                 >
                                 <androidx.constraintlayout.widget.ConstraintLayout
                                     android:layout_width="match_parent"
-                                    android:layout_height="match_parent">
+                                    android:padding="7sp"
+                                    android:layout_height="wrap_content">
 
                                     <TextView
+                                        android:visibility="gone"
+
                                         android:id="@+id/textView"
                                         android:layout_width="wrap_content"
-                                        android:layout_height="match_parent"
-                                        android:gravity="center"
+                                        android:layout_height="0dp"
+                                        android:gravity="center|top"
                                         android:text="UUID :"
                                         android:textSize="16sp"
                                         android:layout_marginLeft="10sp"
@@ -208,7 +229,7 @@
                                         android:id="@+id/uuid_text"
                                         android:layout_width="0dp"
                                         android:gravity="center|start"
-                                        android:layout_height="match_parent"
+                                        android:layout_height="wrap_content"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toStartOf="@+id/uuid_copy"
                                         app:layout_constraintStart_toEndOf="@+id/textView"
@@ -220,9 +241,8 @@
                                         android:id="@+id/uuid_copy"
                                         android:src="@mipmap/copy"
                                         android:layout_margin="5sp"
-                                        android:layout_width="30sp"
-                                        android:layout_height="30sp"
-                                        app:layout_constraintBottom_toBottomOf="parent"
+                                        android:layout_width="25sp"
+                                        android:layout_height="25sp"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintTop_toTopOf="parent">
 
@@ -237,18 +257,20 @@
                                 android:layout_margin="4sp"
                                 app:cardCornerRadius="20sp"
                                 android:backgroundTint="@color/third"
-                                android:layout_height="40sp"
+                                android:layout_height="wrap_content"
                                 >
                                 <androidx.constraintlayout.widget.ConstraintLayout
                                     android:layout_width="match_parent"
+                                    android:padding="7sp"
                                     android:layout_height="match_parent">
 
                                     <TextView
+                                        android:visibility="gone"
                                         android:id="@+id/ff"
                                         android:layout_width="wrap_content"
-                                        android:layout_height="match_parent"
-                                        android:gravity="center"
-                                        android:text="Signature :"
+                                        android:layout_height="0dp"
+                                        android:gravity="top"
+                                        android:text="Server Public Key :"
                                         android:textSize="16sp"
                                         android:layout_marginLeft="10sp"
                                         android:layout_marginRight="5sp"
@@ -264,7 +286,7 @@
                                         android:id="@+id/signature_text"
                                         android:layout_width="0dp"
                                         android:gravity="center|start"
-                                        android:layout_height="match_parent"
+                                        android:layout_height="wrap_content"
                                         app:layout_constraintBottom_toBottomOf="parent"
                                         app:layout_constraintEnd_toStartOf="@+id/signature_copy"
                                         app:layout_constraintStart_toEndOf="@+id/ff"
@@ -276,9 +298,8 @@
                                         android:id="@+id/signature_copy"
                                         android:src="@mipmap/copy"
                                         android:layout_margin="5sp"
-                                        android:layout_width="30sp"
-                                        android:layout_height="30sp"
-                                        app:layout_constraintBottom_toBottomOf="parent"
+                                        android:layout_width="25sp"
+                                        android:layout_height="25sp"
                                         app:layout_constraintEnd_toEndOf="parent"
                                         app:layout_constraintTop_toTopOf="parent">
 
@@ -290,23 +311,6 @@
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/manage_prompt"
-                    android:layout_width="match_parent"
-                    android:layout_height="50sp"
-                    android:layout_marginTop="5sp"
-                    android:backgroundTint="@color/button"
-                    android:textAlignment="viewStart"
-                    android:paddingLeft="10sp"
-                    android:text="@string/manage_prompt"
-                    android:drawableRight="@drawable/baseline_arrow_forward_24"
-
-                    android:textColor="@color/nav"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toTopOf="@+id/btn_update"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
                 <com.google.android.material.card.MaterialCardView
                     app:cardElevation="8sp"
 
