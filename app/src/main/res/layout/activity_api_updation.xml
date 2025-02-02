@@ -124,7 +124,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="50sp"
                     android:layout_marginTop="5sp"
-                    android:backgroundTint="@color/secondary"
+                    android:backgroundTint="@color/button_blue"
                     android:textAlignment="viewStart"
                     android:paddingLeft="10sp"
                     android:text="@string/manage_prompt"
@@ -148,7 +148,7 @@
                         android:orientation="vertical"
                         >
                         <androidx.constraintlayout.widget.ConstraintLayout
-                            android:backgroundTint="@color/button"
+                            android:backgroundTint="@color/button_yellow"
                             android:background="@color/button"
                             android:layout_gravity="fill_horizontal"
                             android:layout_width="match_parent"
@@ -329,7 +329,7 @@
                         android:orientation="vertical"
                         >
                         <androidx.constraintlayout.widget.ConstraintLayout
-                            android:backgroundTint="@color/button"
+                            android:backgroundTint="@color/button_yellow"
                             android:background="@color/button"
                             android:layout_gravity="fill_horizontal"
                             android:layout_width="match_parent"
@@ -504,7 +504,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:cardCornerRadius="20sp"
-                        android:backgroundTint="@color/button"
+                        android:backgroundTint="@color/button_blue"
                         >
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -693,7 +693,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:cardCornerRadius="40sp"
-                        android:backgroundTint="@color/button"
+                        android:backgroundTint="@color/button_pink"
                         >
                         <LinearLayout
                             android:layout_width="match_parent"

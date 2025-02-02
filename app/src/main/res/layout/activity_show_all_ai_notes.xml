@@ -67,7 +67,7 @@
         android:layout_marginRight="5sp"
         android:layout_marginLeft="5sp"
 
-        android:backgroundTint="@color/button"
+        android:backgroundTint="@color/button_blue"
         app:cardCornerRadius="10sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -76,6 +76,7 @@
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
+            android:backgroundTint="@color/button_blue_light"
             android:layout_height="match_parent"
             android:layout_margin="1sp"
             app:cardCornerRadius="9sp">

@@ -57,30 +57,50 @@
                     ></TextView>
 
             </LinearLayout>
-            <ImageView
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/add_event"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_alignParentEnd="true"
+                android:backgroundTint="@color/RC3"
                 android:layout_marginRight="10sp"
                 android:layout_alignParentBottom="true"
-                android:src="@mipmap/addbutton"
+                app:strokeColor="@color/button"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent" >
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:src="@mipmap/home_add"
+                    android:padding="8sp"
+                    android:layout_height="match_parent">
 
-            <ImageView
+                </ImageView>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/add_api"
                 android:layout_width="40dp"
+                android:backgroundTint="@color/RC3"
                 android:layout_height="40dp"
                 android:layout_alignParentEnd="true"
+                app:strokeColor="@color/button"
                 android:layout_alignParentBottom="true"
                 android:layout_marginRight="10sp"
-                android:src="@mipmap/settings"
+
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/linearLayout3"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent" >
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:src="@mipmap/home_update"
+                    android:padding="5sp"
+                    android:layout_height="match_parent">
+
+                </ImageView>
+            </com.google.android.material.card.MaterialCardView>
+
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.appcompat.widget.Toolbar>
@@ -98,7 +118,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbar" />
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/recording_small_card"
         android:layout_width="wrap_content"
         android:clickable="true"
@@ -106,7 +126,7 @@
         android:layout_height="50sp"
         app:cardCornerRadius="30sp"
         android:layout_gravity="end"
-
+        app:strokeColor="@color/button_blue"
         android:backgroundTint="@color/nav"
         android:layout_marginRight="5sp"
         app:layout_constraintVertical_bias="0.89"
@@ -164,6 +184,6 @@
 
 
 
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

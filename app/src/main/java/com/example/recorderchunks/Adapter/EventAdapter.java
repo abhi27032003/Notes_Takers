@@ -2,6 +2,7 @@ package com.example.recorderchunks.Adapter;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,13 +40,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
     private TagStorage tagStorage;
 
-
+    private static SharedPreferences sharedPreferences;
+    private static final String PREFS_NAME = "PromptSelectionPrefs";
 
     public EventAdapter(Context context, List<Event> events,FragmentManager fragmentManager) {
         this.fragmentManager=fragmentManager;
         this.context = context;
         this.events = events;
         tagStorage = new TagStorage(context);
+        this.sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
 
     }
 
@@ -127,6 +131,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
                             DatabaseHelper db=new DatabaseHelper(context);
                             db.deleteEvent(event.getId());
                             db.deleteRecording(event.getId());
+                            deleteSelectionState(event.getId(),context);
                             Notes_Database_Helper ndh=new Notes_Database_Helper(context);
                             ndh.deleteNotebyevent_id(event.getId());
                             Toast.makeText(context,"Event Deleted Successfully..",Toast.LENGTH_LONG).show();
@@ -166,6 +171,11 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
     }
 
+    public static void deleteSelectionState(int id, Context context) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove("selected_items_" + id); // Remove the entry for the specific id
+        editor.apply(); // Apply the changes
+    }
 
 
 

@@ -133,7 +133,7 @@ public class TranscriptionUtils {
                     .addFormDataPart("recording_name", unique_recording_name)
                     .addFormDataPart("chunk_id", chunk_id)
                     .addFormDataPart("language", getLanguageCode(language))
-                    .addFormDataPart("user_id", "user_id_123")
+                    .addFormDataPart("user_id", "")
                     .build();
 
             // 5. Build the request
@@ -193,7 +193,7 @@ public class TranscriptionUtils {
         }
     }
 
-    public static void send_for_transcription(String chunk_id, String filePath, TranscriptionCallback callback,String unique_recording_name,String language) {
+    public static void send_for_transcription(String chunk_id, String filePath, TranscriptionCallback callback,String unique_recording_name,String language,String uuid,Context context) {
         File audioFile = new File(filePath);
         Log.e("recording_name",unique_recording_name);
         if (!audioFile.exists() || !audioFile.isFile()) {
@@ -231,13 +231,15 @@ public class TranscriptionUtils {
                 )
                 .addFormDataPart(
                         "user_id", // Key for the additional parameter
-                        "user_id_123" // Value of the additional parameter
+                       uuid // Value of the additional parameter
                 )
+
                 //user_id
                 //language
                 //chunk_id
                 .build();
 
+        Toast.makeText(context, uuid, Toast.LENGTH_SHORT).show();
 
         // Build the request
         Request request = new Request.Builder()
@@ -284,11 +286,12 @@ public class TranscriptionUtils {
 
     }
 
-    public static void getTranscriptionStatus_All_At_once(String unique_recording_name, TranscriptionStatusCallback callback,String user_id) {
+    public static void getTranscriptionStatus_All_At_once(String unique_recording_name, TranscriptionStatusCallback callback,String user_id,Context context) {
         OkHttpClient client = new OkHttpClient();
+        //Toast.makeText(context, user_id, Toast.LENGTH_SHORT).show();
 
         // Build the request URL with query parameter
-        String url = "https://notetakers.vipresearch.ca/App_Script/status2.php?recording_name=" + unique_recording_name + "&user_id=" + "random_uuid_";
+        String url = "https://notetakers.vipresearch.ca/App_Script/status2.php?recording_name=" + unique_recording_name + "&user_id=" + user_id;
 
         Request request = new Request.Builder()
                 .url(url)

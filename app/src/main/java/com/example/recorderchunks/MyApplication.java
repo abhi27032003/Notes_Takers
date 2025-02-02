@@ -1,8 +1,15 @@
 package com.example.recorderchunks;
 
 import android.app.Application;
+import android.content.Intent;
+
 import androidx.lifecycle.ViewModelStore;
 import androidx.lifecycle.ViewModelStoreOwner;
+
+import com.example.recorderchunks.Activity.CrashReportActivity;
+import com.example.recorderchunks.utils.CustomExceptionHandler;
+import com.github.anrwatchdog.ANRError;
+import com.github.anrwatchdog.ANRWatchDog;
 
 public class MyApplication extends Application implements ViewModelStoreOwner {
 
@@ -11,6 +18,29 @@ public class MyApplication extends Application implements ViewModelStoreOwner {
     @Override
     public void onCreate() {
         super.onCreate();
+        new ANRWatchDog(5000)
+                .setANRListener(new ANRWatchDog.ANRListener() {
+                    @Override
+                    public void onAppNotResponding(ANRError error) {
+                        // Log the error, save it, or attempt to start a reporting activity
+                        // Note: The app may be in an unstable state here.
+                        error.printStackTrace();
+
+                        // If you wish to start your CrashReportActivity, you can try:
+                        Intent intent = new Intent(getApplicationContext(), CrashReportActivity.class);
+                        intent.putExtra("anr_error", error.getMessage());
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        getApplicationContext().startActivity(intent);
+
+                        // Optionally, kill the process if you want to prevent further issues.
+                        // android.os.Process.killProcess(android.os.Process.myPid());
+                        // System.exit(10);
+                    }
+                })
+                .start();
+        Thread.setDefaultUncaughtExceptionHandler(
+                new CustomExceptionHandler(getApplicationContext(), CrashReportActivity.class)
+        );
         // Initialize the ViewModelStore for app-level scope
         viewModelStore = new ViewModelStore();
     }

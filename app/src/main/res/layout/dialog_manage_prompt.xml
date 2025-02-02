@@ -16,8 +16,8 @@ android:padding="16dp" android:background="@drawable/page_background"
     app:boxCornerRadiusBottomStart="20dp"
     app:boxCornerRadiusTopEnd="20dp"
     app:boxCornerRadiusTopStart="20dp"
-    app:boxBackgroundColor="@color/fourth"
-    app:boxStrokeColor="@color/secondary"
+    app:boxBackgroundColor="@color/button_blue_light"
+    app:boxStrokeColor="@color/button_blue"
     android:hint="Enter Title">
 
     <com.google.android.material.textfield.TextInputEditText
@@ -37,9 +37,9 @@ android:padding="16dp" android:background="@drawable/page_background"
     app:boxCornerRadiusBottomStart="20dp"
     app:boxCornerRadiusTopEnd="20dp"
     app:boxCornerRadiusTopStart="20dp"
-    app:boxBackgroundColor="@color/fourth"
+    app:boxBackgroundColor="@color/button_blue_light"
 
-    app:boxStrokeColor="@color/secondary"
+    app:boxStrokeColor="@color/button_blue"
     android:hint="Enter Details">
 
     <com.google.android.material.textfield.TextInputEditText

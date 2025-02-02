@@ -24,6 +24,11 @@
         android:theme="@style/Theme.RecorderChunks"
         tools:targetApi="31">
         <activity
+            android:name=".Activity.CrashReportActivity"
+            android:exported="false" >
+
+        </activity>
+        <activity
             android:name=".Activity.Show_all_ai_notes"
             android:exported="false" />
 
@@ -40,6 +45,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
         <activity
             android:name=".Activity.activity_text_display"
@@ -50,8 +56,6 @@
         <activity
             android:name=".Activity.API_Updation"
             android:exported="false" />
-
-
     </application>
 
 </manifest>

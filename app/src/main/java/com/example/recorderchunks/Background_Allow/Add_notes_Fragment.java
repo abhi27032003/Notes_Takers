@@ -50,6 +50,7 @@ import com.example.recorderchunks.Helpeerclasses.DatabaseHelper;
 import com.example.recorderchunks.Helpeerclasses.Notes_Database_Helper;
 import com.example.recorderchunks.Activity.Manage_Prompt;
 import com.example.recorderchunks.Helpeerclasses.TagStorage;
+import com.example.recorderchunks.ManageLogs.AppLogger;
 import com.example.recorderchunks.Model_Class.Event;
 import com.example.recorderchunks.Model_Class.Note;
 import com.example.recorderchunks.Model_Class.Recording;
@@ -79,6 +80,8 @@ import java.util.Random;
 
 
 public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter.OnSelectionChangedListener,RecordingUtils.RecordingCallback, OnBackPressedListener, TagAdapter.OnTagActionListener{
+    AppLogger logger ;
+
     LinearLayout event_description_view, all_transcription_view;
     Toolbar toolbar;
     private boolean isExpanded = false; // To track collapse/expand state
@@ -106,7 +109,6 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
     TextView textView_small_Timer;
 
     ////////////////////////////////////playing and pausing audio///////////////////////////
-    private CardView recording_animation_card;
 
     private SharedPreferences sharedPreferences;
 
@@ -153,6 +155,9 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         //check if have mic access
 
         //database helpers and other initializations
+
+        logger= AppLogger.getInstance(getContext());
+        logger.addLog("Add Notes Fragment : User Opened Add Notes Activity");
         recording_event_no=recording_event_no.getInstance();
         ce = new current_event();
         recordingLanguage=new recording_language();
@@ -196,7 +201,6 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         import_button=view.findViewById(R.id.import_button);
         make_note=view.findViewById(R.id.make_note);
         toggleShowHide = view.findViewById(R.id.toggle_show_hide);
-        recording_animation_card=view.findViewById(R.id.recording_card);
         recording_small_card=view.findViewById(R.id.recording_small_card);
         textView_small_Timer=view.findViewById(R.id.textView_small_Timer);
         stop_recording_small_animation=view.findViewById(R.id.stop_recording_small_animation);
@@ -207,6 +211,38 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
 
 
+// Get the current texts (converted to lowercase for a case-insensitive check)
+        String dateButtonText = datePickerBtn.getText().toString().toLowerCase();
+        String timeButtonText = timePickerBtn.getText().toString().toLowerCase();
+
+// Check if the datePickerBtn text contains "pick" (you can adjust the condition as needed)
+        if (dateButtonText.contains("pick")) {
+            // Get the current date
+            Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH) + 1; // Note: Calendar.MONTH is 0-indexed
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            // Format the date string (adjust the format as you prefer)
+            String currentDate = String.format(Locale.getDefault(), "%02d/%02d/%04d", day, month, year);
+
+            // Set the text of the button to the current date
+            datePickerBtn.setText(currentDate);
+        }
+
+// Check if the timePickerBtn text contains "pick"
+        if (timeButtonText.contains("pick")) {
+            // Get the current time
+            Calendar calendar = Calendar.getInstance();
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(Calendar.MINUTE);
+
+            // Format the time string (HH:mm format)
+            String currentTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
+
+            // Set the text of the button to the current time
+            timePickerBtn.setText(currentTime);
+        }
 
         //set default recording language
         String savedLanguage = sharedPreferences.getString(SELECTED_LANGUAGE, "English");  // Default value is null
@@ -220,7 +256,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 Intent intent = new Intent(getContext(), activity_text_display.class);
                 intent.putExtra("text", alltranscription.getText().toString());
                 intent.putExtra("Title",getString(R.string.all_transcriptions));
-
+                logger.addLog("Add Notes Fragment : User Clicked on Show All transcriptions");
                 startActivity(intent);
             }
         });
@@ -230,7 +266,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                 Intent intent = new Intent(getContext(), Show_all_ai_notes.class);
                 intent.putExtra("text", String.valueOf(event_id));
                 intent.putExtra("Title",getString(R.string.description));
-
+                logger.addLog("Add Notes Fragment : User Clicked on Show AI generated Notes");
                 startActivity(intent);
             }
         });
@@ -240,6 +276,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         recording_small_card.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                logger.addLog("Add Notes Fragment : User Changed position of the small recording card");
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
                         dX = v.getX() - event.getRawX();
@@ -278,11 +315,9 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         int maxrecording_event=databaseHelper.getMaxEventIdFromRecordings();
         if(nextEventId==maxrecording_event)
         {
+            logger.addLog("Add Notes Fragment : Opened Page to add new event");
             databaseHelper.deleteAllRecordingsByEventId(nextEventId);
             deleteSelectionState(nextEventId);
-
-
-
 
         }
 
@@ -293,10 +328,12 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         event_id = ce.getCurrent_event_no();
         if (event_id != -1) {
             load_data();
+            logger.addLog("Add Notes Fragment : Loaded data of this page");
 
         }
         else{
             event_id=databaseHelper.getNextEventId();
+            logger.addLog("Add Notes Fragment : set default recording language "+savedLanguage);
             recordingLanguage.setRecording_language(savedLanguage);
 
         }
@@ -306,6 +343,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         tagList = loadTags(event_id);
         if (tagList.size() <= 0) {
             // Create and add two default tags
+            logger.addLog("Add Notes Fragment : Added default tags of meeting and lecture");
             tagList.add(new Tag("Meeting|~|" + getRandomNumber(), false));
             tagList.add(new Tag("Lecture|~|" + getRandomNumber(), false));
             saveTags();
@@ -342,6 +380,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     if (languages == null || languages.length == 0) {
+                        logger.addLog("Add Notes Fragment : No prompt present moving to manage prompt");
                         Intent intent = new Intent(getContext(), Manage_Prompt.class);
                         startActivity(intent);
                         return true;
@@ -354,6 +393,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 // Get the selected language
+                logger.addLog("Add Notes Fragment : Selected a prompt message");
                 prompt_message = languages[position];
                 // Toast.makeText(Add_Event.this, "Selected Language: " + selectedLanguage, Toast.LENGTH_SHORT).show();
 
@@ -373,11 +413,14 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         {
             event_description_view.setVisibility(View.GONE);
             showdescription.setVisibility(View.GONE);
+            logger.addLog("Add Notes Fragment : No AI generated notes present for this event");
         }
         if(alltranscription.getText().toString().contains("No items selected") || alltranscription.getText().toString().isEmpty())
         {
             all_transcription_view.setVisibility(View.GONE);
             showalltranscription.setVisibility(View.GONE);
+            logger.addLog("Add Notes Fragment : No no transcription added  for this event");
+
         }
 
         //Event Description and Summary button event
@@ -437,13 +480,16 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         make_note.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                logger.addLog("Add Notes Fragment : User Tried to make AI generateed notes");
+
                 Notes_Database_Helper notesDatabaseHelper=new Notes_Database_Helper(getContext());
                 String prompt="";// If the EditText is empty, load the saved prompt from SharedPreferences
                 if (TextUtils.isEmpty(prompt)) {
                     prompt = promptDatabaseHelper.getPromptTextByName(prompt_message);
 
                     if (TextUtils.isEmpty(prompt)) {
-                        //   Toast.makeText(this, , Toast.LENGTH_SHORT).show();
+                        logger.addLog("Add Notes Fragment : No prompt selected");
+
                         Toast.makeText(getContext(), "Prompt is required", Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -454,20 +500,27 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
                 switch (selectedApi) {
                     case "use ChatGpt":
+                        logger.addLog("Add Notes Fragment : API Switched to Chatgpt");
+
                         eventDescription.setText(getoutput_chatgpt(prompt+":"+alltranscription.getText().toString(),getContext()));
                         //event_description_view.setVisibility(View.VISIBLE);
                         showdescription.setVisibility(View.VISIBLE);
                         break;
                     default:
+                        logger.addLog("Add Notes Fragment : API Switched to Gemini");
+
                         get_gemini_note(getContext(),prompt+":"+alltranscription.getText().toString(),new GeminiCallback() {
                             @Override
                             public void onSuccess(String result) {
                                 notesDatabaseHelper.addNote(result,event_id);
+                                logger.addLog("Add Notes Fragment : Gemini Note making successful");
+
                             }
 
                             @Override
                             public void onFailure(String error) {
                                 notesDatabaseHelper.addNote(error,event_id);
+                                logger.addLog("Add Notes Fragment : Unable to create note with the help of gemini error : "+error);
 
                             }
                         });
@@ -490,17 +543,20 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                         .setCancellable(true)
                         .setFileType(FileType.AUDIO)
                         .setOnSubmitClickListener(files -> {
+                            logger.addLog("Add Notes Fragment : File imported "+files.get(0).getFile().getAbsolutePath());
                             if (files != null && !files.isEmpty()) {
                                 String selectedFilePath = files.get(0).getFile().getAbsolutePath(); // Get the file path
                                 try {
                                     if(event_id!=-1)
                                     {
+                                        logger.addLog("Add Notes Fragment : Saved imported audio to database");
                                         saveAudioToDatabase(event_id, selectedFilePath,savedLanguage);
 
                                     }
 
                                 } catch (IOException e) {
-                                    throw new RuntimeException(e);
+                                    logger.addLog("Add Notes Fragment : error saving imported audio "+e.getMessage());
+
                                 }
                             } else {
                                 Toast.makeText(getContext(), "No file selected", Toast.LENGTH_SHORT).show();
@@ -554,6 +610,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             public void onClick(View v) {
                 if (!Boolean.TRUE.equals(recordingViewModel.getIsRecording().getValue())) {
                     // Timer setup
+                    logger.addLog("Add Notes Fragment : Recording started");
+
                     recording_event_no.setRecording_event_no(event_id);
                     recordButton.setText(getString(R.string.stop_recording));
                     recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.nav));
@@ -568,6 +626,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     getContext().startService(serviceIntent);
 
                 } else {
+                    logger.addLog("Add Notes Fragment : Recording stopped");
+
                     recordButton.setText(getString(R.string.start_recording));
                     recordButton.setBackgroundColor(getContext().getResources().getColor(R.color.secondary));
                     recordingUtils.stopRecording(recording_event_no.getRecording_event_no());
@@ -646,6 +706,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             @Override
             public void onClick(View v) {
                 if (Boolean.TRUE.equals(recordingViewModel.getIsRecording().getValue())) {
+                    logger.addLog("Add Notes Fragment : Recording paused");
+
                     // Pause recording
                     recordingUtils.pauseRecording();
                     recordingViewModel.setRecording(false);  // Set recording state to false
@@ -653,6 +715,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     recordingViewModel.pauseTimer();        // Pause the timer
                     play_pause_recording_small_animation.setImageResource(R.mipmap.play);
                 } else if (Boolean.TRUE.equals(recordingViewModel.getIsPaused().getValue())) {
+                    logger.addLog("Add Notes Fragment : Recording Resumed");
+
                     // Resume recording
                     recordingUtils.resumeRecording();
                     recordingViewModel.setRecording(true);  // Set recording state to true
@@ -666,6 +730,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             @Override
             public void onClick(View v) {
                 // Stop recording entirely
+                logger.addLog("Add Notes Fragment : Recording stopped");
+
                 recordingUtils.stopRecording(recording_event_no.getRecording_event_no());
                 recordingViewModel.setRecording(false);
                 recordingViewModel.setPaused(false); // Reset paused state
@@ -685,6 +751,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         saveEventButton.setOnClickListener(view2 -> {
             if(event_id==ce.getCurrent_event_no())
             {
+                logger.addLog("Add Notes Fragment : Trying to update Event");
+
                 String title = eventTitle.getText().toString();
                 String eventdescription = eventDescription.getText().toString();
                 String selectedDate = datePickerBtn.getText().toString();
@@ -696,6 +764,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             {
                 isRecordingCompleted=is_recording.getIs_Recording();
                 if (!isRecordingCompleted) {
+                    logger.addLog("Add Notes Fragment : Trying to save event");
                     String title = eventTitle.getText().toString();
                     String eventdescription = eventDescription.getText().toString();
                     String selectedDate = datePickerBtn.getText().toString();
@@ -878,36 +947,6 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         textView_small_Timer.setText(formattedTime);
 
     }
-    private void startTimer() {
-
-
-        // Get the current elapsed time if already recorded
-        int initialSeconds = recordingViewModel.getElapsedSeconds().getValue() != null
-                ? recordingViewModel.getElapsedSeconds().getValue()
-                : 0;
-
-        // Start a new thread for updating the timer
-        new Thread(() -> {
-            int seconds = initialSeconds; // Start from the last elapsed time
-            while (Boolean.TRUE.equals(recordingViewModel.getIsRecording().getValue())) {
-                try {
-                    Thread.sleep(1000); // Wait for 1 second
-                    seconds++;
-                    recordingViewModel.updateElapsedSeconds(seconds); // Update elapsed time
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-        }).start();
-    }
-
-    private void stopTimer() {
-        recording_small_card.setVisibility(View.GONE);
-
-        // Stop the timer by resetting the elapsed time
-        recordingViewModel.updateElapsedSeconds(0);
-    }
 
     private String current_date_and_time(){
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss", Locale.getDefault());
@@ -957,9 +996,11 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             updateSelectedItemsDisplay(new ArrayList<>());
             recyclerView.setAdapter(recordingAdapter);
             recordingAdapter.notifyDataSetChanged();
+            logger.addLog("Add Notes Fragment : Loaded data for event");
 
         } else {
             Toast.makeText(getContext(), "Event not found", Toast.LENGTH_SHORT).show();
+            logger.addLog("Add Notes Fragment : Event not found");
             if (getActivity() instanceof Show_Add_notes_Activity) {
                 ((Show_Add_notes_Activity) getActivity()).setFragment(new Show_Notes_Fragment());
             }
@@ -998,6 +1039,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
         if (isInserted) {
             AudioRecyclerAdapter.saveSelectionState(event_id);
+            logger.addLog("Add Notes Fragment : Audio saved to database");
             Toast.makeText(getContext(), "Audio saved to database", Toast.LENGTH_SHORT).show();
             recordingList.clear();
             recordingList=databaseHelper.getRecordingsByEventId(event_id);
@@ -1005,6 +1047,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             recyclerView.setAdapter(recordingAdapter);
             recordingAdapter.notifyDataSetChanged();
         } else {
+            logger.addLog("Add Notes Fragment : Failed to save audio");
             Toast.makeText(getContext(), "Failed to save audio", Toast.LENGTH_SHORT).show();
         }
     }
@@ -1051,11 +1094,14 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         // Show success or failure message
         if (isUpdated) {
             try {
+                logger.addLog("Add Notes Fragment : Event updated successfully");
                 if (getActivity() instanceof Show_Add_notes_Activity) {
                     ((Show_Add_notes_Activity) getActivity()).setFragment(new Show_Notes_Fragment());
                 }
             } catch (Exception e) {
-                Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                logger.addLog("Add Notes Fragment : Event error updating :"+ e.getMessage());
+
+                Toast.makeText(getContext(),"error updating :"+ e.getMessage(), Toast.LENGTH_SHORT).show();
             }
 
             Toast.makeText(getContext(), "Note updated successfully!", Toast.LENGTH_SHORT).show();
@@ -1115,6 +1161,60 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             Toast.makeText(getContext(), "Failed to save event", Toast.LENGTH_SHORT).show();
         }
     }
+    private void saveEventData_fragment_d(String title, String eventDescription, String selectedDate, String selectedTime,int eventId_m) {
+        logger.addLog("Add Notes Fragment : Event auto save initiated");
+
+        if (title == null || title.trim().isEmpty()) {
+           title="not available";
+        }
+
+        if (eventDescription == null || eventDescription.trim().isEmpty()) {
+            eventDescription=String.valueOf(getRandomNumber5());
+        }
+
+        if (selectedDate == null || selectedDate.trim().isEmpty()||selectedDate.contains("Pick")) {
+            selectedDate="--";
+        }
+        if (selectedTime == null || selectedTime.trim().isEmpty()||selectedTime.contains("Pick")) {
+           selectedTime="--";
+        }
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String creationDate = dateFormat.format(new Date());
+        String creationTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+
+        // Save event to database
+        boolean isInserted = databaseHelper.insertEvent(
+                eventId_m,
+                title,
+                eventDescription,
+                creationDate,
+                creationTime,
+                selectedDate,
+                selectedTime,
+                "audioFilePath"
+        );
+
+        if (isInserted) {
+            try {
+                logger.addLog("Add Notes Fragment : Event auto save successful");
+                if (getActivity() instanceof Show_Add_notes_Activity) {
+                    ((Show_Add_notes_Activity) getActivity()).setFragment(new Show_Notes_Fragment());
+                }
+
+            }
+            catch (Exception e)
+            {
+                logger.addLog("Add Notes Fragment : Event auto save failed");
+                Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+
+            //Toast.makeText(getContext(), "Event saved successfully!", Toast.LENGTH_SHORT).show();
+        } else {
+            //Toast.makeText(getContext(), "Failed to save event", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void updateSelectedItemsDisplay(ArrayList<String> selectedItems) {
         if (selectedItems.isEmpty()) {
             alltranscription.setText("No items selected");
@@ -1185,16 +1285,31 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         else
         {
             boolean isRecordingCompleted = is_recording.getIs_Recording();
-            boolean hasUnsavedChanges = !datePickerBtn.getText().toString().contains(getString(R.string.pick_date)) ||
-                    !timePickerBtn.getText().toString().contains(getString(R.string.pick_time)) ||
-                    !eventTitle.getText().toString().isEmpty();
+            boolean hasUnsavedChanges = !eventTitle.getText().toString().isEmpty();
 
             if (hasUnsavedChanges || isRecordingCompleted || !recordingList.isEmpty()) {
-                if (isRecordingCompleted) {
-                    showRecordingInProgressDialog();
-                } else {
-                    showUnsavedChangesDialog();
-                }
+                recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
+                    if(isrecording)
+                    {
+                        String title = eventTitle.getText().toString();
+                        String eventDescriptiont = eventDescription.getText().toString();
+                        String selectedDate = datePickerBtn.getText().toString();
+                        String selectedTime = timePickerBtn.getText().toString();
+                        saveEventData_fragment_d(title, eventDescriptiont, selectedDate, selectedTime, event_id);
+
+                    }
+                    else
+                    {
+                        String title = eventTitle.getText().toString();
+                        String eventDescriptiont = eventDescription.getText().toString();
+                        String selectedDate = datePickerBtn.getText().toString();
+                        String selectedTime = timePickerBtn.getText().toString();
+                        saveEventData_fragment_d(title, eventDescriptiont, selectedDate, selectedTime, event_id);
+
+
+
+                    }
+                });
             } else {
 
                 ((Show_Add_notes_Activity) getActivity()).setFragment(new Show_Notes_Fragment());
@@ -1267,11 +1382,34 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
      * Save event details to the database.
      */
     private void saveEventDetails() {
+        logger.addLog("Add Notes Fragment : Event  saved successful");
         String title = eventTitle.getText().toString();
         String eventDescriptiont = eventDescription.getText().toString();
         String selectedDate = datePickerBtn.getText().toString();
         String selectedTime = timePickerBtn.getText().toString();
         saveEventData(title, eventDescriptiont, selectedDate, selectedTime, event_id);
+    }
+
+    @Override
+    public void onPause() {
+        recordingViewModel.getIsRecording().observe(getViewLifecycleOwner(), isrecording -> {
+            if(isrecording)
+            {
+                String title = eventTitle.getText().toString();
+                String eventDescriptiont = eventDescription.getText().toString();
+                String selectedDate = datePickerBtn.getText().toString();
+                String selectedTime = timePickerBtn.getText().toString();
+                saveEventData_fragment_d(title, eventDescriptiont, selectedDate, selectedTime, event_id);
+            }
+            else
+            {
+
+
+            }
+        });
+
+
+        super.onPause();
     }
 
     /**

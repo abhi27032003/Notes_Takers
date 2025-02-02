@@ -45,7 +45,7 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
 
     public recording_event_no recording_event_no;
     public RecyclerView recordingRecyclerView;
-    private ImageView goTo_Add_event_Page,add_api;
+    private CardView goTo_Add_event_Page,add_api;
     EventAdapter eventAdapter;
     DatabaseHelper databaseHelper;
     private RecordingViewModel recordingViewModel;

@@ -33,6 +33,7 @@ import com.example.recorderchunks.Helpeerclasses.Chunks_Database_Helper;
 import com.example.recorderchunks.Helpeerclasses.LocaleHelper;
 import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
 import com.example.recorderchunks.Helpeerclasses.Prompt_Database_Helper;
+import com.example.recorderchunks.ManageLogs.AppLogger;
 import com.example.recorderchunks.Model_Class.Prompt;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.BuildUtils;
@@ -66,6 +67,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
     private static final String PREF_NAME = "ApiKeysPref";
     private SharedPreferences sharedPreferences;
     private ActivityResultLauncher<String[]> permissionLauncher;
+    AppLogger logger ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +79,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         String isprompt_saved=sharedPreferences.getString(IS_PROMPT_SAVED, "no");
         String localeCode = getLocaleCode(savedAppLanguage);
         LocaleHelper.setLocale(Show_Add_notes_Activity.this, localeCode);
-
+        logger= AppLogger.getInstance(Show_Add_notes_Activity.this);
         Chunks_Database_Helper chunks_database_helper=new Chunks_Database_Helper(this);
         chunks_database_helper.logAllChunks();
 

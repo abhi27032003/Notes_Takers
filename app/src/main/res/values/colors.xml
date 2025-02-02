@@ -14,6 +14,8 @@
     <color name="RC3">#dcfce7</color>
     <color name="RC4">#f4e8ff</color>
     <color name="RC5">#fef9c2</color>
-
-
+    <color name="button_blue">#81B6FF</color>
+    <color name="button_yellow">#FFEA00</color>
+    <color name="button_pink">#DEB3FD</color>
+    <color name="button_blue_light">#BED9FF</color>
 </resources>

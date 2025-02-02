@@ -63,7 +63,7 @@
 
                 <!-- Date Picker Button -->
                 <com.google.android.material.button.MaterialButton
-                    android:backgroundTint="@color/secondary"
+                    android:backgroundTint="@color/button_blue"
                     android:id="@+id/eventDate"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="wrap_content"
@@ -73,7 +73,8 @@
 
                     android:text="Pick Date"
                     app:iconTint="@color/nav"
-                    android:textColor="@color/fourth"
+                    app:cornerRadius="23sp"
+                    android:textColor="@color/black"
                     app:icon="@drawable/baseline_calendar_month_24"
                     app:iconGravity="textStart"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -88,11 +89,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10sp"
-                    android:backgroundTint="@color/button"
+                    android:backgroundTint="@color/button_yellow"
                     android:clickable="false"
                     android:text="Pick Time"
+                    app:cornerRadius="23sp"
                     app:iconTint="@color/nav"
-                    android:textColor="@color/fourth"
+                    android:textColor="@color/black"
                     app:icon="@drawable/baseline_watch_later_24"
                     app:iconGravity="textStart"
                     app:layout_constraintBottom_toBottomOf="parent"

@@ -173,43 +173,46 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="40sp"
-                    android:backgroundTint="@color/button"
+                    android:backgroundTint="@color/button_pink"
                     >
+
                     <LinearLayout
-                        android:layout_marginTop="2sp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:gravity="center"
-                        >
+                        android:layout_marginTop="2sp"
+                        android:gravity="center">
+
                         <TextView
                             android:id="@+id/Loc"
 
                             android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_margin="8sp"
                             android:text="@string/local"
                             android:textColor="@color/nav"
-                            android:textSize="18sp"
-                            android:layout_margin="8sp"
-                            android:layout_height="match_parent">
+                            android:textSize="18sp">
 
                         </TextView>
+
                         <Switch
                             android:id="@+id/transcription_switch"
-                            android:thumbTint="@color/nav"
-
                             android:layout_width="wrap_content"
-                            android:layout_height="match_parent">
+
+                            android:layout_height="match_parent"
+                            android:thumbTint="@color/nav">
 
                         </Switch>
+
                         <TextView
                             android:id="@+id/Ser"
 
                             android:layout_width="wrap_content"
-                            android:text="@string/server"
+                            android:layout_height="match_parent"
                             android:layout_margin="5sp"
+                            android:text="@string/server"
                             android:textColor="@color/nav"
-                            android:textSize="18sp"
-                            android:layout_height="match_parent">
+                            android:textSize="18sp">
 
                         </TextView>
 

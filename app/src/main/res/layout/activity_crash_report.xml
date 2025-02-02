@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+
+    android:background="@drawable/page_background">
+
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/tool"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/nav"
+        android:elevation="4dp"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="Notes App"
+
+        >
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            >
+
+            <LinearLayout
+                android:id="@+id/linearLayout3"
+                android:layout_width="0dp"
+                android:layout_margin="10sp"
+                android:layout_height="match_parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="30sp"
+                    android:text="@string/brand_name"
+                    android:textStyle="normal"
+                    android:textColor="@color/secondary"
+                    android:textSize="20sp"
+                    ></TextView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="30sp"
+                    android:text="@string/app_name"
+                    android:textStyle="bold"
+                    android:textColor="@color/third"
+                    android:textSize="25sp"
+                    ></TextView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="30sp"
+                    android:layout_marginTop="20sp"
+                    android:text="Bug Reoport"
+                    android:textStyle="bold"
+                    android:textColor="@color/button_blue"
+                    android:textSize="20sp"
+                    ></TextView>
+
+            </LinearLayout>
+
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.appcompat.widget.Toolbar>
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/crashReasonTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:paddingBottom="10dp"
+                android:maxLines="4"
+                android:ellipsize="end" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/showDetailsButton"
+                android:layout_width="wrap_content"
+                app:cornerRadius="20sp"
+                android:layout_height="wrap_content"
+                android:text="Show Full Log Details"
+                android:backgroundTint="@color/button_blue_light"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp"
+                app:strokeWidth="2dp"
+                app:strokeColor="@color/button_blue"/>
+
+            <EditText
+                android:id="@+id/feedbackEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Write your experience  here...( optional )"
+                android:padding="10dp"
+                android:background="@drawable/edittext_blue_border"
+            android:minHeight="100dp"
+            android:gravity="top"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sendFeedbackButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cornerRadius="20sp"
+                android:text="Send Log Report"
+                android:backgroundTint="#8FD78C"
+                android:textColor="@color/black"
+                android:layout_marginTop="10dp"
+                app:strokeWidth="2dp"
+                app:strokeColor="@color/button"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/backToMainButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Back to Notes Page"
+                android:backgroundTint="#FFFAAF"
+                android:textColor="@color/black"
+                android:layout_marginTop="10dp"
+                app:cornerRadius="20dp"
+                app:strokeWidth="2dp"
+                app:strokeColor="@color/button_yellow" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
