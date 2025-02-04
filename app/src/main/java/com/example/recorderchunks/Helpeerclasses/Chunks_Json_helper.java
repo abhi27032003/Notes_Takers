@@ -1,5 +1,7 @@
 package com.example.recorderchunks.Helpeerclasses;
 
+import android.util.Log;
+
 import com.example.recorderchunks.Model_Class.Chunk_Response;
 
 import org.json.JSONArray;
@@ -13,7 +15,13 @@ public class Chunks_Json_helper {
 
 
     public static boolean isValidFormat(String jsonString) {
-        JSONObject jsonData=parseJson(jsonString);
+        JSONObject jsonData = parseJson(jsonString);
+
+        // Ensure jsonData is not null before proceeding
+        if (jsonData == null) {
+            Log.e("Chunks_Json_helper", "Invalid JSON string: Failed to parse JSON");
+            return false;
+        }
 
         try {
             // Check for top-level keys
@@ -30,11 +38,13 @@ public class Chunks_Json_helper {
                 }
             }
 
-            return false; // Valid format
+            return false; // No valid chunks found
         } catch (JSONException e) {
+            Log.e("Chunks_Json_helper", "JSON processing error: " + e.getMessage());
             return false; // Invalid format
         }
     }
+
 
     // Function to extract chunk data into a list of ChunkResponse objects
     public static List<Chunk_Response> getChunkList(String jsonString) {

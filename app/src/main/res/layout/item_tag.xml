@@ -3,9 +3,9 @@
     android:layout_height="40sp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     app:cardCornerRadius="26sp"
-
     android:layout_margin="5sp"
-    app:cardBackgroundColor="@color/button"
+    app:strokeColor="@color/button"
+    app:cardBackgroundColor="@color/third"
     android:layout_width="wrap_content">
     <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"

@@ -7,9 +7,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Toast;
 
-import com.android.volley.Request;
+
+import androidx.annotation.NonNull;
+
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
@@ -21,16 +24,30 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 
 public class AI_Notemaking {
+    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
+    private static final String API_KEY = "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"; // Replace with your API key
+    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private static final OkHttpClient client = new OkHttpClient();
     public static void get_gemini_note(Context context, String prompt, GeminiCallback callback)
     {
         try {
@@ -41,7 +58,7 @@ public class AI_Notemaking {
 
             GenerativeModelFutures model = GenerativeModelFutures.from(gm);
 
-            Toast.makeText(context, "'" + prompt + "'", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Message passed to Gemini content will be updated soon", Toast.LENGTH_SHORT).show();
 
             Content content = new Content.Builder()
                     .addText("'" + prompt + "'")
@@ -69,54 +86,70 @@ public class AI_Notemaking {
         }
 
     }
-    public static String  getoutput_chatgpt(String prompt,Context context)
-    {
-        SharedPreferences sharedPreferences;
-        RequestQueue requestQueue;
-        requestQueue = Volley.newRequestQueue(context);
-        sharedPreferences = context.getSharedPreferences("ApiKeysPref", MODE_PRIVATE);
-        final String[] output = {"some error"};
-        String apiKey = sharedPreferences.getString("ChatGptApiKey", "");
-        String apiUrl = "https://api.openai.com/v1/completions"; // Replace with ChatGPT endpoint
+    public static void getoutput_chatgpt(Context context, String question, GeminiCallback callback) {
+        OkHttpClient client = new OkHttpClient();
 
-        if (TextUtils.isEmpty(apiKey)) {
-
-            return "ChatGpt API Key Missing please add it";
-        }
-
+        // Create JSON body
+        JSONObject jsonBody = new JSONObject();
         try {
-            JSONObject jsonRequest = new JSONObject();
-            jsonRequest.put("model", "text-davinci-003"); // Replace with your model
-            jsonRequest.put("prompt", prompt);
-            jsonRequest.put("max_tokens", 100);
+            jsonBody.put("model", "gpt-3.5-turbo");
 
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
-                    Request.Method.POST,
-                    apiUrl,
-                    jsonRequest,
-                    response -> {
-                        try {
-                            output[0] = response.getString("choices");
-                        } catch (JSONException e) {
-                            output[0]= e.getMessage();
-                        }
-                    },
-                    error -> output[0]=error.getMessage()
-            ) {
-                @Override
-                public Map<String, String> getHeaders() {
-                    Map<String, String> headers = new HashMap<>();
-                    headers.put("Authorization", "Bearer " + apiKey);
-                    headers.put("Content-Type", "application/json");
-                    return headers;
-                }
-            };
+            JSONArray messages = new JSONArray();
+            JSONObject systemMessage = new JSONObject();
+            systemMessage.put("role", "system");
+            systemMessage.put("content", "You are a helpful assistant.");
 
-            requestQueue.add(jsonObjectRequest);
+            JSONObject userMessage = new JSONObject();
+            userMessage.put("role", "user");
+            userMessage.put("content", question);
 
+            messages.put(systemMessage);
+            messages.put(userMessage);
+            jsonBody.put("messages", messages);
+
+            jsonBody.put("temperature", 0.7);
         } catch (JSONException e) {
-            output[0]="Error creating request";
+            callback.onFailure("JSON Error: " + e.getMessage());
+            return;
         }
-        return output[0];
+        Toast.makeText(context, "Message passed to ChatGpt content will be updated soon", Toast.LENGTH_SHORT).show();
+
+        // Create request body
+        RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
+
+        // Create request
+        Request request = new Request.Builder()
+                .url(API_URL)
+                .header("Authorization", "Bearer " + API_KEY)
+                .header("Content-Type", "application/json")
+                .post(body)
+                .build();
+
+        // Execute request asynchronously
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                callback.onFailure("Request Failed: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    callback.onFailure("Error: " + response.code() + " - " + response.message());
+                    return;
+                }
+
+                String responseData = response.body().string();
+                try {
+                    JSONObject jsonResponse = new JSONObject(responseData);
+                    JSONArray choices = jsonResponse.getJSONArray("choices");
+                    String reply = choices.getJSONObject(0).getJSONObject("message").getString("content");
+
+                    callback.onSuccess(reply);
+                } catch (JSONException e) {
+                    callback.onFailure("Parsing Error: " + e.getMessage());
+                }
+            }
+        });
     }
 }

@@ -48,6 +48,7 @@ public class HorizontalRecyclerViewAdapter extends RecyclerView.Adapter<Horizont
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         // Bind the data (String) to the TextView
+
         holder.textView.setText(getWord(items.get(position)));
 
         // Set a random color for the ImageView's drawable background

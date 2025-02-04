@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -116,6 +117,20 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
                         .addToBackStack(null)
                         .commit();
 
+            }
+        });
+
+
+        holder.recyclerView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent even) {
+                current_event ce=new current_event();
+                ce.setCurrent_event_no(event.getId());
+                fragmentManager.beginTransaction()
+                        .replace(R.id.main_item_container,new  Add_notes_Fragment())
+                        .addToBackStack(null)
+                        .commit();
+                return false;
             }
         });
 

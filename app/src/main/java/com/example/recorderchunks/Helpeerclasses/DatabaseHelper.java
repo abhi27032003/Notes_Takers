@@ -412,5 +412,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // Return true if at least one row is affected, false otherwise
         return rowsAffected > 0;
     }
+    @SuppressLint("Range")
+    public List<String> getDescriptionsByEventId(String eventId) {
+        List<String> descriptions = new ArrayList<>();
+
+        // Get a reference to the database (this assumes you have a method to get the readable database)
+        SQLiteDatabase db = getReadableDatabase(); // Replace with your method to get the database
+
+        // Define the columns to be fetched
+        String[] columns = {
+                COL_DES_API,
+                COL_DES
+        };
+
+        // Define the selection condition based on event_id
+        String selection = COL_EVENT_ID + " = ?";
+        String[] selectionArgs = { eventId };
+
+        // Define the query
+        Cursor cursor = db.query(TABLE_RECORDINGS, columns, selection, selectionArgs, null, null, null);
+
+        // Iterate over the result set and add the values to the list
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                String descriptionApi = cursor.getString(cursor.getColumnIndex(COL_DES_API));
+                String description = cursor.getString(cursor.getColumnIndex(COL_DES));
+
+                // Add both descriptions to the list
+                descriptions.add(descriptionApi);
+                descriptions.add(description);
+            }
+            cursor.close();
+        }
+
+        return descriptions;
+    }
 
 }

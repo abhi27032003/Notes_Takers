@@ -71,14 +71,14 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     boolean allTranscriptionProgress = true;
     SharedPreferences prefs_uuid ;
     AppLogger logger ;
-
+    private int currentPlayingPosition = -1;
+    private boolean isPlaying = false;
+    private Handler handler = new Handler();
+    private Runnable updateSeekBarRunnable;
 
     public static ArrayList<Recording> recordingList;
     private final Context context;
     private static MediaPlayer mediaPlayer;
-    private static int currentPlayingPosition = -1;
-    private static final Handler handler = new Handler();
-    private static Runnable updateSeekBarRunnable;
     public static ArrayList<String> selectedItems;
     private static SharedPreferences sharedPreferences,sharedPreferences2;
     private static final String PREFS_NAME = "PromptSelectionPrefs";
@@ -115,6 +115,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         this.uuid = prefs_uuid.getString("uuid", null);
         this.signature = prefs_uuid.getString("signature", null);
         this.logger= AppLogger.getInstance(context);
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();  // Stop the media player if it's playing
+            }
+            mediaPlayer.reset();  // Reset to prepare for future usage
+        }
     }
 
     @NonNull
@@ -146,6 +152,9 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             editor.apply();
             Transcribe_Server_with_chunks(audioItem,holder,position);
             if (selectedItems.contains(audioItem.getDescription_api())) {
+                selectedItems.remove(audioItem.getDescription());
+                saveSelectionState(audioItem.getEventId());
+                notifySelectionChanged();
                 holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
                 holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24); // Replace with your "remove" icon resource
             } else {
@@ -162,6 +171,9 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             editor.apply();
             Transcribe_Local(audioItem,holder,position);
             if (selectedItems.contains(audioItem.getDescription())) {
+                selectedItems.remove(audioItem.getDescription_api());
+                saveSelectionState(audioItem.getEventId());
+                notifySelectionChanged();
                 holder.recordingCard.setCardBackgroundColor(context.getResources().getColor(R.color.third));
                 holder.add_to_list.setImageResource(R.drawable.baseline_cancel_24); // Replace with your "remove" icon resource
             } else {
@@ -336,23 +348,25 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         });
 
 
-       holder.bindAudioData(audioItem, position);
-       if(position!=currentPlayingPosition)
-       {
-           //resetPlayerUI(holder);
-       }
 
-        //
-        /////////////////////////////////////////
+        // Update UI for current item based on playback state
+
+        holder.playPauseButton.setImageResource(isPlaying && currentPlayingPosition == position ?
+                R.mipmap.pause : R.mipmap.play);
+
         holder.playPauseButton.setOnClickListener(v -> {
             if (currentPlayingPosition == position) {
-
+                // Toggle play/pause for the current item
+                if (isPlaying) {
+                    pauseAudio(holder);
+                } else {
+                    playAudio(holder, audioItem, position);
+                }
             } else {
-
+                // Play a new audio item and reset the previous one
                 playNewAudio(holder, audioItem, position);
             }
         });
-
         // Handle seek bar changes
         holder.playbackProgressBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -838,7 +852,6 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             if(modelDatabaseHelper.checkModelDownloadedByLanguage(audioItem.getLanguage()))
             {
                 logger.addLog("Local Transcription :  Starting transcription for "+audioItem.getName());
-                //Vosk_Model.initializeVoskModel(context,modelDatabaseHelper.getModelNameByLanguage(selectedLanguage));
                 holder.Description.setText("");
                 holder.transcription_progress.setVisibility(View.VISIBLE);
                 try {
@@ -877,10 +890,13 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         else
         {
-            logger.addLog("Local Transcription :  Already Transcribed "+audioItem.getName());
-            local_open_transcription_enabled(holder);
-            holder.Description.setText(audioItem.getDescription());
-            holder.transcription_progress.setVisibility(View.GONE);
+            new Handler(Looper.getMainLooper()).post(() -> {
+                logger.addLog("Local Transcription : Already Transcribed " + audioItem.getName());
+                local_open_transcription_enabled(holder);
+                holder.Description.setText(audioItem.getDescription());
+                holder.transcription_progress.setVisibility(View.GONE);
+            });
+
 
         }
     }
@@ -1025,39 +1041,83 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
 
+    private void playAudio(AudioViewHolder holder, Recording audioItem, int position) {
+        // Check if there is already a media player and whether it is not playing
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                // If the audio is already playing, do nothing or pause it if required
+                mediaPlayer.pause();
+                isPlaying = false;
+                holder.playPauseButton.setImageResource(R.mipmap.play);  // Change button to play
+            } else {
+                // If the media player is paused, resume it from where it left off
+                mediaPlayer.start();
+                isPlaying = true;
+                holder.playPauseButton.setImageResource(R.mipmap.pause);  // Change button to pause
+                startSeekBarUpdates(holder);  // Restart SeekBar updates if needed
+            }
+        } else {
+            // If no media player exists, start a new one
+            int previousPlayingPosition = currentPlayingPosition;
+            currentPlayingPosition = position;
+
+            if (previousPlayingPosition != -1) {
+                notifyItemChanged(previousPlayingPosition);  // Reset the previous item's UI
+            }
+
+            mediaPlayer = new MediaPlayer();
+            try {
+                mediaPlayer.setDataSource(audioItem.getUrl());
+                mediaPlayer.prepare();  // Prepare synchronously
+                mediaPlayer.start();    // Start playback
+
+                isPlaying = true;
+                holder.playPauseButton.setImageResource(R.mipmap.pause);  // Change button to pause
+                holder.playbackProgressBar.setMax(mediaPlayer.getDuration());
+
+                mediaPlayer.setOnCompletionListener(mp -> resetPlayerUI(holder, position));
+
+                // Start SeekBar updates
+                startSeekBarUpdates(holder);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(context, "Failed to play audio", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
 
     private void playNewAudio(AudioViewHolder holder, Recording audioItem, int position) {
-
-        // Stop the previous playback
+        // Stop previous audio if any
         if (mediaPlayer != null) {
             mediaPlayer.stop();
             mediaPlayer.release();
             stopSeekBarUpdates();
         }
+
+        // Update position and reset UI for the previous item
         int previousPlayingPosition = currentPlayingPosition;
         currentPlayingPosition = position;
-        if(previousPlayingPosition!=-1)
-        {
-            notifyItemChanged(previousPlayingPosition); // Reset the previous item's view
 
+        if (previousPlayingPosition != -1) {
+            notifyItemChanged(previousPlayingPosition);  // Reset the previous item's UI
         }
-        //notifyItemChanged(position);
 
+        // Initialize MediaPlayer for new audio
         mediaPlayer = new MediaPlayer();
         try {
             mediaPlayer.setDataSource(audioItem.getUrl());
-            mediaPlayer.prepare(); // Prepares the player synchronously
+            mediaPlayer.prepare();  // Prepare synchronously
+            mediaPlayer.start();    // Start playback
 
-
-            // Start playback
-            mediaPlayer.start();
+            isPlaying = true;
             holder.playPauseButton.setImageResource(R.mipmap.pause);
             holder.playbackProgressBar.setMax(mediaPlayer.getDuration());
-            mediaPlayer.setOnCompletionListener(mp -> resetPlayerUI(holder,position));
-            currentPlayingPosition = position;
 
-            // Start updating the SeekBar
+            mediaPlayer.setOnCompletionListener(mp -> resetPlayerUI(holder, position));
+
+            // Start SeekBar updates
             startSeekBarUpdates(holder);
 
         } catch (IOException e) {
@@ -1066,7 +1126,16 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
     }
 
+    // Pause the audio
+    private void pauseAudio(AudioViewHolder holder) {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            isPlaying = false;
+            holder.playPauseButton.setImageResource(R.mipmap.play);
+        }
+    }
 
+    // Start updating the SeekBar while audio is playing
     private void startSeekBarUpdates(AudioViewHolder holder) {
         updateSeekBarRunnable = new Runnable() {
             @Override
@@ -1075,18 +1144,40 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     holder.playbackProgressBar.setProgress(mediaPlayer.getCurrentPosition());
                     updateElapsedTime(holder);
                     handler.postDelayed(this, 10);
-                    if(mediaPlayer.getDuration()==holder.playbackProgressBar.getProgress())
-                    {
+                    if (mediaPlayer.getDuration() == holder.playbackProgressBar.getProgress()) {
                         holder.playbackProgressBar.setProgress(0);
                         holder.playbackTimer.setText("00:00");
                         holder.playPauseButton.setImageResource(R.mipmap.play);
-
                     }
                 }
             }
         };
         handler.post(updateSeekBarRunnable);
     }
+
+    // Stop SeekBar updates
+    private void stopSeekBarUpdates() {
+        if (updateSeekBarRunnable != null) {
+            handler.removeCallbacks(updateSeekBarRunnable);
+        }
+    }
+
+    // Reset the UI when playback is completed
+    private void resetPlayerUI(AudioViewHolder holder, int currentPlayingPosition) {
+        holder.playbackProgressBar.setProgress(0);
+        holder.playbackTimer.setText("00:00");
+        holder.playPauseButton.setImageResource(R.mipmap.play);
+        isPlaying = false;
+    }
+
+    // Update elapsed time on the UI
+    private void updateElapsedTime(AudioViewHolder holder) {
+        if (mediaPlayer != null) {
+            int currentPosition = mediaPlayer.getCurrentPosition();
+            holder.playbackTimer.setText(formatTime(currentPosition));
+        }
+    }
+
     public static void saveSelectionState(int id) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putStringSet("selected_items_"+id, new HashSet<>(selectedItems));
@@ -1133,41 +1224,26 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         if (savedItems != null) {
             selectedItems.addAll(savedItems);
         }
+        List<String> allDescriptions = databaseHelper.getDescriptionsByEventId(String.valueOf(id)); // Assuming you already have this method
+
+        // Convert the list of all descriptions into a set for easy lookup
+        Set<String> validDescriptions = new HashSet<>(allDescriptions);
+
+        // Remove any description from savedItems that isn't in the validDescriptions set
+        if (selectedItems != null) {
+            selectedItems.removeIf(item -> !validDescriptions.contains(item));
+        }
+
+        saveSelectionState(id);
         notifySelectionChanged();
-    }
-    private static void loadSelectionState_fort(int id) {
-        Set<String> savedItems = sharedPreferences.getStringSet("selected_items_"+id, new HashSet<>());
-        selectedItems.clear();
-        if (savedItems != null) {
-            selectedItems.addAll(savedItems);
-        }
-    }
-
-
-    private void stopSeekBarUpdates() {
-        if (updateSeekBarRunnable != null) {
-            handler.removeCallbacks(updateSeekBarRunnable);
-        }
-    }
-
-    private void resetPlayerUI(AudioViewHolder holder,int currentPlayingPosition) {
-        holder.playbackProgressBar.setProgress(0);
-        holder.playbackTimer.setText("00:00");
-        holder.playPauseButton.setImageResource(R.mipmap.play);
-
 
     }
 
-    private void updateElapsedTime(AudioViewHolder holder) {
-        if (mediaPlayer != null) {
-            int currentPosition = mediaPlayer.getCurrentPosition();
-            holder.playbackTimer.setText(formatTime(currentPosition));
-        }
+
+    private void removeInvalidDescriptions( int eventId) {
+        // Fetch all descriptions from the database for the given eventId
+
     }
-
-
-
-
     private String formatTime(int millis) {
         int seconds = (millis / 1000) % 60;
         int minutes = (millis / (1000 * 60)) % 60;
@@ -1289,7 +1365,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             playbackTimer.setText("00:00");
             playbackProgressBar.setProgress(0);
             playbackProgressBar.setMax(0); // Reset seek bar until new audio is loaded
-            playPauseButton.setImageResource(ir.one_developer.file_picker.R.drawable.ic_play);
+            playPauseButton.setImageResource(R.mipmap.play);
         }
 
     }

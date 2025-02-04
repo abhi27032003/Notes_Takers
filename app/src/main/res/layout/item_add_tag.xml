@@ -5,8 +5,9 @@
     app:cardCornerRadius="26sp"
 
     android:layout_margin="5sp"
-    app:strokeColor="@color/secondary"
-    app:cardBackgroundColor="@color/button"
+    app:strokeColor="@color/button"
+
+    app:cardBackgroundColor="@color/third"
     android:layout_width="wrap_content">
 
     <com.google.android.material.button.MaterialButton
@@ -14,7 +15,8 @@
         android:layout_width="wrap_content"
         android:layout_height="40sp"
         android:layout_marginRight="10sp"
+        android:textColor="@color/black"
 
-        android:backgroundTint="@color/secondary"
+        android:backgroundTint="@color/third"
         android:text="Add Tag" />
 </com.google.android.material.card.MaterialCardView>

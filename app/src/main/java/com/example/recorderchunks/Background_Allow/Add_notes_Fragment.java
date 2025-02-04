@@ -502,7 +502,21 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                     case "use ChatGpt":
                         logger.addLog("Add Notes Fragment : API Switched to Chatgpt");
 
-                        eventDescription.setText(getoutput_chatgpt(prompt+":"+alltranscription.getText().toString(),getContext()));
+                        getoutput_chatgpt(getContext(),prompt+":"+alltranscription.getText().toString(),new GeminiCallback() {
+                            @Override
+                            public void onSuccess(String result) {
+                                notesDatabaseHelper.addNote(result,event_id, "ChatGpt");
+                                logger.addLog("Add Notes Fragment : Gemini Note making successful");
+
+                            }
+
+                            @Override
+                            public void onFailure(String error) {
+                                notesDatabaseHelper.addNote(error,event_id,"ChatGpt");
+                                logger.addLog("Add Notes Fragment : Unable to create note with the help of gemini error : "+error);
+
+                            }
+                        });
                         //event_description_view.setVisibility(View.VISIBLE);
                         showdescription.setVisibility(View.VISIBLE);
                         break;
@@ -512,14 +526,14 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                         get_gemini_note(getContext(),prompt+":"+alltranscription.getText().toString(),new GeminiCallback() {
                             @Override
                             public void onSuccess(String result) {
-                                notesDatabaseHelper.addNote(result,event_id);
+                                notesDatabaseHelper.addNote(result,event_id,"Gemini");
                                 logger.addLog("Add Notes Fragment : Gemini Note making successful");
 
                             }
 
                             @Override
                             public void onFailure(String error) {
-                                notesDatabaseHelper.addNote(error,event_id);
+                                notesDatabaseHelper.addNote(error,event_id,"Gemini");
                                 logger.addLog("Add Notes Fragment : Unable to create note with the help of gemini error : "+error);
 
                             }

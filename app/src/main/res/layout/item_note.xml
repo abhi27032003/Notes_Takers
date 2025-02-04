@@ -40,7 +40,7 @@
 
         android:backgroundTint="@color/button"
         android:minHeight="40sp"
-        app:cardCornerRadius="60sp"
+        app:cardCornerRadius="15sp"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout6"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
