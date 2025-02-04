@@ -44,8 +44,6 @@ import okhttp3.Response;
 
 
 public class AI_Notemaking {
-
-
     public static void get_gemini_note(Context context, String prompt, GeminiCallback callback,String api_key)
     {
         try {
