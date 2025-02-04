@@ -1,7 +1,10 @@
 package com.example.recorderchunks;
 
 import android.app.Application;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
+import android.os.Build;
 
 import androidx.lifecycle.ViewModelStore;
 import androidx.lifecycle.ViewModelStoreOwner;
@@ -43,8 +46,21 @@ public class MyApplication extends Application implements ViewModelStoreOwner {
         );
         // Initialize the ViewModelStore for app-level scope
         viewModelStore = new ViewModelStore();
+        createNotificationChannel();
     }
-
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "AUDIO_CHANNEL",
+                    "Audio Playback",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
     @Override
     public ViewModelStore getViewModelStore() {
         return viewModelStore;
