@@ -111,21 +111,11 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="latest codebase 14 lsv">
+    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="latest codebase 15 lsv">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/AI_Notemaking.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/AI_Notemaking.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/TranscriptionUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/TranscriptionUtils.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/EventAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/EventAdapter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/HorizontalRecyclerViewAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/HorizontalRecyclerViewAdapter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Chunks_Json_helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Chunks_Json_helper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/DatabaseHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/DatabaseHelper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Notes_Database_Helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Notes_Database_Helper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_add_notes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_add_notes_.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/item_add_tag.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_add_tag.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/item_note.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_note.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/item_tag.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_tag.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -573,7 +563,15 @@
       <option name="project" value="LOCAL" />
       <updated>1738513363058</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="latest codebase 15 lsv">
+      <option name="closed" value="true" />
+      <created>1738637857399</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1738637857399</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -617,7 +615,8 @@
     <MESSAGE value="latest codebase 12 lsv" />
     <MESSAGE value="latest codebase 13 lsv" />
     <MESSAGE value="latest codebase 14 lsv" />
-    <option name="LAST_COMMIT_MESSAGE" value="latest codebase 14 lsv" />
+    <MESSAGE value="latest codebase 15 lsv" />
+    <option name="LAST_COMMIT_MESSAGE" value="latest codebase 15 lsv" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -634,22 +633,22 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>765</line>
+          <line>769</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>426</line>
+          <line>428</line>
           <option name="timeStamp" value="18" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>550</line>
+          <line>554</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>589</line>
+          <line>593</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -659,7 +658,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>566</line>
+          <line>570</line>
           <option name="timeStamp" value="32" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -694,7 +693,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>903</line>
+          <line>908</line>
           <option name="timeStamp" value="55" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -724,7 +723,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>979</line>
+          <line>984</line>
           <option name="timeStamp" value="65" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -734,22 +733,22 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>1408</line>
+          <line>1412</line>
           <option name="timeStamp" value="71" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>1303</line>
+          <line>1307</line>
           <option name="timeStamp" value="73" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>1326</line>
+          <line>1330</line>
           <option name="timeStamp" value="74" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>1068</line>
+          <line>1072</line>
           <option name="timeStamp" value="75" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -773,7 +772,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>924</line>
+          <line>928</line>
           <properties class="com.example.recorderchunks.Background_Allow.Add_notes_Fragment">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -827,7 +826,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>844</line>
+          <line>849</line>
           <properties class="com.example.recorderchunks.Adapter.AudioRecyclerAdapter" method="Transcribe_Local">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -854,7 +853,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>928</line>
+          <line>932</line>
           <properties class="com.example.recorderchunks.Background_Allow.Add_notes_Fragment" method="onRecordingPaused">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -863,7 +862,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java</url>
-          <line>1067</line>
+          <line>1071</line>
           <properties class="com.example.recorderchunks.Background_Allow.Add_notes_Fragment" method="getRandomNumber5">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />

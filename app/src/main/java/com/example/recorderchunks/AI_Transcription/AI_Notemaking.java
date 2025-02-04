@@ -44,16 +44,14 @@ import okhttp3.Response;
 
 
 public class AI_Notemaking {
-    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private static final String API_KEY = "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"; // Replace with your API key
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-    private static final OkHttpClient client = new OkHttpClient();
-    public static void get_gemini_note(Context context, String prompt, GeminiCallback callback)
+
+
+    public static void get_gemini_note(Context context, String prompt, GeminiCallback callback,String api_key)
     {
         try {
             GenerativeModel gm = new GenerativeModel(
                     "gemini-1.5-flash-001",
-                    "AIzaSyDp4QqV17XLUsZsSjgCLKdZdVTcWCZqeUk"
+                    api_key
             );
 
             GenerativeModelFutures model = GenerativeModelFutures.from(gm);
@@ -86,7 +84,7 @@ public class AI_Notemaking {
         }
 
     }
-    public static void getoutput_chatgpt(Context context, String question, GeminiCallback callback) {
+    public static void getoutput_chatgpt(Context context, String question, GeminiCallback callback,String api_key) {
         OkHttpClient client = new OkHttpClient();
 
         // Create JSON body
@@ -119,8 +117,8 @@ public class AI_Notemaking {
 
         // Create request
         Request request = new Request.Builder()
-                .url(API_URL)
-                .header("Authorization", "Bearer " + API_KEY)
+                .url("https://api.openai.com/v1/chat/completions")
+                .header("Authorization", "Bearer " + api_key)
                 .header("Content-Type", "application/json")
                 .post(body)
                 .build();

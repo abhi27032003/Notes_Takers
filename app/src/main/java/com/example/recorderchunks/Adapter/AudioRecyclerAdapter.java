@@ -624,8 +624,13 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             logger.addLog("Server Transcription : Unable to send "+chunkTranscription.getChunkId()+" for "+audioitem.getName()+" to server for transcription   "+"got response "+status);
 
                             Log.d("chunk_path","error "+errorMessage+" for "+chunkTranscription.getChunkPath()+"\n");
-                            holder.transcription_status.setText("Some error in sending chunk "+chunkTranscription.getChunkId());
+                            holder.transcription_status.setText("Some error in sending chunk "+chunkTranscription.getChunkId()+" retrying...");
+
                             allTranscriptionProgress=false;
+                            new Handler(Looper.getMainLooper()).postDelayed(() ->
+                                            transcribe_and_chunkify_audio(chunkPaths, recordingId, uuid, holder, audioitem, position),
+                                    5000
+                            );
 
                         }
                     }, chunkTranscription.getUniqueRecordingName(),audioitem.getLanguage(),uuid,context);

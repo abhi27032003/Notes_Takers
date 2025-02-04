@@ -3,6 +3,8 @@ package com.example.recorderchunks.Background_Allow;
 import static android.content.Context.MODE_PRIVATE;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.get_gemini_note;
 import static com.example.recorderchunks.AI_Transcription.AI_Notemaking.getoutput_chatgpt;
+import static com.example.recorderchunks.Activity.API_Updation.KEY_CHATGPT;
+import static com.example.recorderchunks.Activity.API_Updation.KEY_GEMINI;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_TRANSCRIPTION_METHOD;
 import static com.example.recorderchunks.utils.AudioUtils.getAudioDuration;
@@ -480,6 +482,8 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         make_note.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String chatGptApi = sharedPreferences.getString(KEY_CHATGPT, "");
+                String geminiApi = sharedPreferences.getString(KEY_GEMINI, "");
                 logger.addLog("Add Notes Fragment : User Tried to make AI generateed notes");
 
                 Notes_Database_Helper notesDatabaseHelper=new Notes_Database_Helper(getContext());
@@ -516,7 +520,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                                 logger.addLog("Add Notes Fragment : Unable to create note with the help of gemini error : "+error);
 
                             }
-                        });
+                        },chatGptApi);
                         //event_description_view.setVisibility(View.VISIBLE);
                         showdescription.setVisibility(View.VISIBLE);
                         break;
@@ -537,7 +541,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                                 logger.addLog("Add Notes Fragment : Unable to create note with the help of gemini error : "+error);
 
                             }
-                        });
+                        },geminiApi);
                         //event_description_view.setVisibility(View.VISIBLE);
                         showdescription.setVisibility(View.VISIBLE);
                         break;
