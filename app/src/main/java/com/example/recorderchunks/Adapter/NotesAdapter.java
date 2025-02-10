@@ -1,5 +1,6 @@
 package com.example.recorderchunks.Adapter;
 
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -14,6 +15,7 @@ import android.widget.Toast;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.recorderchunks.Helpeerclasses.Notes_Database_Helper;
 import com.example.recorderchunks.Model_Class.Note;
 import com.example.recorderchunks.R;
 
@@ -23,11 +25,13 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
     private Context context;
     private List<Note> noteList;
+    private Notes_Database_Helper notesDatabaseHelper;
 
 
     public NotesAdapter(Context context, List<Note> noteList) {
         this.context = context;
         this.noteList = noteList;
+        this.notesDatabaseHelper=new Notes_Database_Helper(context);
 
     }
 
@@ -66,6 +70,30 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
                 isExpanded = !isExpanded; // Toggle the flag
             }
         });
+        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new AlertDialog.Builder(context)
+                        .setTitle("Delete Note")
+                        .setMessage("Are you sure you want to delete this note?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+                            int position = holder.getAdapterPosition();
+                            if (position != RecyclerView.NO_POSITION) {
+                                // Remove from database
+                                notesDatabaseHelper.deleteNote(note.getNoteId());
+
+                                // Remove from list
+                                noteList.remove(position);
+
+                                // Notify adapter
+                                notifyItemRemoved(position);
+                            }
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                        .show();
+            }
+        });
+
 
 
 
@@ -83,11 +111,12 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
     public class NoteViewHolder extends RecyclerView.ViewHolder {
         TextView noteTextView;
         TextView createdOnTextView;
-        ImageView saveButton, shareButton, copyButton;
+        ImageView saveButton, shareButton, copyButton,deleteButton;
         CardView selectedCard;
         TextView readMore;
         public NoteViewHolder(View itemView) {
             super(itemView);
+            deleteButton=itemView.findViewById(R.id.deleteButton);
             noteTextView = itemView.findViewById(R.id.fullText);
             createdOnTextView = itemView.findViewById(R.id.createdon);
             saveButton = itemView.findViewById(R.id.save_p);

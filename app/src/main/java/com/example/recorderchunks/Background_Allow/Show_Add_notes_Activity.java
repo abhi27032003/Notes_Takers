@@ -3,6 +3,7 @@ package com.example.recorderchunks.Background_Allow;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -37,6 +38,8 @@ import com.example.recorderchunks.ManageLogs.AppLogger;
 import com.example.recorderchunks.Model_Class.Prompt;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.BuildUtils;
+import com.google.android.play.core.splitinstall.SplitInstallManager;
+import com.google.android.play.core.splitinstall.SplitInstallRequest;
 
 
 import org.json.JSONException;
@@ -44,8 +47,12 @@ import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import android.util.Base64;
 import java.util.Date;
 import java.util.List;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 public class Show_Add_notes_Activity extends AppCompatActivity {
 
@@ -69,10 +76,22 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
     private ActivityResultLauncher<String[]> permissionLauncher;
     AppLogger logger ;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_add_notes);
+        //////
+        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        boolean isFirstLaunch = prefs.getBoolean("isFirstLaunch", true);
+        if (isFirstLaunch) {
+
+
+            // Mark first launch as completed
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("isFirstLaunch", false);
+            editor.apply();
+        }
         //////
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         String savedAppLanguage = sharedPreferences.getString(SELECTED_APP_LANGUAGE, "English");
@@ -120,7 +139,11 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
 
         // Check and request permissions
         checkAndRequestPermissions();
-        getUid();
+        try {
+            getUid();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         // Set the default fragment
         setFragment(new Show_Notes_Fragment());
         check_saved_model_download();
@@ -171,15 +194,17 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         }
     }
 
-    private void getUid() {
+    private void getUid() throws Exception {
         // Get the shared preferences
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("preferences", Context.MODE_PRIVATE);
 
         // Check if uuid and signature already exist in shared preferences
         String storedUuid = prefs.getString("uuid", null);
-        String storedSignature = prefs.getString("signature", null);
+        String stored_server_public_key= prefs.getString("server_public_key", null);
+        String stored_client_private_key= prefs.getString("client_private_key", null);
+        String stored_client_public_key= prefs.getString("client_public_key", null);
 
-        if (storedUuid != null && storedSignature != null) {
+        if (storedUuid != null && stored_server_public_key != null &&stored_client_private_key!=null && stored_client_public_key!=null) {
             // If both uuid and signature are found, skip the network call
          //   Toast.makeText(Show_Add_notes_Activity.this, "UUID and Signature already saved", Toast.LENGTH_SHORT).show();
             return; // Exit the method if values already exist
@@ -194,7 +219,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         String epoch_time = BuildUtils.getSha1Hex(String.valueOf(System.currentTimeMillis()));
 
         // Server URL for registration
-        String URL = "https://notetakers.vipresearch.ca/App_Script/register.php";
+        String URL = "https://notetakers.vipresearch.ca/App_Script/Register_Final.php";
         RequestQueue requestQueue = Volley.newRequestQueue(this);
 
         // Prepare the API parameters to send in the request
@@ -209,6 +234,9 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+        SecretKey key1 = generateAESKey();
+        SecretKey key2 = generateAESKey();
+
         // Create the JsonObjectRequest for sending data to the server
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, URL, params,
                 new Response.Listener<JSONObject>() {
@@ -216,13 +244,17 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         try {
                             // Extract UUID and CRC server_public_key the server response
-                            Log.v("encryotion",response.toString());
+                            Log.v("encryption",response.toString());
                             String uuid = response.getString("uuid");
                             String server_public_key = response.getString("server_public_key");
-                            Log.v("encryotion",uuid+" : "+server_public_key);
+                            String client_public_key = response.getString("client_public_key");
+                            String client_private_key = response.getString("client_private_key");
+                            Log.v("encryption",uuid+" \n : "+server_public_key+" \n"+client_public_key+" \n"+client_private_key);
                             SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("preferences", Context.MODE_PRIVATE).edit();
                             editor.putString("uuid", uuid);
-                            editor.putString("signature", server_public_key);
+                            editor.putString("server_public_key", server_public_key);
+                            editor.putString("client_public_key", client_public_key);
+                            editor.putString("client_private_key", client_private_key);
                             editor.apply();
                             Toast.makeText(Show_Add_notes_Activity.this,"uuid and encryption information setup Complete ",Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
@@ -244,7 +276,14 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         // Add the request to the queue
         requestQueue.add(jsonObjectRequest);
     }
-
+    public static String encodeBase64(byte[] data) {
+        return Base64.encodeToString(data, Base64.DEFAULT); // Works on API 24+
+    }
+    public static SecretKey generateAESKey() throws Exception {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(128); // Generate a 128-bit AES key
+        return keyGen.generateKey();
+    }
 
     public void setFragment(Fragment fragment) {
         getSupportFragmentManager()
@@ -351,5 +390,16 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
             }
         }).start();
     }
+
+
+    private void showProgressDialog() {
+        // Create and show the progress dialog (you can also use a `ProgressBar` or a custom dialog)
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Downloading FFmpeg module...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+    }
+
+
 
 }

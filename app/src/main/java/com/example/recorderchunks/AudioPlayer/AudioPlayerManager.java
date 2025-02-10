@@ -12,96 +12,106 @@ import java.io.IOException;
 public class AudioPlayerManager {
     private static AudioPlayerManager instance;
     private MediaPlayer mediaPlayer;
-    private Handler handler = new Handler();
-    private Runnable updateSeekBar;
+    private String currentFilePath;
+    private String currentRecordingId;
+    private AudioPlayerViewModel viewModel;
+    private Handler handler;
+    private Runnable seekRunnable;
 
-    private final MutableLiveData<String> currentRecordingId = new MutableLiveData<>(null);
-    private final MutableLiveData<Boolean> isPlaying = new MutableLiveData<>(false);
-    private final MutableLiveData<Integer> currentPosition = new MutableLiveData<>(0);
-    private final MutableLiveData<Integer> totalDuration = new MutableLiveData<>(0);
-
-    private AudioPlayerManager() {
+    private AudioPlayerManager(AudioPlayerViewModel viewModel) {
+        if (viewModel == null) {
+            throw new IllegalArgumentException("ViewModel cannot be null");
+        }
+        this.viewModel = viewModel;
         mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnCompletionListener(mp -> stopAudio());
+        handler = new Handler();
     }
 
-    public static synchronized AudioPlayerManager getInstance() {
+    public static synchronized AudioPlayerManager getInstance(AudioPlayerViewModel viewModel) {
         if (instance == null) {
-            instance = new AudioPlayerManager();
+            instance = new AudioPlayerManager(viewModel);
         }
         return instance;
     }
 
-    public void playAudio(String filePath, String recordingId) {
-        stopAudio();
+    public void playRecording(String recordingId, String filePath) {
+        if (mediaPlayer.isPlaying() && filePath.equals(currentFilePath)) {
+            pauseRecording();
+            return;
+        }
+        stopRecording();
 
         try {
+            mediaPlayer.reset();
             mediaPlayer.setDataSource(filePath);
             mediaPlayer.prepare();
             mediaPlayer.start();
 
-            currentRecordingId.postValue(recordingId);
-            isPlaying.postValue(true);
-            totalDuration.postValue(mediaPlayer.getDuration());
+            currentFilePath = filePath;
+            currentRecordingId = recordingId;
 
-            updateSeekBar = new Runnable() {
-                @Override
-                public void run() {
-                    currentPosition.postValue(mediaPlayer.getCurrentPosition());
-                    handler.postDelayed(this, 500);
-                }
-            };
-            handler.post(updateSeekBar);
+            viewModel.setCurrentRecording(recordingId);
+            viewModel.setPlaying(true);
+
+            // Start updating seek position periodically
+            startSeekUpdate();
+
+            mediaPlayer.setOnCompletionListener(mp -> {
+                viewModel.setPlaying(false);
+                viewModel.setCurrentRecording("null");
+                stopSeekUpdate();
+            });
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void pauseAudio() {
+    public void pauseRecording() {
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
-            isPlaying.postValue(false);
-            handler.removeCallbacks(updateSeekBar);
+            viewModel.setPlaying(false);
         }
+        stopSeekUpdate();
     }
 
-    public void resumeAudio() {
-        if (!mediaPlayer.isPlaying()) {
-            mediaPlayer.start();
-            isPlaying.postValue(true);
-            handler.post(updateSeekBar);
-        }
-    }
-
-    public void stopAudio() {
-        if (mediaPlayer.isPlaying()) {
+    public void stopRecording() {
+        if (mediaPlayer.isPlaying() || mediaPlayer.getCurrentPosition() > 0) {
             mediaPlayer.stop();
-            mediaPlayer.reset();
-            isPlaying.postValue(false);
-            currentRecordingId.postValue(null);
-            handler.removeCallbacks(updateSeekBar);
+            viewModel.setPlaying(false);
+            viewModel.setCurrentRecording("null");
         }
+        stopSeekUpdate();
     }
 
     public void seekTo(int position) {
-        mediaPlayer.seekTo(position);
-        currentPosition.postValue(position);
+        if (mediaPlayer != null) {
+            mediaPlayer.seekTo(position);
+            viewModel.setSeekPosition(position);
+        }
     }
 
-    public LiveData<String> getCurrentRecordingId() {
-        return currentRecordingId;
+    public boolean isPlaying() {
+        return mediaPlayer.isPlaying();
     }
 
-    public LiveData<Boolean> getIsPlaying() {
-        return isPlaying;
+    private void startSeekUpdate() {
+        seekRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (mediaPlayer.isPlaying()) {
+                    int currentPosition = mediaPlayer.getCurrentPosition();
+                    viewModel.setSeekPosition(currentPosition/1000);
+                    handler.postDelayed(this, 1000); // Update every second
+                }
+            }
+        };
+        handler.post(seekRunnable);
     }
 
-    public LiveData<Integer> getCurrentPosition() {
-        return currentPosition;
-    }
-
-    public LiveData<Integer> getTotalDuration() {
-        return totalDuration;
+    private void stopSeekUpdate() {
+        if (seekRunnable != null) {
+            handler.removeCallbacks(seekRunnable);
+        }
     }
 }

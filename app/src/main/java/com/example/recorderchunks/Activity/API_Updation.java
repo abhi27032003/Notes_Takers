@@ -460,7 +460,7 @@ public class API_Updation extends AppCompatActivity {
 
         // Get stored uuid and signature
         String storedUuid = prefs.getString("uuid", null);
-        String storedSignature = prefs.getString("signature", null);
+        String storedSignature = prefs.getString("server_public_key", null);
 
 
         // Check if uuid and signature are present and set the text accordingly

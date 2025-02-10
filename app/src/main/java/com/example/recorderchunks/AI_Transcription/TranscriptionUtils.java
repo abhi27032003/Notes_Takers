@@ -9,12 +9,14 @@ import android.widget.Toast;
 
 import com.example.recorderchunks.Encryption.AudioEncryptor;
 import com.example.recorderchunks.Encryption.RSAEncryptor;
+import com.example.recorderchunks.Encryption.SHA256HashGenerator;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
@@ -63,8 +65,8 @@ public class TranscriptionUtils {
             30, TimeUnit.SECONDS, // Keep-alive time
             new LinkedBlockingQueue<Runnable>() // Queue for waiting tasks
     );
-    private static final String SEND_TRANSCRIPTION_URL = "https://notetakers.vipresearch.ca/App_Script/uploads.php";
-
+    private static final String SEND_TRANSCRIPTION_URL = "https://notetakers.vipresearch.ca/App_Script/upload_enc.php";
+    static SharedPreferences prefs ;
     // Callback interface for handling success and failure
     public interface TranscriptionCallback {
         void onSuccess(String transcription);
@@ -76,7 +78,7 @@ public class TranscriptionUtils {
     }
 
     public interface TranscriptionStatusCallback {
-        void onTranscriptionStatusSuccess(String name, String status, int queuePosition) throws JSONException;
+        void onTranscriptionStatusSuccess(String name, String status, int queuePosition) throws Exception;
         void onTranscriptionStatusError(String errorMessage);
     }
     /**
@@ -91,7 +93,8 @@ public class TranscriptionUtils {
             TranscriptionCallback callback,
             String unique_recording_name,
             String language,
-            Context context
+            Context context,
+            String uuid
             )
     {
 
@@ -106,28 +109,24 @@ public class TranscriptionUtils {
         }
 
         try {
-            // 1. Generate AES key
-            SecretKey aesKey = AudioEncryptor.generateAESKey();
-
-            // 2. Encrypt the audio file using the AES key
-            byte[] encryptedAudio = AudioEncryptor.encryptFileWithAES(audioFile, aesKey);
-
-            SharedPreferences sharedPreferences = context.getSharedPreferences("preferences", Context.MODE_PRIVATE);
-            String serverPublicKeyBase64 = sharedPreferences.getString("signature", null);
-
-            if (serverPublicKeyBase64 == null) {
-                if (callback != null) {
-                    callback.onError("Server public key not found in shared preferences.");
-                }
-                return;
-            }
 
 
-            // Load the server's public key
-            PublicKey serverPubKey = RSAEncryptor.loadPublicKey(serverPublicKeyBase64);
-            byte[] encryptedAESKey = RSAEncryptor.encryptAESKeyWithRSAPublicKey(serverPubKey, aesKey.getEncoded());
+            String salt="ʌᴉԀ ɹǝsǝɐɹƆɥ";
 
-            // 4. Create the multipart request body with encrypted content
+            // 1. Encrypt the audio file using the client private AES key
+            byte[] encryptedAudio = AudioEncryptor.encryptFileWithAESkeystring(audioFile,context);
+
+            String chunk_hash= SHA256HashGenerator.generateSHA256Hash(encryptedAudio,salt);
+            prefs = context.getSharedPreferences("preferences", Context.MODE_PRIVATE);
+            String stored_private_key = prefs.getString("client_private_key", null);
+            String stored_public_key = prefs.getString("client_public_key", null);
+
+
+//            Log.e("encrypted audio ",unique_recording_name+" "+audioString);
+//            Log.e("encrypted audio hash ",unique_recording_name+" "+chunk_hash);
+
+
+            // 2. Create the multipart request body with encrypted content
             RequestBody requestBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart(
@@ -135,15 +134,14 @@ public class TranscriptionUtils {
                             audioFile.getName() + ".enc",
                             RequestBody.create(encryptedAudio, MediaType.parse("application/octet-stream"))
                     )
-                    .addFormDataPart(
-                            "encrypted_key",
-                            "key.enc",
-                            RequestBody.create(encryptedAESKey, MediaType.parse("application/octet-stream"))
-                    )
                     .addFormDataPart("recording_name", unique_recording_name)
                     .addFormDataPart("chunk_id", chunk_id)
                     .addFormDataPart("language", getLanguageCode(language))
-                    .addFormDataPart("user_id", "")
+                    .addFormDataPart("user_id", uuid)
+                    .addFormDataPart("chunk_hash", chunk_hash)
+                    .addFormDataPart("client private key", stored_private_key)
+                    .addFormDataPart("client public key", stored_public_key)
+
                     .build();
 
             // 5. Build the request
@@ -175,7 +173,7 @@ public class TranscriptionUtils {
                     try {
                         if (response.isSuccessful()) {
                             String responseBody = response.body() != null ? response.body().string() : "";
-                            Log.d("ResponseSuccess", "Body: " + responseBody);
+                            Log.d("encrypted audio", "Body: " + responseBody);
                             new Handler(Looper.getMainLooper()).post(() ->
                                     callback.onSuccess(responseBody)
                             );
@@ -332,6 +330,8 @@ public class TranscriptionUtils {
                         Log.e("chunk_path_i", responseString);
 
                         Log.e("chunk_path_I",e.getMessage());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
 
 
@@ -404,10 +404,12 @@ public class TranscriptionUtils {
             e.printStackTrace();
             return "Error parsing JSON: " + e.getMessage();
         }
-    }public static void send_for_transcription(String chunk_id, String filePath, TranscriptionCallback callback,
+    }
+
+    public static void send_for_transcription(String chunk_id, String filePath, TranscriptionCallback callback,
                                               String unique_recording_name, String language, String uuid, Context context) {
         try {
-            taskQueue.put(() -> processRequest(chunk_id, filePath, callback, unique_recording_name, language, uuid, context));
+            taskQueue.put(() -> send_for_transcription_encrypted(chunk_id, filePath, callback, unique_recording_name, language,  context,uuid));
             executorService.execute(taskQueue.poll()); // Pick tasks from queue and execute them
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

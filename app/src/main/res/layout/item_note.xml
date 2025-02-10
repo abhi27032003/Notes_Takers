@@ -30,6 +30,7 @@
 
         </TextView>
 
+
     </LinearLayout>
 
     <com.google.android.material.card.MaterialCardView
@@ -144,27 +145,16 @@
 
         </ImageView>
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/selectedcard"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:backgroundTint="@color/secondary"
-            app:cardCornerRadius="20sp">
+        <ImageView
+            android:id="@+id/deleteButton"
+            android:layout_width="35dp"
+            android:layout_height="35sp"
+            android:padding="7sp"
+            android:src="@mipmap/delete"
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="4sp"
-                android:text="Selected"
-                android:textColor="@color/black"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:visibility="gone">
-
-            </TextView>
-        </androidx.cardview.widget.CardView>
-
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
     </LinearLayout>
 

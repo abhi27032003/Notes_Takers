@@ -36,6 +36,10 @@
             android:name=".Activity.RecordingService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
+        <service
+            android:name=".AudioPlayer.AudioPlaybackService"
+            android:exported="false"/>
+
 
         <activity
             android:name=".Background_Allow.Show_Add_notes_Activity"
@@ -56,6 +60,16 @@
         <activity
             android:name=".Activity.API_Updation"
             android:exported="false" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.recorderchunks.provider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+
     </application>
 
 </manifest>

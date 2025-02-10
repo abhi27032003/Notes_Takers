@@ -705,7 +705,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                         play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
                         recordingList.clear();
                         recordingList = databaseHelper.getRecordingsByEventId(event_id);
-                        recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
+                        recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this,getViewLifecycleOwner());
                         updateSelectedItemsDisplay(new ArrayList<>());
                         recyclerView.setAdapter(recordingAdapter);
                         recordButton.setText(getString(R.string.start_recording));
@@ -857,7 +857,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
                             play_pause_recording_small_animation.setImageResource(R.mipmap.pause);
                             recordingList.clear();
                             recordingList = databaseHelper.getRecordingsByEventId(event_id);
-                            recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
+                            recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this,getViewLifecycleOwner());
                             updateSelectedItemsDisplay(new ArrayList<>());
                             recyclerView.setAdapter(recordingAdapter);
                             recordButton.setText(getString(R.string.start_recording));
@@ -878,7 +878,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         recordingList.addAll(databaseHelper.getRecordingsByEventId(event_id));
 
         if (recordingAdapter == null) {
-            recordingAdapter = new AudioRecyclerAdapter(recordingList, requireContext(), this);
+            recordingAdapter = new AudioRecyclerAdapter(recordingList, requireContext(), this,getViewLifecycleOwner());
             recyclerView.setAdapter(recordingAdapter);
         } else {
             recordingAdapter.notifyDataSetChanged();
@@ -946,7 +946,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
         recordingList = databaseHelper.getRecordingsByEventId(event_id);
         if(getContext() !=null)
         {
-            recordingAdapter = new AudioRecyclerAdapter(recordingList,getActivity(), this);
+            recordingAdapter = new AudioRecyclerAdapter(recordingList,getActivity(), this,getViewLifecycleOwner());
 
         }
         else
@@ -1010,7 +1010,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             timePickerBtn.setText(event.getEventTime());
             recordingList.clear();
             recordingList = db.getRecordingsByEventId(event_id);
-            recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this);
+            recordingAdapter = new AudioRecyclerAdapter(recordingList, getContext(), this,getViewLifecycleOwner());
             updateSelectedItemsDisplay(new ArrayList<>());
             recyclerView.setAdapter(recordingAdapter);
             recordingAdapter.notifyDataSetChanged();
@@ -1061,7 +1061,7 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
             Toast.makeText(getContext(), "Audio saved to database", Toast.LENGTH_SHORT).show();
             recordingList.clear();
             recordingList=databaseHelper.getRecordingsByEventId(event_id);
-            recordingAdapter = new AudioRecyclerAdapter(recordingList,getContext() ,this);
+            recordingAdapter = new AudioRecyclerAdapter(recordingList,getContext() ,this,getViewLifecycleOwner());
             recyclerView.setAdapter(recordingAdapter);
             recordingAdapter.notifyDataSetChanged();
         } else {

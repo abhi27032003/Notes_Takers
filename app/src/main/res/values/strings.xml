@@ -61,6 +61,8 @@
     <string name="local">Local</string>
     <string name="server">Server</string>
     <string name="api_selected">API Selected</string>
+    <string name="title_dynamicfeature_ffmpeg">ffmpegs</string>
+    <string name="title_ffmpegmodule">ffmpegmodule</string>
 
 
 </resources>

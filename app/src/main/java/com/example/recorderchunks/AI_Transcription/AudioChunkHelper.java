@@ -1,10 +1,16 @@
 package com.example.recorderchunks.AI_Transcription;
+import android.content.Context;
+import com.arthenica.mobileffmpeg.FFmpeg;
+
 import android.os.AsyncTask;
 import android.util.Log;
 import android.media.MediaPlayer;
 import android.widget.Toast;
 
-import com.arthenica.mobileffmpeg.FFmpeg;
+
+import com.google.android.play.core.splitinstall.SplitInstallManager;
+import com.google.android.play.core.splitinstall.SplitInstallManagerFactory;
+import com.google.android.play.core.splitinstall.SplitInstallRequest;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,8 +20,9 @@ import java.util.regex.Pattern;
 
 public class AudioChunkHelper {
 
+
     // Splits the audio file into chunks and returns the list of chunk file paths
-    public static List<String> splitAudioIntoChunks(String filePath, int chunkSizeMs) {
+    public static List<String> splitAudioIntoChunks(String filePath, int chunkSizeMs,Context context) {
 //        Log.d("file_path",filePath);
         List<String> chunkPaths = new ArrayList<>();
         try {
@@ -53,7 +60,7 @@ public class AudioChunkHelper {
                     // String ffmpegLogs = FFmpeg.getLastCommandOutput();
                     if (rc == 0) {
                         chunkPaths.add(chunkFile.getAbsolutePath());
-                        Log.e("chunk_path",chunkFile.getAbsolutePath());
+                       // Log.e("chunk_path",chunkFile.getAbsolutePath());
 
 
                     }
@@ -63,7 +70,7 @@ public class AudioChunkHelper {
                     }
                 }
                 else {
-                    Log.e("chunk_path",chunkFile.getAbsolutePath());
+                   // Log.e("chunk_path",chunkFile.getAbsolutePath());
                     chunkPaths.add(chunkFile.getAbsolutePath());
                 }
 
@@ -75,11 +82,12 @@ public class AudioChunkHelper {
         }
         return chunkPaths; // Return the list of chunk file paths
     }
-    public static void splitAudioInBackground(final String filePath, final int chunkSizeMs, final splitCallback callback) {
+    
+    public static void splitAudioInBackground(final Context context,final String filePath, final int chunkSizeMs, final splitCallback callback) {
         new AsyncTask<Void, Void, List<String>>() {
             @Override
             protected List<String> doInBackground(Void... voids) {
-                return splitAudioIntoChunks(filePath, chunkSizeMs);
+                return splitAudioIntoChunks(filePath, chunkSizeMs,context);
             }
 
             @Override
