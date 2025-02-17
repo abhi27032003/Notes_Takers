@@ -49,7 +49,7 @@ public class AI_Notemaking {
         try {
             GenerativeModel gm = new GenerativeModel(
                     "gemini-1.5-flash-001",
-                    api_key
+                    "AIzaSyDp4QqV17XLUsZsSjgCLKdZdVTcWCZqeUk"
             );
 
             GenerativeModelFutures model = GenerativeModelFutures.from(gm);
@@ -116,7 +116,7 @@ public class AI_Notemaking {
         // Create request
         Request request = new Request.Builder()
                 .url("https://api.openai.com/v1/chat/completions")
-                .header("Authorization", "Bearer " + api_key)
+                .header("Authorization", "Bearer " + "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")
                 .header("Content-Type", "application/json")
                 .post(body)
                 .build();

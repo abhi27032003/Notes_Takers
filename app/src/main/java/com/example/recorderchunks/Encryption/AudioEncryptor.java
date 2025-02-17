@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import android.util.Base64;
 import android.util.Log;
@@ -31,6 +34,15 @@ public class AudioEncryptor {
         keyGen.init(AES_KEY_SIZE, new SecureRandom());
         return keyGen.generateKey();
     }
+    public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
+        // Initialize the KeyPairGenerator
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048); // You can choose 2048 or 4096 for stronger security
+
+        // Generate the KeyPair
+        return keyPairGenerator.generateKeyPair();
+    }
+
 
     // 2) Encrypt file (audio) with AES (GCM mode)
     public static byte[] encryptFileWithAES(File inputFile, SecretKey aesKey) throws Exception {

@@ -8,6 +8,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -33,9 +35,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
+public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> implements Filterable {
     private Context context;
     private List<Event> events;
+    public static List<Event> filteredList;
 
     private FragmentManager fragmentManager;
 
@@ -50,10 +53,15 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         this.events = events;
         tagStorage = new TagStorage(context);
         this.sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        this.filteredList = new ArrayList<>(events);
+
 
 
     }
-
+    public void updateList(List<Event> newList) {
+        this.filteredList = new ArrayList<>(newList);
+        notifyDataSetChanged();
+    }
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(context).inflate(R.layout.item_event, parent, false);
@@ -63,7 +71,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
 
-        Event event = events.get(position);
+        Event event = filteredList.get(position);
 
 
         if (event.getTitle() != null) {
@@ -119,20 +127,35 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
             }
         });
-
-
-        holder.recyclerView.setOnTouchListener(new View.OnTouchListener() {
+        holder.show_details.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent even) {
+            public void onClick(View v) {
                 current_event ce=new current_event();
                 ce.setCurrent_event_no(event.getId());
+
+
                 fragmentManager.beginTransaction()
                         .replace(R.id.main_item_container,new  Add_notes_Fragment())
                         .addToBackStack(null)
                         .commit();
-                return false;
+
             }
         });
+
+
+
+//        holder.recyclerView.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent even) {
+//                current_event ce=new current_event();
+//                ce.setCurrent_event_no(event.getId());
+//                fragmentManager.beginTransaction()
+//                        .replace(R.id.main_item_container,new  Add_notes_Fragment())
+//                        .addToBackStack(null)
+//                        .commit();
+//                return false;
+//            }
+//        });
 
         holder.deleteEvent.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -196,7 +219,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        return events.size();
+        return filteredList.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -205,12 +228,13 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         ImageView deleteEvent;
         LinearLayout linearLayout ;
         RecyclerView recyclerView ;
-        MaterialCardView Card_main;
+        MaterialCardView Card_main,show_details;
+
 
         public ViewHolder(View itemView) {
             super(itemView);
             Card_main=itemView.findViewById(R.id.Card_main);
-
+            show_details=itemView.findViewById(R.id.show_details);
             linearLayout=itemView.findViewById(R.id.linearLayout);
             recyclerView= itemView.findViewById(R.id.horizontalRecyclerView);
             titleTextView = itemView.findViewById(R.id.eventTitle);
@@ -222,5 +246,35 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
 
         }
+    }
+    @Override
+    public Filter getFilter() {
+        return new Filter() {
+            @Override
+            protected FilterResults performFiltering(CharSequence constraint) {
+                List<Event> filteredResults = new ArrayList<>();
+                if (constraint == null || constraint.length() == 0) {
+                    filteredResults.addAll(events);
+                } else {
+                    String filterPattern = constraint.toString().toLowerCase().trim();
+                    for (Event event : events) {
+                        if (event.getTitle().toLowerCase().contains(filterPattern)) {
+                            filteredResults.add(event);
+                        }
+                    }
+                }
+                FilterResults results = new FilterResults();
+                results.values = filteredResults;
+                return results;
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            protected void publishResults(CharSequence constraint, FilterResults results) {
+                filteredList.clear();
+                filteredList.addAll((List<Event>) results.values);
+                notifyDataSetChanged();
+            }
+        };
     }
 }

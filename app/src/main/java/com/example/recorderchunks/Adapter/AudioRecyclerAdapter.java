@@ -4,10 +4,13 @@ package com.example.recorderchunks.Adapter;
 import static com.example.recorderchunks.AI_Transcription.AudioChunkHelper.splitAudioInBackground;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
+import static com.example.recorderchunks.utils.NetworkUtil.showNoInternetDialog;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
@@ -60,8 +63,12 @@ import com.example.recorderchunks.ManageLogs.AppLogger;
 import com.example.recorderchunks.Model_Class.ChunkTranscription;
 import com.example.recorderchunks.Model_Class.Chunk_Response;
 import com.example.recorderchunks.Model_Class.Recording;
+import com.example.recorderchunks.Model_Class.RecordingViewModel;
+import com.example.recorderchunks.MyApplication;
 import com.example.recorderchunks.R;
 import com.example.recorderchunks.utils.AudioUtils;
+import com.example.recorderchunks.utils.Audio_Converter_util;
+import com.example.recorderchunks.utils.NetworkUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -109,14 +116,14 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
     private AudioPlayerManager playerManager;
 
-    private AudioPlayerViewModel viewModel;
+    private   AudioPlayerViewModel viewModel;
     private LifecycleOwner lifecycleOwner;
 
 
 
 
 
-    public AudioRecyclerAdapter(ArrayList<Recording> recordingList, Context context, OnSelectionChangedListener listener,LifecycleOwner lifecycleOwner) {
+    public AudioRecyclerAdapter(ArrayList<Recording> recordingList, Context context, OnSelectionChangedListener listener,LifecycleOwner lifecycleOwner,AudioPlayerViewModel viewModel) {
         this.lifecycleOwner = lifecycleOwner;
 
 
@@ -144,10 +151,15 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
             }
             mediaPlayer.reset();  // Reset to prepare for future usage
         }
-        this.viewModel = new ViewModelProvider((ViewModelStoreOwner) context).get(AudioPlayerViewModel.class);
+        MyApplication application = (MyApplication) context.getApplicationContext();
+        this.viewModel = application.getViewModelProvider().get(AudioPlayerViewModel.class);
+
+
+
+
 
         // Initialize the AudioPlayerManager with the ViewModel
-        this.playerManager=AudioPlayerManager.getInstance(viewModel);
+        this.playerManager=AudioPlayerManager.getInstance();
     }
 
     @NonNull
@@ -189,7 +201,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 holder.add_to_list.setImageResource(R.drawable.baseline_add_24); // Replace with your "add" icon resource
             }
 
-        } else if ("Local".equalsIgnoreCase(selectedModel)) {
+        }
+        else if ("Local".equalsIgnoreCase(selectedModel)) {
 
             holder.model_switch.setChecked(false); // Assuming btn1 is for ChatGPT
             LocalSideSelected(holder);
@@ -375,69 +388,61 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         });
 
 
-
-        // Update UI for current item based on playback state
-
-//        holder.playPauseButton.setImageResource(isPlaying && currentPlayingPosition == position ?
-//                R.mipmap.pause : R.mipmap.play);
-//
-//        holder.playPauseButton.setOnClickListener(v -> {
-//            if (currentPlayingPosition == position) {
-//                // Toggle play/pause for the current item
-//                if (isPlaying) {
-//                    pauseAudio(holder);
-//                } else {
-//                    playAudio(holder, audioItem, position);
-//                }
-//            } else {
-//                // Play a new audio item and reset the previous one
-//                playNewAudio(holder, audioItem, position);
-//            }
-//        });
-//        // Handle seek bar changes
-//        holder.playbackProgressBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-//            @Override
-//            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//                if (fromUser && mediaPlayer != null) {
-//                    mediaPlayer.seekTo(progress);
-//                    updateElapsedTime(holder);
-//                }
-//            }
-//
-//            @Override
-//            public void onStartTrackingTouch(SeekBar seekBar) {}
-//
-//            @Override
-//            public void onStopTrackingTouch(SeekBar seekBar) {}
-//        });
         holder.playPauseButton.setOnClickListener(v -> {
 
             Intent intent = new Intent(context, AudioPlaybackService.class);
-            intent.setAction(playerManager.isPlaying() ? "PAUSE" : "PLAY");
+            if(playerManager.current_playing_recording_id().equals(String.valueOf(audioItem.getRecordingId())))
+            {
+                Log.v("playback_test",playerManager.isPlaying() ? "PAUSE" : "PLAY 1");
+
+                intent.setAction(playerManager.isPlaying() ? "PAUSE" : "PLAY");
+            }
+            else
+            {
+                Log.v("playback_test","PLAY");
+                intent.setAction("PLAY");
+
+
+            }
+
             intent.putExtra("RECORDING_ID", String.valueOf(audioItem.getRecordingId()));
             intent.putExtra("FILE_PATH", audioItem.getUrl());
             context.startService(intent);
+            Log.v("playback_test", "media player : "+playerManager.current_playing_recording_id()+" : "+playerManager.isPlaying());
         });
 
-        if (viewModel != null) {
-            // Observe ViewModel
-            viewModel.getCurrentRecordingId().observe(lifecycleOwner, id -> {
-                holder.playPauseButton.setImageResource(
-                        String.valueOf(audioItem.getRecordingId()).equals(id) && Boolean.TRUE.equals(viewModel.getIsPlaying().getValue())
-                                ? R.mipmap.play
-                                : R.mipmap.pause
-                );
-            });
+        viewModel.getPlaybackState().observe(lifecycleOwner, playbackState -> {
+            int id = playbackState.first;
+            boolean isPlaying = playbackState.second;
+            Log.v("playback_test", "viewmodel  :"+id+" : "+isPlaying);
 
-            viewModel.getSeekPosition().observe(lifecycleOwner, position2 -> {
-               // Toast.makeText(context, position2+" so", Toast.LENGTH_SHORT).show();
+            if (id == audioItem.getRecordingId() && isPlaying) {
+                holder.playPauseButton.setImageResource(R.mipmap.pause);
+            } else {
+                holder.playPauseButton.setImageResource(R.mipmap.play);
+            }
+        });
 
-                if (String.valueOf(audioItem.getRecordingId()).equals(viewModel.getCurrentRecordingId().getValue())) {
-                    holder.playbackProgressBar.setProgress(position2);
-                }
-            });
+        viewModel.getSeekPosition().observe(lifecycleOwner, position2 -> {
+            if (String.valueOf(audioItem.getRecordingId()).equals(String.valueOf(viewModel.getCurrentRecordingId().getValue()))) {
 
-        }
+
+                Integer progress=findPercentage(position2, Integer.valueOf(AudioUtils.getAudioDuration(audioItem.getUrl())));
+                holder.playbackProgressBar.setProgress( progress,true);
+                holder.playbackTimer.setText(convertSecondsToTime(position2));
+
+
+            }
+            else
+            {
+                holder.playbackProgressBar.setProgress( 0,true);
+                holder.playbackTimer.setText(convertSecondsToTime(0));
+
+            }
+
+
+        });
+
         holder.delete.setOnClickListener(v -> {
             Context activityContext = v.getContext(); // Get the context from the view
 
@@ -519,32 +524,80 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         }
         holder.share_recording.setOnClickListener(v -> {
             Context context = v.getContext(); // This ensures it's an Activity context
-            shareAudio(context, audioItem.getUrl());
+            shareAudio(context, audioItem.getUrl(),holder);
         });
 
     }
-    private void shareAudio(Context context, String filePath) {
+    private void shareAudio(Context context, String filePath,AudioViewHolder holder) {
+        holder.recordingCard.setVisibility(View.INVISIBLE);
+        holder.sharing_progress_card.setVisibility(View.VISIBLE);
         File audioFile = new File(filePath);
         if (!audioFile.exists()) {
             Toast.makeText(context, "File not found!", Toast.LENGTH_SHORT).show();
+            holder.recordingCard.setVisibility(View.VISIBLE);
+            holder.sharing_progress_card.setVisibility(View.INVISIBLE);
             return;
         }
+        if(Audio_Converter_util.isSupportedFormat(filePath))
+        {
+            Audio_Converter_util.convertToMp3(context, filePath, new Audio_Converter_util.AudioConversionCallback() {
+                @Override
+                public void onSuccess(String outputFilePath) {
+                    holder.recordingCard.setVisibility(View.VISIBLE);
+                    holder.sharing_progress_card.setVisibility(View.INVISIBLE);
+                    File mp3audioFile = new File(outputFilePath);
+                    Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", mp3audioFile);
 
-        Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", audioFile);
+                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                    shareIntent.setType("audio/*");
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.setType("audio/*");
-        shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    Activity activity = getActivityFromContext(context);
+                    if (activity != null) {
+                        activity.startActivity(Intent.createChooser(shareIntent, "Share Audio"));
+                    } else {
+                        // If it's still not an Activity context, use FLAG_ACTIVITY_NEW_TASK
+                        shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Audio"));
+                    }
+                }
 
-        Activity activity = getActivityFromContext(context);
-        if (activity != null) {
-            activity.startActivity(Intent.createChooser(shareIntent, "Share Audio"));
-        } else {
-            // If it's still not an Activity context, use FLAG_ACTIVITY_NEW_TASK
-            shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(Intent.createChooser(shareIntent, "Share Audio"));
+                @Override
+                public void onFailure(String errorMessage) {
+                    holder.recordingCard.setVisibility(View.VISIBLE);
+                    holder.sharing_progress_card.setVisibility(View.INVISIBLE);
+                    Log.e("MainActivity", "Conversion failed: " + errorMessage);
+                    // Show error message to the user
+                }
+            });
+
         }
+        else
+        {
+            Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", audioFile);
+
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("audio/*");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            Activity activity = getActivityFromContext(context);
+            if (activity != null) {
+                holder.recordingCard.setVisibility(View.VISIBLE);
+                holder.sharing_progress_card.setVisibility(View.INVISIBLE);
+                activity.startActivity(Intent.createChooser(shareIntent, "Share Audio"));
+            } else {
+                // If it's still not an Activity context, use FLAG_ACTIVITY_NEW_TASK
+                shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                holder.recordingCard.setVisibility(View.VISIBLE);
+                holder.sharing_progress_card.setVisibility(View.INVISIBLE);
+                context.startActivity(Intent.createChooser(shareIntent, "Share Audio"));
+            }
+
+        }
+
+
     }
     private Activity getActivityFromContext(Context context) {
         while (context instanceof ContextWrapper) {
@@ -556,69 +609,89 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         return null;
     }
 
+    public static Integer findPercentage(Integer x, Integer y) {
+        if (y == 0) {
+            return 0; // Return 0 to avoid division by zero error
+        }
+        return (int) ((x * 100.0) / y); // Multiply by 100.0 to retain decimal precision before casting
+    }
+
+
     //////////////////////------Server Side Transcription------//////////////////////////////////////
     private void Transcribe_Server_with_chunks(Recording audioItem, AudioViewHolder holder, int position) {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.execute(() -> {
-            String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
-            String[] supportedFormats = {"wav", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
-            String changetowavformat = "3gp";
 
-            server_open_transcription_disabled(holder);
-            holder.Description_api.post(() -> {
-                holder.Description_api.setText("");
-                holder.transcription_progress_api.setVisibility(View.VISIBLE);
-                holder.transcription_status_progress_bar_api.setProgress(0, true);
-                holder.progressPercentage.setText(0 + " %");
-            });
-
-            if (Arrays.asList(supportedFormats).contains(fileExtension)) {
-                if (audioItem.getIs_transcribed_api().equals("no")) {
-                    logger.addLog("Server Transcription : Sending " + audioItem.getName() + " To server for transcription");
-
-                    holder.transcription_status.post(() -> holder.transcription_status.setText("Sending for chunking.."));
-
-                    splitAudioInBackground(context, audioItem.getUrl(), 60000, chunkPaths -> {
-                        holder.transcription_status_progress_bar_api.post(() -> holder.transcription_status_progress_bar_api.setProgress(10, true));
-                        logger.addLog("Server Transcription : Divided " + audioItem.getName() + " into " + chunkPaths.size() + " chunks");
-                        holder.progressPercentage.post(() -> holder.progressPercentage.setText(10 + " %"));
-
-                        transcribe_and_chunkify_audio(chunkPaths, audioItem.getRecordingId(), uuid, holder, audioItem, position);
-                    });
-
-                } else {
-                    updateTranscriptionCompleteUI(holder, audioItem);
-                }
-            } else if (fileExtension.contains(changetowavformat)) {
-                if (audioItem.getIs_transcribed_api().equals("no")) {
-                    logger.addLog("Server Transcription : Sending " + audioItem.getName() + " To server for transcription");
-
-                    holder.transcription_status.post(() -> holder.transcription_status.setText("Sending for chunking.."));
-
-                    String convertedFilePath = convertToWav(audioItem.getUrl(), context);
-                    splitAudioInBackground(context, convertedFilePath, 60000, chunkPaths -> {
-                        holder.transcription_status_progress_bar_api.post(() -> holder.transcription_status_progress_bar_api.setProgress(10, true));
-                        logger.addLog("Server Transcription : Divided " + audioItem.getName() + " into " + chunkPaths.size() + " chunks");
-                        holder.progressPercentage.post(() -> holder.progressPercentage.setText(10 + " %"));
-
-                        transcribe_and_chunkify_audio(chunkPaths, audioItem.getRecordingId(), uuid, holder, audioItem, position);
-                    });
-
-                } else {
-                    updateTranscriptionCompleteUI(holder, audioItem);
-                }
-            } else {
-                holder.transcription_status_progress_bar_api.post(() -> holder.transcription_status_progress_bar_api.setProgress(100, true));
-                holder.progressPercentage.post(() -> holder.progressPercentage.setText(100 + " %"));
-                databaseHelper.updaterecording_details_api(audioItem.getRecordingId(), "Unsupported format");
-                audioItem.setIs_transcribed_api("yes");
-                audioItem.setDescription_api("Unsupported format :" + fileExtension);
-                holder.Description_api.post(() -> holder.Description_api.setText("Unsupported format :" + fileExtension));
-                holder.transcription_progress_api.post(() -> holder.transcription_progress_api.setVisibility(View.GONE));
+        
+        if(NetworkUtil.isConnected(context))
+        {
+            executorService.execute(() -> {
+                String fileExtension = AudioUtils.getFileExtension(audioItem.getUrl()).toLowerCase();
+                String[] supportedFormats = {"wav", "m4a", "mp3", "webm", "mp4", "mpga", "mpeg"};
+                String changetowavformat = "3gp";
 
                 server_open_transcription_disabled(holder);
-            }
-        });
+                holder.Description_api.post(() -> {
+                    holder.Description_api.setText("");
+                    holder.transcription_progress_api.setVisibility(View.VISIBLE);
+                    holder.transcription_status_progress_bar_api.setProgress(0, true);
+                    holder.progressPercentage.setText(0 + " %");
+                });
+
+                if (Arrays.asList(supportedFormats).contains(fileExtension)) {
+                    if (audioItem.getIs_transcribed_api().equals("no")) {
+                        logger.addLog("Server Transcription : Sending " + audioItem.getName() + " To server for transcription");
+
+                        holder.transcription_status.post(() -> holder.transcription_status.setText("Sending for chunking.."));
+
+                        splitAudioInBackground(context, audioItem.getUrl(), 60000, chunkPaths -> {
+                            holder.transcription_status_progress_bar_api.post(() -> holder.transcription_status_progress_bar_api.setProgress(10, true));
+                            logger.addLog("Server Transcription : Divided " + audioItem.getName() + " into " + chunkPaths.size() + " chunks");
+                            holder.progressPercentage.post(() -> holder.progressPercentage.setText(10 + " %"));
+
+                            transcribe_and_chunkify_audio(chunkPaths, audioItem.getRecordingId(), uuid, holder, audioItem, position);
+                        });
+
+                    } else {
+                        updateTranscriptionCompleteUI(holder, audioItem);
+                    }
+                } else if (fileExtension.contains(changetowavformat)) {
+                    if (audioItem.getIs_transcribed_api().equals("no")) {
+                        logger.addLog("Server Transcription : Sending " + audioItem.getName() + " To server for transcription");
+
+                        holder.transcription_status.post(() -> holder.transcription_status.setText("Sending for chunking.."));
+
+                        String convertedFilePath = convertToWav(audioItem.getUrl(), context);
+                        splitAudioInBackground(context, convertedFilePath, 60000, chunkPaths -> {
+                            holder.transcription_status_progress_bar_api.post(() -> holder.transcription_status_progress_bar_api.setProgress(10, true));
+                            logger.addLog("Server Transcription : Divided " + audioItem.getName() + " into " + chunkPaths.size() + " chunks");
+                            holder.progressPercentage.post(() -> holder.progressPercentage.setText(10 + " %"));
+
+                            transcribe_and_chunkify_audio(chunkPaths, audioItem.getRecordingId(), uuid, holder, audioItem, position);
+                        });
+
+                    } else {
+                        updateTranscriptionCompleteUI(holder, audioItem);
+                    }
+                } else {
+                    holder.transcription_status_progress_bar_api.post(() -> holder.transcription_status_progress_bar_api.setProgress(100, true));
+                    holder.progressPercentage.post(() -> holder.progressPercentage.setText(100 + " %"));
+                    databaseHelper.updaterecording_details_api(audioItem.getRecordingId(), "Unsupported format");
+                    audioItem.setIs_transcribed_api("yes");
+                    audioItem.setDescription_api("Unsupported format :" + fileExtension);
+                    holder.Description_api.post(() -> holder.Description_api.setText("Unsupported format :" + fileExtension));
+                    holder.transcription_progress_api.post(() -> holder.transcription_progress_api.setVisibility(View.GONE));
+
+                    server_open_transcription_disabled(holder);
+                }
+            });
+        }
+
+        else
+        {
+            NetworkUtil.showNoInternetDialog(holder.itemView.getContext());
+            holder.transcription_status.setText("No Internet");
+
+        }
 
     }
     private void updateTranscriptionCompleteUI(AudioViewHolder holder, Recording audioItem) {
@@ -708,11 +781,6 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             uiHandler.post(() -> holder.transcription_status.setText("Some error in sending chunk " + chunkTranscription.getChunkId() + " retrying..."));
 
                             allTranscriptionProgress=false;
-                            new Handler(Looper.getMainLooper()).postDelayed(() ->
-                                            transcribe_and_chunkify_audio(chunkPaths, recordingId, uuid, holder, audioitem, position),
-                                    5000
-                            );
-
                         }
                     }, chunkTranscription.getUniqueRecordingName(),audioitem.getLanguage(),uuid,context);
 
@@ -722,7 +790,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         // All chunks sent, now wait for responses
                         logger.addLog("Server Transcription : send all "+totalChunks+" for "+audioitem.getName()+" to server for transcription ");
 
-                        Log.i("c_t",chunkTranscription.getChunkId());
+                        Log.i("c_t","chubk id : "+chunkTranscription.getChunkId());
                         holder.transcription_status.setText("Audio sent for transcription, waiting for responses from API");                        get_transcription_single(chunkTranscription.getUniqueRecordingName(), holder,audioitem,position); // Trigger the final transcription step
                     }
                 }
@@ -780,11 +848,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         String chunkId = chunk.getChunkId();
                         String status = chunk.getStatus();
                         String transcription=chunk.getTranscription();
-                        if(!chunk.getTranscription().contains("not available"))
-                        {
-                            transcription = Audio_decryptor.decryptText(chunk.getTranscription(),context);
-
-                        }
+//                        if(!chunk.getTranscription().contains("not available"))
+//                        {
+//                            transcription = Audio_decryptor.decryptText(chunk.getTranscription(),context);
+//
+//                        }
+                        transcription = chunk.getTranscription();
 
 
                         if (status.contains("completed")) {
@@ -1419,7 +1488,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         TextView recordingLabel,ceation_d_and_t,total_time,Description,Description_api,transcription_status;
         ImageView expand_button,add_to_list,delete,expand_button_api,share_recording;
 
-        CardView recordingCard;
+        CardView recordingCard,sharing_progress_card;
         LinearLayout transcription_progress,transcription_progress_api;
         Spinner languageSpinner;
 
@@ -1444,6 +1513,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
             Start_Transcription=itemView.findViewById(R.id.Start_Transcription);
             recordingCard=itemView.findViewById(R.id.recordingCard);
+            sharing_progress_card=itemView.findViewById(R.id.sharing_progress_card);
             expand_button=itemView.findViewById(R.id.expand_btn);
             delete=itemView.findViewById(R.id.deleteButton);
             add_to_list=itemView.findViewById(R.id.add_to_list);

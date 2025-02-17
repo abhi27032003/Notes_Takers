@@ -8,10 +8,12 @@
     android:layout_marginBottom="8dp">
 
 
+
     <!-- Event Title -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:id="@+id/Card_main"
+        app:cardCornerRadius="8sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -238,5 +240,31 @@
 
 
     <!-- Container for Delete Button -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/show_details"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="0sp"
+        android:backgroundTint="@color/nav"
+        app:cardCornerRadius="8sp"
+
+        android:layout_margin="3sp"
+        android:layout_marginRight="0sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <TextView
+            android:text="Show Details"
+            android:textColor="@color/white"
+            android:layout_width="wrap_content"
+            android:layout_marginTop="5sp"
+            android:layout_marginBottom="5sp"
+            android:layout_marginRight="10sp"
+            android:layout_marginLeft="10sp"
+            android:layout_height="wrap_content"
+            >
+
+        </TextView>
+
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

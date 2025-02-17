@@ -1,6 +1,19 @@
 package com.example.recorderchunks.Background_Allow;
 
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
+import static com.example.recorderchunks.Encryption.AudioEncryptor.generateKeyPair;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.decrypt;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.divideString;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.encrypt;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.generateAESKey_local;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.generateAndFormatRSAKeys;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.generateSHA256Hash;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.generateSHA256HashWithSalt;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.getPrivateKeyFromPEM;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.getPublicKeyFromPEM;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.getPublicKeyFromString;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.verifyDivision;
+
 
 import android.Manifest;
 import android.app.ProgressDialog;
@@ -17,6 +30,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -26,10 +41,14 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.recorderchunks.Activity.API_Updation;
 import com.example.recorderchunks.Activity.Manage_Prompt;
+import com.example.recorderchunks.Adapter.AudioRecyclerAdapter;
 import com.example.recorderchunks.Adapter.OnBackPressedListener;
 import com.example.recorderchunks.Adapter.PromptAdapter;
+import com.example.recorderchunks.AudioPlayer.AudioPlayerManager;
+import com.example.recorderchunks.AudioPlayer.AudioPlayerViewModel;
 import com.example.recorderchunks.Audio_Models.ModelDownloader;
 import com.example.recorderchunks.Audio_Models.Vosk_Model;
+import com.example.recorderchunks.Encryption.KeyPairPEM;
 import com.example.recorderchunks.Helpeerclasses.Chunks_Database_Helper;
 import com.example.recorderchunks.Helpeerclasses.LocaleHelper;
 import com.example.recorderchunks.Helpeerclasses.Model_Database_Helper;
@@ -45,6 +64,10 @@ import com.google.android.play.core.splitinstall.SplitInstallRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import android.util.Base64;
@@ -77,6 +100,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
     AppLogger logger ;
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,6 +108,10 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         //////
         SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         boolean isFirstLaunch = prefs.getBoolean("isFirstLaunch", true);
+
+
+
+
         if (isFirstLaunch) {
 
 
@@ -203,10 +231,11 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         String stored_server_public_key= prefs.getString("server_public_key", null);
         String stored_client_private_key= prefs.getString("client_private_key", null);
         String stored_client_public_key= prefs.getString("client_public_key", null);
+        String stored_AES_key= prefs.getString("client_AES_key", null);
+
 
         if (storedUuid != null && stored_server_public_key != null &&stored_client_private_key!=null && stored_client_public_key!=null) {
-            // If both uuid and signature are found, skip the network call
-         //   Toast.makeText(Show_Add_notes_Activity.this, "UUID and Signature already saved", Toast.LENGTH_SHORT).show();
+
             return; // Exit the method if values already exist
         }
 
@@ -219,7 +248,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
         String epoch_time = BuildUtils.getSha1Hex(String.valueOf(System.currentTimeMillis()));
 
         // Server URL for registration
-        String URL = "https://notetakers.vipresearch.ca/App_Script/Register_Final.php";
+        String URL = "https://notetakers.vipresearch.ca/App_Script/Full_final_Register.php";
         RequestQueue requestQueue = Volley.newRequestQueue(this);
 
         // Prepare the API parameters to send in the request
@@ -234,8 +263,11 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        SecretKey key1 = generateAESKey();
-        SecretKey key2 = generateAESKey();
+
+
+        KeyPairPEM rsaKeys = generateAndFormatRSAKeys();
+        String client_public_RSA_Key = rsaKeys.getPublicKey();
+        String client_private_RSA_Key = rsaKeys.getPrivateKey();
 
         // Create the JsonObjectRequest for sending data to the server
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, URL, params,
@@ -243,19 +275,117 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            // Extract UUID and CRC server_public_key the server response
-                            Log.v("encryption",response.toString());
+                            // Log.v("encryption",response.toString());
                             String uuid = response.getString("uuid");
                             String server_public_key = response.getString("server_public_key");
-                            String client_public_key = response.getString("client_public_key");
-                            String client_private_key = response.getString("client_private_key");
-                            Log.v("encryption",uuid+" \n : "+server_public_key+" \n"+client_public_key+" \n"+client_private_key);
+                            Log.v("encryption",uuid+" \n : "+server_public_key+" \n"+client_public_RSA_Key+" \n"+client_private_RSA_Key);
                             SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("preferences", Context.MODE_PRIVATE).edit();
-                            editor.putString("uuid", uuid);
-                            editor.putString("server_public_key", server_public_key);
-                            editor.putString("client_public_key", client_public_key);
-                            editor.putString("client_private_key", client_private_key);
-                            editor.apply();
+                            SecretKey aeskey=generateAESKey_local(server_public_key,client_public_RSA_Key,uuid);
+                            String USER_AES_KEY= Base64.encodeToString(aeskey.getEncoded(), Base64.DEFAULT);
+
+                            String[] client_key_public = divideString(client_public_RSA_Key);
+                            ////// send public key
+                            JSONObject jsonPayload = new JSONObject();
+                            try {
+                                jsonPayload.put("encrypted_clientpublic", "NA");
+                                jsonPayload.put("uuid", uuid);
+                                jsonPayload.put("encrypted_clientpublic_part1", client_key_public[0]);
+                                jsonPayload.put("encrypted_clientpublic_part2", client_key_public[1]);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            // Initialize Volley RequestQueue
+                            RequestQueue requestQueue2 = Volley.newRequestQueue(Show_Add_notes_Activity.this);
+
+                            // Create JSON Request
+                            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
+                                    Request.Method.POST,
+                                    "https://notetakers.vipresearch.ca/App_Script/send_client_public.php",
+                                    jsonPayload,
+                                    new Response.Listener<JSONObject>() {
+                                        @Override
+                                        public void onResponse(JSONObject response) {
+
+                                            try {
+                                                // Convert encrypted AES key to Base64
+                                                PublicKey pk_server=getPublicKeyFromString(server_public_key) ;
+
+                                                String encryptedKeyBase64 =encrypt(generateSHA256HashWithSalt(USER_AES_KEY,client_public_RSA_Key),pk_server);
+
+                                                Log.v("encryption","hash of AES key : "+response.toString());
+                                                // Create JSON payload
+                                                JSONObject payload = new JSONObject();
+                                                payload.put("uuid", uuid);
+                                                payload.put("encrypted_aes_key", encryptedKeyBase64);
+
+                                                // Initialize Volley request queue
+                                                RequestQueue requestQueue = Volley.newRequestQueue(Show_Add_notes_Activity.this);
+
+                                                // Create POST request
+                                                JsonObjectRequest jsonRequest = new JsonObjectRequest(
+                                                        Request.Method.POST,
+                                                        "https://notetakers.vipresearch.ca/App_Script/send_aes_key.php",
+                                                        payload,
+                                                        new Response.Listener<JSONObject>() {
+                                                            @Override
+                                                            public void onResponse(JSONObject response) {
+                                                                editor.putString("uuid", uuid);
+                                                                editor.putString("server_public_key", server_public_key);
+                                                                editor.putString("client_public_key", String.valueOf(client_public_RSA_Key));
+                                                                editor.putString("client_private_key", String.valueOf(client_private_RSA_Key));
+                                                                editor.putString("client_AES_key", String.valueOf(USER_AES_KEY));
+                                                                editor.apply();
+                                                                Log.v("encryption","response send aes : "+response.toString());
+                                                                Toast.makeText(Show_Add_notes_Activity.this,"response : "+response.toString(),Toast.LENGTH_LONG).show();
+
+                                                            }
+                                                        },
+                                                        new Response.ErrorListener() {
+                                                            @Override
+                                                            public void onErrorResponse(VolleyError error) {
+                                                                Toast.makeText(Show_Add_notes_Activity.this,"Sending Hash of AES key API not working "+ error.toString(), Toast.LENGTH_SHORT).show();
+
+                                                                Log.v("encryption","response send aes : "+error.getMessage());
+                                                                Toast.makeText(Show_Add_notes_Activity.this,"error :"+error.getMessage(),Toast.LENGTH_LONG).show();
+                                                            }
+                                                        }
+                                                );
+
+                                                // Add request to queue
+                                                requestQueue.add(jsonRequest);
+
+                                            } catch (Exception e) {
+                                                Log.v("encryption","response send aes : "+"error 2 :"+e.getMessage());
+                                                Toast.makeText(Show_Add_notes_Activity.this,"error 2 :"+e.getMessage(),Toast.LENGTH_LONG).show();
+
+                                            }
+                                            // save
+                                            editor.putString("uuid", uuid);
+                                            editor.putString("server_public_key", server_public_key);
+                                            editor.putString("client_public_key", String.valueOf(client_public_RSA_Key));
+                                            editor.putString("client_private_key", String.valueOf(client_private_RSA_Key));
+                                            editor.putString("client_AES_key", String.valueOf(USER_AES_KEY));
+                                            editor.apply();
+                                            Log.v("encryption","response send public key"+response.toString());
+
+                                            Log.v("encryption",uuid+" \n : "+server_public_key+" \n"+client_public_RSA_Key+" \n"+client_private_RSA_Key+"\n"+USER_AES_KEY);
+
+                                        }
+                                    },
+                                    new Response.ErrorListener() {
+                                        @Override
+                                        public void onErrorResponse(VolleyError error) {
+                                            // Handle the error response
+                                            Toast.makeText(Show_Add_notes_Activity.this,"Sending public RSA key API not working "+ error.toString(), Toast.LENGTH_SHORT).show();
+                                            Log.e("encryption", "Error hello : " + error.toString());
+                                        }
+                                    }
+                            );
+
+                            // Add the request to the queue
+                            requestQueue2.add(jsonObjectRequest);
+
                             Toast.makeText(Show_Add_notes_Activity.this,"uuid and encryption information setup Complete ",Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             // Handle any errors that occur during response processing
@@ -291,6 +421,20 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                 .replace(R.id.main_item_container, fragment)
                 .commit();
     }
+
+    @Override
+    protected void onPause() {
+
+
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+
+        super.onDestroy();
+    }
+
     @Override
     public void onBackPressed() {
         // Find the current fragment

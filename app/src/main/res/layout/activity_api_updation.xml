@@ -256,6 +256,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_margin="4sp"
                                 app:cardCornerRadius="20sp"
+                                android:visibility="gone"
                                 android:backgroundTint="@color/third"
                                 android:layout_height="wrap_content"
                                 >

@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.content.Intent;
 import android.os.Build;
 
+import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStore;
 import androidx.lifecycle.ViewModelStoreOwner;
 
@@ -17,10 +18,14 @@ import com.github.anrwatchdog.ANRWatchDog;
 public class MyApplication extends Application implements ViewModelStoreOwner {
 
     private ViewModelStore viewModelStore;
+    private ViewModelProvider viewModelProvider;
+    private static MyApplication instance;
+
 
     @Override
     public void onCreate() {
         super.onCreate();
+
         new ANRWatchDog(5000)
                 .setANRListener(new ANRWatchDog.ANRListener() {
                     @Override
@@ -45,7 +50,10 @@ public class MyApplication extends Application implements ViewModelStoreOwner {
                 new CustomExceptionHandler(getApplicationContext(), CrashReportActivity.class)
         );
         // Initialize the ViewModelStore for app-level scope
+        instance = this; // Set the global instance
+
         viewModelStore = new ViewModelStore();
+        viewModelProvider = new ViewModelProvider(this, new ViewModelProvider.AndroidViewModelFactory(this));
         createNotificationChannel();
     }
     private void createNotificationChannel() {
@@ -61,8 +69,16 @@ public class MyApplication extends Application implements ViewModelStoreOwner {
             }
         }
     }
+    public ViewModelProvider getViewModelProvider() {
+        return viewModelProvider;
+    }
+
     @Override
     public ViewModelStore getViewModelStore() {
         return viewModelStore;
+    }
+
+    public static MyApplication getInstance() {
+        return instance;
     }
 }

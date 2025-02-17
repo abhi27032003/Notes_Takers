@@ -106,6 +106,80 @@
     </androidx.appcompat.widget.Toolbar>
 
     <!-- Floating Action Button -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:id="@+id/materialCardView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar"
+        android:orientation="horizontal"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.card.MaterialCardView
+
+            android:visibility="gone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="10sp"
+            app:cardCornerRadius="40sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/filter_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:strokeColor="@color/button">
+
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/searchView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:iconifiedByDefault="false"
+                android:queryHint="Search by title" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <ImageView
+            android:visibility="gone"
+            android:id="@+id/filter_button"
+            android:layout_width="30sp"
+            android:layout_height="30sp"
+            android:src="@mipmap/filter"
+            android:layout_marginRight="5sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </ImageView>
+
+        <Button
+            android:id="@+id/button_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="send publc  RSA  KEY"
+
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </Button>
+
+        <Button
+            android:id="@+id/button_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="send hash AES KEY"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </Button>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
 
 
     <!-- RecyclerView -->
@@ -117,7 +191,7 @@
         android:padding="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+        app:layout_constraintTop_toBottomOf="@+id/materialCardView" />
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/recording_small_card"
         android:layout_width="wrap_content"
@@ -156,7 +230,7 @@
                 android:text="00:00" />
             <ImageView
                 android:id="@+id/play_pause_recording_small_animation"
-                android:layout_width="match_parent"
+                android:layout_width="50sp"
                 android:layout_height="50sp"
                 android:src="@mipmap/pause"
                 android:backgroundTint="@color/secondary"

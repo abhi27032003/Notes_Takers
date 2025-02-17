@@ -65,7 +65,8 @@ public class TranscriptionUtils {
             30, TimeUnit.SECONDS, // Keep-alive time
             new LinkedBlockingQueue<Runnable>() // Queue for waiting tasks
     );
-    private static final String SEND_TRANSCRIPTION_URL = "https://notetakers.vipresearch.ca/App_Script/upload_enc.php";
+    private static final String SEND_TRANSCRIPTION_URL = "https://notetakers.vipresearch.ca/App_Script/uploads.php";
+    private static final String SEND_TRANSCRIPTION_URL_eccoded = "https://notetakers.vipresearch.ca/App_Script/upload_enc.php";
     static SharedPreferences prefs ;
     // Callback interface for handling success and failure
     public interface TranscriptionCallback {
@@ -146,7 +147,7 @@ public class TranscriptionUtils {
 
             // 5. Build the request
             Request request = new Request.Builder()
-                    .url(SEND_TRANSCRIPTION_URL)
+                    .url(SEND_TRANSCRIPTION_URL_eccoded)
                     .post(requestBody)
                     .build();
 
@@ -409,7 +410,7 @@ public class TranscriptionUtils {
     public static void send_for_transcription(String chunk_id, String filePath, TranscriptionCallback callback,
                                               String unique_recording_name, String language, String uuid, Context context) {
         try {
-            taskQueue.put(() -> send_for_transcription_encrypted(chunk_id, filePath, callback, unique_recording_name, language,  context,uuid));
+            taskQueue.put(() -> processRequest(chunk_id, filePath, callback, unique_recording_name, language, uuid, context));
             executorService.execute(taskQueue.poll()); // Pick tasks from queue and execute them
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
