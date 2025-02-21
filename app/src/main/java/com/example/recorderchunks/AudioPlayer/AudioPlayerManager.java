@@ -56,9 +56,11 @@ public class AudioPlayerManager {
             // Start updating seek position periodically
             startSeekUpdate();
 
-            mediaPlayer.setOnCompletionListener(mp -> {
-                viewModel.setPlaying(false);
+            mediaPlayer.setOnCompletionListener(mp -> {  viewModel.setPlaying(false);
+                viewModel.setSeekPosition(0);
                 viewModel.setCurrentRecording(-1);
+                currentRecordingId="-1";
+                currentFilePath="-1";
                 stopSeekUpdate();
             });
 

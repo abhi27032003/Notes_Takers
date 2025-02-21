@@ -4,12 +4,15 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import android.util.Base64;
@@ -29,11 +32,7 @@ public class AudioEncryptor {
     static SharedPreferences prefs ;
 
     // 1) Generate a random AES key
-    public static SecretKey generateAESKey() throws Exception {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(AES_KEY_SIZE, new SecureRandom());
-        return keyGen.generateKey();
-    }
+
     public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         // Initialize the KeyPairGenerator
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -45,31 +44,15 @@ public class AudioEncryptor {
 
 
     // 2) Encrypt file (audio) with AES (GCM mode)
-    public static byte[] encryptFileWithAES(File inputFile, SecretKey aesKey) throws Exception {
-        // Read input file into a byte array
-        byte[] inputBytes = readFile(inputFile);
 
-        // Initialize Cipher for AES/GCM/NoPadding
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        byte[] iv = new byte[12]; // 96-bit IV for GCM is typical
-        new SecureRandom().nextBytes(iv); // Securely generate random IV
-
-        GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-        cipher.init(Cipher.ENCRYPT_MODE, aesKey, gcmSpec);
-
-        // Encrypt the input bytes
-        byte[] cipherText = cipher.doFinal(inputBytes);
-
-        // Combine IV and ciphertext (IV || cipherText)
-        byte[] output = new byte[iv.length + cipherText.length];
-        System.arraycopy(iv, 0, output, 0, iv.length);
-        System.arraycopy(cipherText, 0, output, iv.length, cipherText.length);
-
-        return output;
-    }
     public static byte[] encryptFileWithAESkeystring(File inputFile, Context context) throws Exception {
         prefs = context.getSharedPreferences("preferences", Context.MODE_PRIVATE);
-        String strord_key = prefs.getString("client_private_key", null);
+        String strord_key = prefs.getString("client_AES_key", null);
+
+        if (strord_key == null) {
+            throw new IllegalStateException("AES Key not found in SharedPreferences");
+        }
+
         // Convert the AES key string into a SecretKey
         SecretKey aesKey = convertStringToSecretKey(strord_key);
 
@@ -78,22 +61,26 @@ public class AudioEncryptor {
 
         // Initialize Cipher for AES/GCM/NoPadding
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        byte[] iv = new byte[12]; // 96-bit IV for GCM is typical
-        new SecureRandom().nextBytes(iv); // Securely generate random IV
 
-        GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+        // Generate a secure random IV (12 bytes for AES-GCM)
+        byte[] iv = new byte[12]; // 96-bit IV (recommended)
+        new SecureRandom().nextBytes(iv);
+
+        // Set up AES-GCM with IV
+        GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv); // 128-bit authentication tag
         cipher.init(Cipher.ENCRYPT_MODE, aesKey, gcmSpec);
 
-        // Encrypt the input bytes
+        // Encrypt data
         byte[] cipherText = cipher.doFinal(inputBytes);
 
-        // Combine IV and ciphertext (IV || cipherText)
-        byte[] output = new byte[iv.length + cipherText.length];
-        System.arraycopy(iv, 0, output, 0, iv.length);
-        System.arraycopy(cipherText, 0, output, iv.length, cipherText.length);
+        // Combine IV and CipherText (IV || CipherText)
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.write(iv); // Store IV at the beginning
+        outputStream.write(cipherText); // Append encrypted content
 
-        return output;
+        return outputStream.toByteArray();
     }
+
 
     // Convert AES key string to SecretKey
     public static SecretKey convertStringToSecretKey(String aesKeyString) throws Exception {
@@ -111,6 +98,30 @@ public class AudioEncryptor {
             throw new IllegalArgumentException("Invalid Base64 format for AES key!", e);
         }
     }
+    public static String getSHA256Hash_of_audiofile(String filePath) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            InputStream fis = new FileInputStream(new File(filePath));
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                digest.update(buffer, 0, bytesRead);
+            }
+            fis.close();
+
+            // Convert hash bytes to hex string
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : digest.digest()) {
+                hexString.append(String.format("%02x", b));
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     // Read the file into a byte array
     private static byte[] readFile(File file) throws Exception {
         try (FileInputStream fis = new FileInputStream(file)) {

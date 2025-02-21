@@ -695,10 +695,19 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
     }
     private void updateTranscriptionCompleteUI(AudioViewHolder holder, Recording audioItem) {
+
             holder.transcription_status_progress_bar_api.post(() -> holder.transcription_status_progress_bar_api.setProgress(100, true));
             holder.progressPercentage.post(() -> holder.progressPercentage.setText(100 + " %"));
             holder.transcription_progress_api.postDelayed(() -> holder.transcription_progress_api.setVisibility(View.INVISIBLE), 100);
-            holder.Description_api.post(() -> holder.Description_api.setText(audioItem.getDescription_api()));
+            if(!audioItem.getDescription_api().isEmpty())
+            {
+                holder.Description_api.post(() -> holder.Description_api.setText(audioItem.getDescription_api()));
+
+            }
+            else
+            {
+                holder.Description_api.post(() -> holder.Description_api.setText("Recording Transcribed successfully No text found"));
+            }
             server_open_transcription_enabled(holder);
 
     }

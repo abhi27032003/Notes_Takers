@@ -235,6 +235,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
 
 
         if (storedUuid != null && stored_server_public_key != null &&stored_client_private_key!=null && stored_client_public_key!=null) {
+            Log.v("encryption",storedUuid+" \n : "+stored_server_public_key+" \n"+stored_client_private_key+" \n"+stored_client_public_key+"\n"+stored_AES_key);
 
             return; // Exit the method if values already exist
         }
