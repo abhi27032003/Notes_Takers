@@ -1,5 +1,7 @@
 package com.example.recorderchunks.Helpeerclasses;
 
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.generateSHA256Hash;
+
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
@@ -290,7 +292,7 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
                 }
 
                 // Insert new chunk
-                String Unique_recording_name = uuid + getParentFolder(chunkPath); // Generate unique chunk ID
+                String Unique_recording_name = generateSHA256Hash(uuid + getParentFolder(chunkPath)); // Generate unique chunk ID
 
                 ContentValues values = new ContentValues();
                 values.put(COL_UNIQUE_RECORDING_NAME, Unique_recording_name);

@@ -287,6 +287,12 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                             String[] client_key_public = divideString(client_public_RSA_Key);
                             ////// send public key
                             JSONObject jsonPayload = new JSONObject();
+                            editor.putString("uuid", uuid);
+                            editor.putString("server_public_key", server_public_key);
+                            editor.putString("client_public_key", String.valueOf(client_public_RSA_Key));
+                            editor.putString("client_private_key", String.valueOf(client_private_RSA_Key));
+                            editor.putString("client_AES_key", String.valueOf(USER_AES_KEY));
+                            editor.apply();
                             try {
                                 jsonPayload.put("encrypted_clientpublic", "NA");
                                 jsonPayload.put("uuid", uuid);

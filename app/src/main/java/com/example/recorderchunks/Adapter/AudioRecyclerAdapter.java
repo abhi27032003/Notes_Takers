@@ -47,6 +47,7 @@ import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.RecyclerView;
 
 
+import com.android.volley.Response;
 import com.example.recorderchunks.AI_Transcription.AudioChunkHelper;
 import com.example.recorderchunks.AI_Transcription.TranscriptionUtils;
 import com.example.recorderchunks.Activity.activity_text_display;
@@ -86,6 +87,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdapter.AudioViewHolder> {
     boolean allTranscriptionProgress = true;
@@ -720,7 +730,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
         Handler uiHandler = new Handler(Looper.getMainLooper());
 
         logger.addLog("Server Transcription : Audio file "+audioitem.getName()+" chunked successfully, sending for transcription to server");
-        uiHandler.post(() -> holder.transcription_status.setText("Audio chunked successfully, sending for transcription to server"));        boolean added_to_db = chunks_database_helper.addChunksBatch(chunkPaths, recordingId, uuid);
+        uiHandler.post(() -> holder.transcription_status.setText("Audio chunked successfully, sending for transcription to server"));
+        boolean added_to_db = chunks_database_helper.addChunksBatch(chunkPaths, recordingId, uuid);
         Log.e("chunk_path", "trying to add to database :" + added_to_db);
         allTranscriptionProgress = true;
         int totalChunks = chunkPaths.size(); // Total number of chunks
@@ -856,6 +867,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     for (Chunk_Response chunk : all_chunks_status) {
                         String chunkId = chunk.getChunkId();
                         String status = chunk.getStatus();
+                        String chunk_name=chunk.getChunk_name();
                         String transcription=chunk.getTranscription();
 //                        if(!chunk.getTranscription().contains("not available"))
 //                        {
@@ -870,6 +882,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                             chunks_database_helper.updateChunkTranscription(chunkId, unique_recordingId, transcription);
                             chunks_database_helper.updateChunkStatus(chunkId, unique_recordingId, "completed");
                             Log.i("got_chunks_2",chunkId+transcription);
+                            send_status_received(chunk_name);
 
                             chunkTranscriptionMap.put(chunkId, transcription); // Add transcription to the map
                         } else {
@@ -1002,6 +1015,43 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
 
+    }
+
+    private void send_status_received(String chunkName) {
+        // 1. Create request body for POST request
+        RequestBody requestBody = new FormBody.Builder()
+                .add("recording_name", chunkName)
+                .add("received", "true")
+                .add("user_id", uuid)
+                .build();
+
+        // 2. Create the request
+        Request request = new Request.Builder()
+                .url("https://notetakers.vipresearch.ca/App_Script/upload_enc.php")
+                .post(requestBody) // POST request
+                .build();
+
+        // 3. Create OkHttpClient instance with timeout settings
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .build();
+
+        // 4. Execute the request asynchronously
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull okhttp3.Response response) throws IOException {
+
+            }
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("API_ERROR", "Failed to send status: " + e.getMessage(), e);
+            }
+
+
+        });
     }
 
     private String combineChunkTranscriptions(Map<String, String> chunkTranscriptionMap) {
