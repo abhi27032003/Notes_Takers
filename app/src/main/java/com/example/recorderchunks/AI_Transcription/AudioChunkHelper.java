@@ -87,7 +87,7 @@ public class AudioChunkHelper {
         new AsyncTask<Void, Void, List<String>>() {
             @Override
             protected List<String> doInBackground(Void... voids) {
-                return splitAudioIntoChunks(filePath, chunkSizeMs,context);
+                return splitAudioIntoChunks(filePath, 5000,context);
             }
 
             @Override

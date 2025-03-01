@@ -47,11 +47,10 @@ public class Audio_decryptor {
     public static String decryptText(String encryptedText, Context context) throws Exception {
         prefs = context.getSharedPreferences("preferences", Context.MODE_PRIVATE);
         String strord_key = prefs.getString("server_public_key", null);
-        // Convert private key string to PrivateKey object
-        PublicKey privateKey = loadPublicKey(strord_key);
+        PublicKey publicKey = loadPublicKey(strord_key);
 
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.DECRYPT_MODE, publicKey);
 
         byte[] decodedBytes = Base64.decode(encryptedText, Base64.DEFAULT); // Fix for API 24
         byte[] decryptedBytes = cipher.doFinal(decodedBytes);

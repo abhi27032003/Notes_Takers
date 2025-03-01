@@ -292,11 +292,15 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
                 }
 
                 // Insert new chunk
-                String Unique_recording_name = generateSHA256Hash(uuid + getParentFolder(chunkPath)); // Generate unique chunk ID
+                String unique_recording_hash=replaceSlashes(generateSHA256Hash(uuid + getParentFolder(chunkPath)));
+                String Unique_recording_name = replaceSlashes(generateSHA256Hash(uuid + getParentFolder(chunkPath))+"|!~!|"+uuid+"|!~!|"+extractNumberBeforeDot(chunkPath)); // Generate unique chunk ID
+                Log.d("chunk_unique_name","unique recording name : "+Unique_recording_name);
+                Log.d("chunk_unique_name","search parameter : "+unique_recording_hash);
+
 
                 ContentValues values = new ContentValues();
-                values.put(COL_UNIQUE_RECORDING_NAME, Unique_recording_name);
-                values.put(COL_CHUNK_ID, extractNumberBeforeDot(chunkPath)); // Unique chunk ID
+                values.put(COL_UNIQUE_RECORDING_NAME, unique_recording_hash);
+                values.put(COL_CHUNK_ID,replaceSlashes(Unique_recording_name)); // Unique chunk ID
                 values.put(COL_RECORDING_ID, recordingId);
                 values.put(COL_STATUS, "not_started"); // Default status
                 values.put(COL_CHUNK_PATH, chunkPath);
@@ -316,6 +320,11 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
         }
 
 
+    }
+    public static String replaceSlashes(String input) {
+        return input.replaceAll("[/\\\\]", "|");
+        // [/] matches forward slash
+        // [\\\\] matches backslash (escaped because \ is a special character)
     }
     public static String extractNumberBeforeDot(String filePath) {
         StringBuilder number = new StringBuilder();

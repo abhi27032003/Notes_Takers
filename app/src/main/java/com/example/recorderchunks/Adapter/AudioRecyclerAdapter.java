@@ -3,6 +3,7 @@ package com.example.recorderchunks.Adapter;
 
 import static com.example.recorderchunks.AI_Transcription.AudioChunkHelper.splitAudioInBackground;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.decryptTextPrivateRSA;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
 import static com.example.recorderchunks.utils.NetworkUtil.showNoInternetDialog;
 
@@ -74,11 +75,16 @@ import com.example.recorderchunks.utils.NetworkUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -861,6 +867,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
                 if(Chunks_Json_helper.isValidFormat(response))
                 {
+                    Log.e("transcription_response","inside is valid :"+ response);
+
                     logger.addLog("Server Transcription :  Response from server for "+audioitem.getName()+" is valid ");
 
                     List<Chunk_Response> all_chunks_status= Chunks_Json_helper.getChunkList(response);
@@ -868,13 +876,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                         String chunkId = chunk.getChunkId();
                         String status = chunk.getStatus();
                         String chunk_name=chunk.getChunk_name();
-                        String transcription=chunk.getTranscription();
-//                        if(!chunk.getTranscription().contains("not available"))
-//                        {
-//                            transcription = Audio_decryptor.decryptText(chunk.getTranscription(),context);
-//
-//                        }
-                        transcription = chunk.getTranscription();
+                        String transcription= decryptTextPrivateRSA(chunk.getTranscription(),context);
+
 
 
                         if (status.contains("completed")) {
@@ -1015,6 +1018,98 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
 
 
+    }
+
+    private void get_transcription_one_by_one(int recordingId, AudioViewHolder holder, Recording audioItem, int position) {
+        List<ChunkTranscription> chunks = chunks_database_helper.getChunksByRecordingId(recordingId);
+        if (chunks.isEmpty()) {
+            Log.d("get_transcription_one_by_one", "No chunks found for recording ID: " + recordingId);
+            return;
+        }
+
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        fetchNextChunk(chunks, 0, holder, audioItem, position, mainHandler);
+    }
+
+    private void fetchNextChunk(List<ChunkTranscription> chunks, int index, AudioViewHolder holder, Recording audioItem, int position, Handler mainHandler) {
+        if (index >= chunks.size()) {
+            Log.d("get_transcription_one_by_one", "All chunks processed for " + audioItem.getName());
+            return;
+        }
+
+        ChunkTranscription chunk = chunks.get(index);
+        String chunkId = chunk.getChunkId();
+
+        Log.d("get_transcription_one_by_one", "Fetching transcription for chunk: " + chunkId);
+
+        mainHandler.post(() -> holder.transcription_status.setText("Fetching transcription for chunk " + (index + 1) + " / " + chunks.size()));
+
+        new Thread(() -> {
+            try {
+                String transcription = fetchTranscriptionFromServer(chunkId);
+                if (transcription != null && !transcription.contains("not available")) {
+                    chunks_database_helper.updateChunkTranscription(chunkId, chunk.getUniqueRecordingName(), transcription);
+                    chunks_database_helper.updateChunkStatus(chunkId, chunk.getUniqueRecordingName(), "completed");
+
+                    mainHandler.post(() -> {
+                        holder.Description_api.setText(transcription);
+                        holder.transcription_status.setText("Chunk " + (index + 1) + " transcribed");
+                    });
+                } else {
+                    Log.d("get_transcription_one_by_one", "No valid transcription for chunk: " + chunkId);
+                }
+            } catch (Exception e) {
+                Log.e("get_transcription_one_by_one", "Error fetching transcription for chunk: " + chunkId, e);
+            }
+
+            // Move to the next chunk after a delay
+            mainHandler.postDelayed(() -> fetchNextChunk(chunks, index + 1, holder, audioItem, position, mainHandler), 5000);
+        }).start();
+    }
+
+    private String fetchTranscriptionFromServer(String chunkId) {
+        try {
+            String url = "https://notetakers.vipresearch.ca/App_Script/enc_status.php";
+            Map<String, String> params = new HashMap<>();
+            params.put("recording_name", chunkId);
+
+            String response = sendGetRequest(url, params);
+            return extractTranscription(response);
+        } catch (Exception e) {
+            Log.e("fetchTranscriptionFromServer", "Error fetching transcription for chunk: " + chunkId, e);
+            return null;
+        }
+    }
+
+    private String sendGetRequest(String url, Map<String, String> params) throws IOException {
+        Uri.Builder uriBuilder = Uri.parse(url).buildUpon();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            uriBuilder.appendQueryParameter(entry.getKey(), entry.getValue());
+        }
+        URL finalUrl = new URL(uriBuilder.toString());
+        HttpURLConnection urlConnection = (HttpURLConnection) finalUrl.openConnection();
+        urlConnection.setRequestMethod("GET");
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+            StringBuilder result = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                result.append(line);
+            }
+            return result.toString();
+        } finally {
+            urlConnection.disconnect();
+        }
+    }
+
+    private String extractTranscription(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            return jsonObject.optString("transcription", "not available");
+        } catch (JSONException e) {
+            Log.e("extractTranscription", "Error parsing transcription response", e);
+            return "not available";
+        }
     }
 
     private void send_status_received(String chunkName) {
@@ -1231,7 +1326,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     public boolean isMessageSuccessful(String jsonResponse) {//Encrypted file uploaded and queued successfully
         try {
 
-            if (jsonResponse.contains("message") && (jsonResponse.contains("successfully")||jsonResponse.contains("already exists")||jsonResponse.contains("successful"))) {
+            if (jsonResponse.contains("message") || (jsonResponse.contains("successfully")||jsonResponse.contains("already exists")||jsonResponse.contains("successful"))) {
                 return true;
             }
         } catch (Exception e) {

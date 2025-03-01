@@ -4,9 +4,12 @@ import static com.example.recorderchunks.Encryption.AudioEncryptor.getSHA256Hash
 import static com.example.recorderchunks.Encryption.RSASignature.createPackage;
 import static com.example.recorderchunks.Encryption.RSASignature.encryptJsonPackage;
 import static com.example.recorderchunks.Encryption.RSASignature.signData;
+import static com.example.recorderchunks.Helpeerclasses.Chunks_Json_helper.convertJsonFormat;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
@@ -20,7 +23,10 @@ import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.HashMap;
@@ -71,7 +77,7 @@ public class TranscriptionUtils {
             new LinkedBlockingQueue<Runnable>() // Queue for waiting tasks
     );
     private static final String SEND_TRANSCRIPTION_URL = "https://notetakers.vipresearch.ca/App_Script/uploads.php";
-    private static final String SEND_TRANSCRIPTION_URL_eccoded = "https://notetakers.vipresearch.ca/App_Script/upload_enc.php";
+    private static final String SEND_TRANSCRIPTION_URL_eccoded = "https://notetakers.vipresearch.ca/App_Script/Final_upload_enc_chunk.php";
     static SharedPreferences prefs ;
     // Callback interface for handling success and failure
     public interface TranscriptionCallback {
@@ -142,13 +148,25 @@ public class TranscriptionUtils {
             byte[] encryptedAudio = AudioEncryptor.encryptFileWithAESkeystring(audioFile,context);
             String encryptedAudiosignature = signData(encryptedAudio,stored_private_key);
             String jsonpackage=createPackage(encryptedAudio,encryptedAudiosignature);
-            String chunk_hash= SHA256HashGenerator.generateSHA256Hash(encryptedAudio,salt);
             byte[] encryptedPackage = encryptJsonPackage(jsonpackage, context);
             String finalEncryptedPackage = Base64.encodeToString(encryptedPackage, Base64.DEFAULT);
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File file = new File(downloadsDir, "helloenc.txt");
 
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(finalEncryptedPackage.getBytes());
+                fos.flush();
+                Log.v("TOOOOO","File saved successfully: " + file.getAbsolutePath());
+               // Toast.makeText(context, "File saved successfully: " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+                System.out.println("File saved successfully: " + file.getAbsolutePath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
            //Log.d("EncryptionLog", "Encrypted Audio: " + Base64.encodeToString(encryptedAudio, Base64.DEFAULT));
            // Log.d("EncryptionLog", "Final json : " + finalEncryptedPackage);
             //Log.d("EncryptionLog", "JSON Package: " + jsonpackage);
+            Log.d("EncryptionLog", "Signature: " + encryptedAudiosignature);
+
 
 
 // Use this method instead of Log.d()
@@ -168,24 +186,11 @@ public class TranscriptionUtils {
             RequestBody requestBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart(
-                            "encrypted_audio",
-                            audioFile.getName() + ".enc",
+                            "audio_file",
+                            chunk_id + ".enc",
                             RequestBody.create(encryptedAudio, MediaType.parse("application/octet-stream"))
                     )
-                    .addFormDataPart("recording_name", unique_recording_name)
-                    .addFormDataPart("chunk_id", chunk_id)
-                    .addFormDataPart("language", getLanguageCode(language))
-                    .addFormDataPart("user_id", uuid)
-                    .addFormDataPart("chunk_hash", chunk_hash)
-                    .addFormDataPart(
-                            "encrypted_package",
-                            "encrypted_package.enc",
-                            RequestBody.create(encryptedPackage, MediaType.parse("application/octet-stream")) // Send as a file
-                    )
-                    .addFormDataPart("AES Key", USER_AES_KEY)
-                    .addFormDataPart("RSA Client private key", stored_private_key)
                     .build();
-
 
 
 
@@ -220,6 +225,8 @@ public class TranscriptionUtils {
                         if (response.isSuccessful()) {
                             String responseBody = response.body() != null ? response.body().string() : "";
                             Log.d("encrypted audio", "Body: " + responseBody);
+                            Log.d("encrypted audio", "name: " + chunk_id);
+
                             new Handler(Looper.getMainLooper()).post(() ->
                                     callback.onSuccess(responseBody)
                             );
@@ -344,8 +351,23 @@ public class TranscriptionUtils {
         OkHttpClient client = new OkHttpClient();
         //Toast.makeText(context, user_id, Toast.LENGTH_SHORT).show();
 
+        Log.e("transcription_response",unique_recording_name +" _");
+        String encodedParam="";
+       // String encodedParam = null;
+        try
+        {
+             encodedParam = URLEncoder.encode(unique_recording_name, "UTF-8");
+
+        }catch (Exception e)
+        {
+
+        }
+
+
+        Log.e("transcription_response", encodedParam);
+
         // Build the request URL with query parameter
-        String url = "https://notetakers.vipresearch.ca/App_Script/status2.php?recording_name=" + unique_recording_name + "&user_id=" + user_id;
+        String url = "https://notetakers.vipresearch.ca/App_Script/enc_status.php?search=" + encodedParam ;
 
         Request request = new Request.Builder()
                 .url(url)
@@ -364,7 +386,15 @@ public class TranscriptionUtils {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    String responseString = response.body().string();
+                    String response_text=response.body().string();
+                    String responseString = null;
+                    try {
+                        responseString = convertJsonFormat(response_text).toString();
+                        Log.e("transcription_response", response_text);
+                        Log.e("transcription_response", responseString);
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     // Log the response
                     Log.e("chunk_path", responseString);

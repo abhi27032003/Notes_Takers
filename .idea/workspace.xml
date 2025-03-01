@@ -116,13 +116,18 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="latest codebase 19 lsv">
+    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="latest codebase 20 lsv">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/AudioChunkHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/AudioChunkHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/TranscriptionUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/TranscriptionUtils.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Add_notes_Activity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Add_notes_Activity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Notes_Fragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Notes_Fragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Encryption/Audio_decryptor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Encryption/Audio_decryptor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Encryption/RSAKeyGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Encryption/RSAKeyGenerator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Chunks_Database_Helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Chunks_Database_Helper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Chunks_Json_helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Chunks_Json_helper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Model_Class/Chunk_Response.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Model_Class/Chunk_Response.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_show_notes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_show_notes.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -618,7 +623,15 @@
       <option name="project" value="LOCAL" />
       <updated>1740161583900</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="latest codebase 20 lsv">
+      <option name="closed" value="true" />
+      <created>1740254895258</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1740254895259</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -642,7 +655,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
-    <MESSAGE value="basic project structure -1st commit" />
     <MESSAGE value="basic project structure -2nd commit testing git" />
     <MESSAGE value="basic project structure -3rd commit(11/11)" />
     <MESSAGE value="basic project structure -3rd commit(11/11)--do not install" />
@@ -667,7 +679,8 @@
     <MESSAGE value="latest codebase 17 lsv" />
     <MESSAGE value="latest codebase 18 lsv" />
     <MESSAGE value="latest codebase 19 lsv" />
-    <option name="LAST_COMMIT_MESSAGE" value="latest codebase 19 lsv" />
+    <MESSAGE value="latest codebase 20 lsv" />
+    <option name="LAST_COMMIT_MESSAGE" value="latest codebase 20 lsv" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -679,7 +692,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>351</line>
+          <line>357</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -704,7 +717,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Notes_Fragment.java</url>
-          <line>127</line>
+          <line>130</line>
           <option name="timeStamp" value="28" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -719,7 +732,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>523</line>
+          <line>529</line>
           <option name="timeStamp" value="35" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -734,32 +747,32 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>308</line>
+          <line>314</line>
           <option name="timeStamp" value="49" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>1106</line>
+          <line>1201</line>
           <option name="timeStamp" value="55" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>490</line>
+          <line>496</line>
           <option name="timeStamp" value="57" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>489</line>
+          <line>495</line>
           <option name="timeStamp" value="58" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>488</line>
+          <line>494</line>
           <option name="timeStamp" value="59" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>487</line>
+          <line>493</line>
           <option name="timeStamp" value="60" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -769,12 +782,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>1182</line>
+          <line>1277</line>
           <option name="timeStamp" value="65" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>366</line>
+          <line>372</line>
           <option name="timeStamp" value="66" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -809,17 +822,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>280</line>
+          <line>286</line>
           <option name="timeStamp" value="81" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>372</line>
+          <line>378</line>
           <option name="timeStamp" value="82" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Notes_Fragment.java</url>
-          <line>326</line>
+          <line>329</line>
           <option name="timeStamp" value="83" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
@@ -877,17 +890,8 @@
           <option name="timeStamp" value="40" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
-          <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Helpeerclasses/Chunks_Database_Helper.java</url>
-          <line>177</line>
-          <properties class="com.example.recorderchunks.Helpeerclasses.Chunks_Database_Helper" method="getAllChunks">
-            <option name="EMULATED" value="true" />
-            <option name="WATCH_EXIT" value="false" />
-          </properties>
-          <option name="timeStamp" value="42" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>1008</line>
+          <line>1011</line>
           <properties>
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -896,7 +900,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/AI_Transcription/TranscriptionUtils.java</url>
-          <line>104</line>
+          <line>110</line>
           <properties class="com.example.recorderchunks.AI_Transcription.TranscriptionUtils" method="send_for_transcription_encrypted">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -905,7 +909,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
-          <line>779</line>
+          <line>785</line>
           <properties>
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
@@ -929,6 +933,15 @@
             <option name="WATCH_EXIT" value="false" />
           </properties>
           <option name="timeStamp" value="76" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Adapter/AudioRecyclerAdapter.java</url>
+          <line>734</line>
+          <properties class="com.example.recorderchunks.Adapter.AudioRecyclerAdapter" method="transcribe_and_chunkify_audio">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="84" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

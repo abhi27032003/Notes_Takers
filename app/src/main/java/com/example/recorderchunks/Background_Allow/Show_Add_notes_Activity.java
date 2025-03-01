@@ -3,6 +3,8 @@ package com.example.recorderchunks.Background_Allow;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
 import static com.example.recorderchunks.Encryption.AudioEncryptor.generateKeyPair;
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.decrypt;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.decryptTextPrivateRSA;
+
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.divideString;
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.encrypt;
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.generateAESKey_local;
@@ -236,7 +238,9 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
 
         if (storedUuid != null && stored_server_public_key != null &&stored_client_private_key!=null && stored_client_public_key!=null) {
             Log.v("encryption",storedUuid+" \n : "+stored_server_public_key+" \n"+stored_client_private_key+" \n"+stored_client_public_key+"\n"+stored_AES_key);
+           // Log.v("encryption", decryptTextPrivateRSA("cNwvH3L51/ckk2Lz9wQufONXeyrrQT9i49mMsrntceaQ55qBy2fmsUnMWDqvC9yUJTIxZdpac0hwovRCLu2uIuaWSZcYmjkCVzGDJcze6fbskiVb/G6XiuK3H0gyIYN57kVRxWs7doBZETUBIjVMnaghDlmbgkQGNHewbGtkxqju3dKLYf9Dg/HkWexee2MiKHXXJpAAgIThn7uFHK3S8l9oqM0+jMmHbtv5s5NSEHREso12smDzrU2jg5+A7Km/WmUYPRWO3605NNfKa2Wh03DanYMtoVXVhOCWh967QdyFW98WLZj/qQwdsvPVhCWkbDHPLXjrawqXYH3jDNtAyg==",Show_Add_notes_Activity.this));
 
+         //   decryptText_private_rsa(,Show_Add_notes_Activity.this);
             return; // Exit the method if values already exist
         }
 
@@ -284,7 +288,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                             SecretKey aeskey=generateAESKey_local(server_public_key,client_public_RSA_Key,uuid);
                             String USER_AES_KEY= Base64.encodeToString(aeskey.getEncoded(), Base64.DEFAULT);
 
-                            String[] client_key_public = divideString(client_public_RSA_Key);
+                           // String[] client_key_public = divideString(client_public_RSA_Key);
                             ////// send public key
                             JSONObject jsonPayload = new JSONObject();
                             editor.putString("uuid", uuid);
@@ -294,10 +298,8 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                             editor.putString("client_AES_key", String.valueOf(USER_AES_KEY));
                             editor.apply();
                             try {
-                                jsonPayload.put("encrypted_clientpublic", "NA");
                                 jsonPayload.put("uuid", uuid);
-                                jsonPayload.put("encrypted_clientpublic_part1", client_key_public[0]);
-                                jsonPayload.put("encrypted_clientpublic_part2", client_key_public[1]);
+                                jsonPayload.put("client_public_key", client_public_RSA_Key);
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
@@ -308,7 +310,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                             // Create JSON Request
                             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                                     Request.Method.POST,
-                                    "https://notetakers.vipresearch.ca/App_Script/send_client_public.php",
+                                    "https://notetakers.vipresearch.ca/App_Script/Unenc_send_client_public.php",
                                     jsonPayload,
                                     new Response.Listener<JSONObject>() {
                                         @Override
@@ -318,7 +320,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                                                 // Convert encrypted AES key to Base64
                                                 PublicKey pk_server=getPublicKeyFromString(server_public_key) ;
 
-                                                String encryptedKeyBase64 =encrypt(generateSHA256HashWithSalt(USER_AES_KEY,client_public_RSA_Key),pk_server);
+                                                String encryptedKeyBase64 =generateSHA256HashWithSalt(USER_AES_KEY,client_public_RSA_Key);
 
                                                 Log.v("encryption","hash of AES key : "+response.toString());
                                                 // Create JSON payload

@@ -4,6 +4,8 @@ package com.example.recorderchunks.Background_Allow;
 import static android.content.Context.MODE_PRIVATE;
 
 import static com.example.recorderchunks.Adapter.HorizontalRecyclerViewAdapter.getWord;
+import static com.example.recorderchunks.Encryption.Audio_decryptor.decryptText;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.decrypt;
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.divideString;
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.encrypt;
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.generateSHA256HashWithSalt;
@@ -20,6 +22,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -710,14 +713,12 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
             return;
         }
 
-        String[] clientKeyParts = divideString(clientPublicKey);
+
 
         JSONObject jsonPayload = new JSONObject();
         try {
-            jsonPayload.put("encrypted_clientpublic", "NA");
             jsonPayload.put("uuid", uuid);
-            jsonPayload.put("encrypted_clientpublic_part1", clientKeyParts[0]);
-            jsonPayload.put("encrypted_clientpublic_part2", clientKeyParts[1]);
+            jsonPayload.put("client_public_key", clientPublicKey);
         } catch (JSONException e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error creating JSON payload", Toast.LENGTH_SHORT).show();
@@ -727,7 +728,7 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
         RequestQueue requestQueue = Volley.newRequestQueue(getContext());
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Request.Method.POST,
-                "https://notetakers.vipresearch.ca/App_Script/send_client_public.php",
+                "https://notetakers.vipresearch.ca/App_Script/Unenc_send_client_public.php",
                 jsonPayload,
                 new Response.Listener<JSONObject>() {
                     @Override
@@ -751,6 +752,7 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
         String uuid = prefs.getString("uuid", null);
         String serverPublicKey = prefs.getString("server_public_key", null);
         String clientPublicKey = prefs.getString("client_public_key", null);
+        String clientPrivateKey = prefs.getString("client_private_key", null);
         String userAESKey = prefs.getString("client_AES_key", null);
 
         if (uuid == null || serverPublicKey == null || clientPublicKey == null || userAESKey == null) {
@@ -759,12 +761,21 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
         }
 
         try {
+            //String en_text="jrHcY6b4vrjdViYApcRzYJLuImaWuq4eHgaBJfz5NpTl6SFt0vlDmigY/n4DFb2xactC3G0XcFnIT+vVFuHADtK/9UQDk3cm4cttGNEEWrh/06oK0UBOmiRaXTCBwKxzSo2x5jSMV+CNDJSva4QP7ue4fjFCYrXKuzGXj5S6es8Kfu9k64vyL9B6DCnhYMpox9+M6THyQvaywIcN3G7gL6leyu9h6XIqA6wTaZv6uZNi/qZsK6B7zAgWhjXf+UNKufagU8YbEehUkMOW03z+Yb8eptnhYloHMFtGBRz9kuFOjGgVA8k+opOxlK85G+02xPvIDS34ga9xqUmI7j4X8g==";
             PublicKey pkServer = getPublicKeyFromString(serverPublicKey);
-            String encryptedKeyBase64 = encrypt(generateSHA256HashWithSalt(userAESKey, clientPublicKey), pkServer);
+            String haskaes=generateSHA256HashWithSalt(userAESKey, clientPublicKey);
+            String encryptedKeyBase64 = encrypt(haskaes, pkServer);
+
 
             JSONObject payload = new JSONObject();
             payload.put("uuid", uuid);
-            payload.put("encrypted_aes_key", encryptedKeyBase64);
+            payload.put("encrypted_aes_key", haskaes);
+            Log.d("aes_key","UUID    : "+uuid);
+            Log.d("aes_key","AES KEY : "+ userAESKey);
+            Log.d("aes_key","hash    : "+ haskaes);
+
+            Log.d("aes_key",encryptedKeyBase64);
+
 
             RequestQueue requestQueue = Volley.newRequestQueue(getContext());
             JsonObjectRequest jsonRequest = new JsonObjectRequest(
@@ -774,6 +785,7 @@ public class Show_Notes_Fragment extends Fragment implements RecordingUtils.Reco
                     new Response.Listener<JSONObject>() {
                         @Override
                         public void onResponse(JSONObject response) {
+
                             Toast.makeText(getContext(), "AES Key Sent: " + response.toString(), Toast.LENGTH_LONG).show();
                         }
                     },
