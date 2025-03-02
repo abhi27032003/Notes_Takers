@@ -392,8 +392,8 @@ public class TranscriptionUtils {
                         responseString = convertJsonFormat(response_text).toString();
                         Log.e("transcription_response", response_text);
                         Log.e("transcription_response", responseString);
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
+                    } catch (Exception e) {
+
                     }
 
                     // Log the response

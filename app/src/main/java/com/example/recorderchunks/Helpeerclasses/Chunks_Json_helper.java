@@ -74,35 +74,43 @@ public class Chunks_Json_helper {
         }
         return chunkList;
     }
-    public static JSONObject convertJsonFormat(String jsonString) throws JSONException {
-        JSONArray inputArray = new JSONArray(jsonString);
-        JSONArray chunksArray = new JSONArray();
-
-        for (int i = 0; i < inputArray.length(); i++) {
-            JSONObject fileObj = inputArray.getJSONObject(i);
-            String fileName = fileObj.getString("File Name");
-            String content = fileObj.getString("Content");
-
-            // Extract chunk_id (number before .txt)
-            String[] parts = fileName.split("\\|!~!\\|");
-            String chunkNumber = parts[parts.length - 1].replace(".txt", "");
-
-            // Extract unique_name (excluding .txt)
-            String uniqueName = parts[0] + "|!~!|" + parts[1] + "|!~!|" + chunkNumber;
-
-            // Create new JSON object
-            JSONObject chunkObj = new JSONObject();
-            chunkObj.put("chunk_id", chunkNumber);
-            chunkObj.put("status", "completed");
-            chunkObj.put("unique_name", uniqueName);
-            chunkObj.put("transcription", content);
-
-            chunksArray.put(chunkObj);
-        }
-
-        // Wrap in the required JSON structure
+    public static JSONObject convertJsonFormat(String jsonString)  {
         JSONObject outputJson = new JSONObject();
-        outputJson.put("chunks", chunksArray);
+        try {
+            JSONArray inputArray = new JSONArray(jsonString);
+            JSONArray chunksArray = new JSONArray();
+
+            for (int i = 0; i < inputArray.length(); i++) {
+                JSONObject fileObj = inputArray.getJSONObject(i);
+                String fileName = fileObj.getString("File Name");
+                String content = fileObj.getString("Content");
+
+                // Extract chunk_id (number before .txt)
+                String[] parts = fileName.split("\\|!~!\\|");
+                String chunkNumber = parts[parts.length - 1].replace(".txt", "");
+
+                // Extract unique_name (excluding .txt)
+                String uniqueName = parts[0] + "|!~!|" + parts[1] + "|!~!|" + chunkNumber;
+
+                // Create new JSON object
+                JSONObject chunkObj = new JSONObject();
+                chunkObj.put("chunk_id", chunkNumber);
+                chunkObj.put("status", "completed");
+                chunkObj.put("unique_name", uniqueName);
+                chunkObj.put("transcription", content);
+
+                chunksArray.put(chunkObj);
+            }
+
+            // Wrap in the required JSON structure
+
+            outputJson.put("chunks", chunksArray);
+
+        }
+        catch(Exception e)
+        {
+
+        }
 
         return outputJson;
     }
