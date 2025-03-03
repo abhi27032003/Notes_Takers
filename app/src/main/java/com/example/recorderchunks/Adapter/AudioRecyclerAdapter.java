@@ -974,8 +974,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            holder.transcription_status_progress_bar_api.setProgress((int) progress, true);
-                            holder.progressPercentage.setText((int) progress + " %");
+                            if(progress<=100)
+                            {
+                                holder.transcription_status_progress_bar_api.setProgress((int) progress, true);
+                                holder.progressPercentage.setText((int) progress + " %");
+                            }
+
                         }
                     });
                     if (total_chunks > transcribed_chunks) {
