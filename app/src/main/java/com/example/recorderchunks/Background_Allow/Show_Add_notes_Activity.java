@@ -346,17 +346,17 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                                                                 editor.putString("client_AES_key", String.valueOf(USER_AES_KEY));
                                                                 editor.apply();
                                                                 Log.v("encryption","response send aes : "+response.toString());
-                                                                Toast.makeText(Show_Add_notes_Activity.this,"response : "+response.toString(),Toast.LENGTH_LONG).show();
+                                                               // Toast.makeText(Show_Add_notes_Activity.this,"response : "+response.toString(),Toast.LENGTH_LONG).show();
 
                                                             }
                                                         },
                                                         new Response.ErrorListener() {
                                                             @Override
                                                             public void onErrorResponse(VolleyError error) {
-                                                                Toast.makeText(Show_Add_notes_Activity.this,"Sending Hash of AES key API not working "+ error.toString(), Toast.LENGTH_SHORT).show();
+                                                                //Toast.makeText(Show_Add_notes_Activity.this,"Sending Hash of AES key API not working "+ error.toString(), Toast.LENGTH_SHORT).show();
 
                                                                 Log.v("encryption","response send aes : "+error.getMessage());
-                                                                Toast.makeText(Show_Add_notes_Activity.this,"error :"+error.getMessage(),Toast.LENGTH_LONG).show();
+                                                               // Toast.makeText(Show_Add_notes_Activity.this,"error :"+error.getMessage(),Toast.LENGTH_LONG).show();
                                                             }
                                                         }
                                                 );
@@ -366,7 +366,7 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
 
                                             } catch (Exception e) {
                                                 Log.v("encryption","response send aes : "+"error 2 :"+e.getMessage());
-                                                Toast.makeText(Show_Add_notes_Activity.this,"error 2 :"+e.getMessage(),Toast.LENGTH_LONG).show();
+                                               // Toast.makeText(Show_Add_notes_Activity.this,"error 2 :"+e.getMessage(),Toast.LENGTH_LONG).show();
 
                                             }
                                             // save
@@ -395,17 +395,17 @@ public class Show_Add_notes_Activity extends AppCompatActivity {
                             // Add the request to the queue
                             requestQueue2.add(jsonObjectRequest);
 
-                            Toast.makeText(Show_Add_notes_Activity.this,"uuid and encryption information setup Complete ",Toast.LENGTH_LONG).show();
+                            //Toast.makeText(Show_Add_notes_Activity.this,"uuid and encryption information setup Complete ",Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             // Handle any errors that occur during response processing
 
-                            Toast.makeText(Show_Add_notes_Activity.this, "Error processing response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(Show_Add_notes_Activity.this, "Error processing response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(Show_Add_notes_Activity.this, "ERROR:"+error.getMessage(), Toast.LENGTH_SHORT).show();
+            //    Toast.makeText(Show_Add_notes_Activity.this, "ERROR:"+error.getMessage(), Toast.LENGTH_SHORT).show();
                 // Handle errors that occur during the network request
                 Log.w("_DEBUG_ error", error.getCause());
                 //Toast.makeText(Show_Add_notes_Activity.this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();

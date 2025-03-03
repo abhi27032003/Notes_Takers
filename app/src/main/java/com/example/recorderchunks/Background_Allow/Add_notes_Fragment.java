@@ -948,21 +948,26 @@ public class Add_notes_Fragment extends Fragment implements AudioRecyclerAdapter
 
     private  void load_recycler(int event_id)
     {
-        recordingViewModel.updateElapsedSeconds(0);
-        recordingList.clear();
-        recordingList = databaseHelper.getRecordingsByEventId(event_id);
-        if(getContext() !=null)
-        {
-            recordingAdapter = new AudioRecyclerAdapter(recordingList,getActivity(), this,getViewLifecycleOwner(),viewModel);
+        try {
+            recordingViewModel.updateElapsedSeconds(0);
+            recordingList.clear();
+            recordingList = databaseHelper.getRecordingsByEventId(event_id);
+            if(getContext() !=null)
+            {
+                recordingAdapter = new AudioRecyclerAdapter(recordingList,getActivity(), this,getViewLifecycleOwner(),viewModel);
+
+            }
+            else
+            {
+                // Toast.makeText(getContext(), "null Activity", Toast.LENGTH_SHORT).show();
+            }
+            updateSelectedItemsDisplay(new ArrayList<>());
+            recyclerView.setAdapter(recordingAdapter);
+            recordingAdapter.notifyDataSetChanged();
+        } catch (RuntimeException e) {
 
         }
-        else
-        {
-            // Toast.makeText(getContext(), "null Activity", Toast.LENGTH_SHORT).show();
-        }
-        updateSelectedItemsDisplay(new ArrayList<>());
-        recyclerView.setAdapter(recordingAdapter);
-        recordingAdapter.notifyDataSetChanged();
+
     }
     private void updateTimerText(int elapsedTime) {
         // Format the time and set it to the TextView
