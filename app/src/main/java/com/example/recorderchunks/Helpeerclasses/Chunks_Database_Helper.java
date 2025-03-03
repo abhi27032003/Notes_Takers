@@ -416,10 +416,10 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
         }
 
         // Step 3: Delete chunk records from the database
-        int rowsDeleted = db.delete(TABLE_CHUNKS, COL_RECORDING_ID + " = ?",
-                new String[]{String.valueOf(recordingId)});
+//        int rowsDeleted = db.delete(TABLE_CHUNKS, COL_RECORDING_ID + " = ?",
+//                new String[]{String.valueOf(recordingId)});
 
-        Log.d("ChunkDeletion", "Deleted " + rowsDeleted + " chunk records from database for recording ID: " + recordingId);
+//        Log.d("ChunkDeletion", "Deleted " + rowsDeleted + " chunk records from database for recording ID: " + recordingId);
 
         db.close();
     }
