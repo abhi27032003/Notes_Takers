@@ -407,7 +407,7 @@ public class TranscriptionUtils {
 
                         Log.e("chunk_path_I",e.getMessage());
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                      ///  throw new RuntimeException(e);
                     }
 
 

@@ -249,11 +249,7 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
     }
 
     // New: Delete all chunks by recording ID
-    public void deleteChunksByRecordingId(int recordingId) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_CHUNKS, COL_RECORDING_ID + " = ?", new String[]{String.valueOf(recordingId)});
-        db.close();
-    }
+
     public void deleteChunksByPath(String chunkPath) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_CHUNKS, COL_CHUNK_PATH + " = ?", new String[]{chunkPath});
@@ -385,6 +381,47 @@ public class Chunks_Database_Helper extends SQLiteOpenHelper {
 
         File file = new File(filePath);
         return file.getParent();
+    }
+
+    public void deleteChunksByRecordingId(int recordingId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        List<String> chunkPaths = new ArrayList<>();
+
+        // Step 1: Retrieve all chunk paths for the given recording ID
+        Cursor cursor = db.query(TABLE_CHUNKS, new String[]{COL_CHUNK_PATH},
+                COL_RECORDING_ID + " = ?", new String[]{String.valueOf(recordingId)},
+                null, null, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                String chunkPath = cursor.getString(cursor.getColumnIndexOrThrow(COL_CHUNK_PATH));
+                chunkPaths.add(chunkPath);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+
+        // Step 2: Delete files from storage
+        for (String path : chunkPaths) {
+            File file = new File(path);
+            if (file.exists()) {
+                boolean deleted = file.delete();
+                if (deleted) {
+                    Log.d("ChunkDeletion", "Deleted chunk file: " + path);
+                } else {
+                    Log.e("ChunkDeletion", "Failed to delete chunk file: " + path);
+                }
+            } else {
+                Log.w("ChunkDeletion", "File does not exist: " + path);
+            }
+        }
+
+        // Step 3: Delete chunk records from the database
+        int rowsDeleted = db.delete(TABLE_CHUNKS, COL_RECORDING_ID + " = ?",
+                new String[]{String.valueOf(recordingId)});
+
+        Log.d("ChunkDeletion", "Deleted " + rowsDeleted + " chunk records from database for recording ID: " + recordingId);
+
+        db.close();
     }
 
 }

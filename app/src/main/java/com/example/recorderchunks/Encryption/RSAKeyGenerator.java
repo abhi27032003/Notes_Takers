@@ -11,6 +11,7 @@ import java.security.PublicKey;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -21,11 +22,15 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
 public class RSAKeyGenerator {
+    private static final int NONCE_SIZE = 12; // 12-byte nonce
+    private static final int TAG_SIZE = 16;   // 16-byte authentication tag
+
     static SharedPreferences prefs ;
     private static final String TAG = "RSAKeyGenerator";
 
@@ -254,6 +259,61 @@ public class RSAKeyGenerator {
         } catch (NoSuchAlgorithmException e) {
             System.err.println("SHA-256 Algorithm Not Found");
             return null;
+        }
+    }
+
+
+
+    public static String tryDecryptAESGCM(byte[] encryptedData, byte[] keyBytes, int nonceSize, int tagSize) {
+        try {
+            SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+
+            // Extract nonce, ciphertext, and tag
+            byte[] nonce = Arrays.copyOfRange(encryptedData, 0, nonceSize);
+            byte[] ciphertext = Arrays.copyOfRange(encryptedData, nonceSize, encryptedData.length - tagSize);
+            byte[] tag = Arrays.copyOfRange(encryptedData, encryptedData.length - tagSize, encryptedData.length);
+
+            // Combine ciphertext + tag
+            byte[] combinedCiphertext = new byte[ciphertext.length + tag.length];
+            System.arraycopy(ciphertext, 0, combinedCiphertext, 0, ciphertext.length);
+            System.arraycopy(tag, 0, combinedCiphertext, ciphertext.length, tag.length);
+
+
+            // AES-GCM decryption
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(tagSize * 8, nonce);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec);
+            byte[] decryptedBytes = cipher.doFinal(combinedCiphertext);
+
+            return  new String(decryptedBytes);
+        } catch (Exception e) {
+            return "Tag mismatch or decryption failed: " + e.getMessage();
+        }
+    }
+
+    public static String decryptAESGCM(String encryptedBase64, Context context) {
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("preferences", Context.MODE_PRIVATE);
+            String aesKeyBase64 = prefs.getString("client_AES_key", null);
+            byte[] encryptedData = Base64.decode(encryptedBase64.trim(), Base64.NO_WRAP);
+            byte[] keyBytes = Base64.decode(aesKeyBase64.trim(), Base64.NO_WRAP);
+
+
+            // Try different nonce & tag sizes (same as Python logic)
+            int[] nonceSizes = {12, 16};
+            int[] tagSizes = {16, 8};
+
+            for (int nonceSize : nonceSizes) {
+                for (int tagSize : tagSizes) {
+                    String result = tryDecryptAESGCM(encryptedData, keyBytes, nonceSize, tagSize);
+                    if (!result.startsWith("Tag mismatch")) {
+                        return result;
+                    }
+                }
+            }
+            return "Could not decrypt with AES-GCM.";
+        } catch (Exception e) {
+            return "Decryption error: " + e.getMessage();
         }
     }
 }

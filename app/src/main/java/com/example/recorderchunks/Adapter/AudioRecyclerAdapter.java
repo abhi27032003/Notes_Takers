@@ -3,6 +3,7 @@ package com.example.recorderchunks.Adapter;
 
 import static com.example.recorderchunks.AI_Transcription.AudioChunkHelper.splitAudioInBackground;
 import static com.example.recorderchunks.Activity.API_Updation.SELECTED_LANGUAGE;
+import static com.example.recorderchunks.Encryption.RSAKeyGenerator.decryptAESGCM;
 import static com.example.recorderchunks.Encryption.RSAKeyGenerator.decryptTextPrivateRSA;
 import static com.example.recorderchunks.utils.AudioUtils.convertToWav;
 import static com.example.recorderchunks.utils.NetworkUtil.showNoInternetDialog;
@@ -84,6 +85,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -872,11 +874,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     logger.addLog("Server Transcription :  Response from server for "+audioitem.getName()+" is valid ");
 
                     List<Chunk_Response> all_chunks_status= Chunks_Json_helper.getChunkList(response);
+                    Integer transcribed_chunks=all_chunks_status.size();
                     for (Chunk_Response chunk : all_chunks_status) {
                         String chunkId = chunk.getChunkId();
                         String status = chunk.getStatus();
                         String chunk_name=chunk.getChunk_name();
-                        String transcription= decryptTextPrivateRSA(chunk.getTranscription(),context);
+                        String transcription= decryptAESGCM(chunk.getTranscription(),context);
 
 
 
@@ -895,8 +898,8 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
 
                         Log.i("got_chunks",chunkId.toString());
                     }
-                    Integer total_chunks= Chunks_Json_helper.getTotalChunkCount(response);
-                    Integer transcribed_chunks=Chunks_Json_helper.getCompletedChunkCount(response);
+                    Integer total_chunks= chunks_database_helper.getTotalChunksByRecordingId(audioitem.getRecordingId());
+
                     Log.i("got_chunks",transcribed_chunks+"/"+total_chunks);
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
@@ -924,6 +927,7 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                                 AudioRecyclerAdapter.selectedItems.remove(audioitem.getDescription());
                                 saveSelectionStatet(audioitem.getEventId(),position);
                                 notifySelectionChanged();
+                                chunks_database_helper.deleteChunksByRecordingId(audioitem.getRecordingId());
                                 Transcribe_Server_with_chunks(audioitem,holder,position);
 
                                 new Handler(Looper.getMainLooper()).post(new Runnable() {
@@ -989,6 +993,17 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                 else {
                     logger.addLog("Server Transcription : Response from server for "+audioitem.getName()+" is invalid ");
                     Log.i("got_chunks","invalid json format");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            logger.addLog("Server Transcription :  All chunks are not transcribed for "+audioitem.getName()+" retrying to check if all are transcribed");
+
+                            Log.i("got_chunks","rechecking....");
+                            holder.transcription_status.setText("Refreshing Status");
+
+                            get_transcription_single(unique_recordingId, holder,audioitem,position);
+                        }
+                    }, 30000); // 60000 milliseconds = 1 minute
                 }
 
             }
@@ -1152,12 +1167,18 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
     private String combineChunkTranscriptions(Map<String, String> chunkTranscriptionMap) {
         StringBuilder combinedTranscription = new StringBuilder();
 
-        for (Map.Entry<String, String> entry : chunkTranscriptionMap.entrySet()) {
+        // Sort the map entries based on the numeric prefix of the keys
+        List<Map.Entry<String, String>> sortedEntries = new ArrayList<>(chunkTranscriptionMap.entrySet());
+        sortedEntries.sort(Comparator.comparingInt(e -> Integer.parseInt(e.getKey().replaceAll("[^0-9]", ""))));
+
+        // Append values in sorted order
+        for (Map.Entry<String, String> entry : sortedEntries) {
             combinedTranscription.append(entry.getValue()).append(" ");
         }
 
         return combinedTranscription.toString().trim(); // Remove trailing space
     }
+
 
     ///////////////////////////////////-----Transcribe Local-----------//////////////////////////////////////
 
