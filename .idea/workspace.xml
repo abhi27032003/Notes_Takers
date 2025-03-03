@@ -116,10 +116,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="latest codebase 23 lsv">
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Add_notes_Fragment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Add_notes_Activity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/recorderchunks/Background_Allow/Show_Add_notes_Activity.java" afterDir="false" />
-    </list>
+    <list default="true" id="33d2a412-619c-4dc5-acbd-9f8e7e1f12b7" name="Changes" comment="latest codebase 24 lsv" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -653,7 +650,15 @@
       <option name="project" value="LOCAL" />
       <updated>1741027047599</updated>
     </task>
-    <option name="localTasksCounter" value="36" />
+    <task id="LOCAL-00036" summary="latest codebase 24 lsv">
+      <option name="closed" value="true" />
+      <created>1741027790483</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1741027790483</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -677,7 +682,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
-    <MESSAGE value="basic project structure -4th commit(11/11)--vosk" />
     <MESSAGE value="added functionality-4th commit(11/11)--vosk" />
     <MESSAGE value="added functionality-5th commit(13/13)" />
     <MESSAGE value="updated project" />
@@ -702,7 +706,8 @@
     <MESSAGE value="latest codebase 21 lsv" />
     <MESSAGE value="latest codebase 22 lsv" />
     <MESSAGE value="latest codebase 23 lsv" />
-    <option name="LAST_COMMIT_MESSAGE" value="latest codebase 23 lsv" />
+    <MESSAGE value="latest codebase 24 lsv" />
+    <option name="LAST_COMMIT_MESSAGE" value="latest codebase 24 lsv" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

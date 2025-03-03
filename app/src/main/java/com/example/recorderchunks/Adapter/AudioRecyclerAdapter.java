@@ -904,8 +904,12 @@ public class AudioRecyclerAdapter extends RecyclerView.Adapter<AudioRecyclerAdap
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
-                            holder.transcription_status.setText("Chunks Transcribed : "+transcribed_chunks+" / "+total_chunks);
-                            logger.addLog("Server Transcription : Chunks Transcribed : "+transcribed_chunks+" / "+total_chunks+" for "+audioitem.getName());
+                            if(total_chunks>0)
+                            {
+                                holder.transcription_status.setText("Chunks Transcribed : "+transcribed_chunks+" / "+total_chunks);
+                                logger.addLog("Server Transcription : Chunks Transcribed : "+transcribed_chunks+" / "+total_chunks+" for "+audioitem.getName());
+
+                            }
 
                         }
                     });
